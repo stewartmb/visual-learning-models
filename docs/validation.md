@@ -1,4 +1,4 @@
-# Validación de la versión 0.1
+# Validación de la versión 0.1.1
 
 Fecha: 9 de noviembre de 2026. Entorno de cálculo: macOS, Apple M2 Pro, Python 3.12, CPU, semilla 42. Las versiones están en el manifiesto.
 
@@ -18,6 +18,7 @@ Resultado: **4 pruebas aprobadas**.
 Recorrido automatizado con Chromium/Playwright sobre la aplicación Flask:
 
 - Cambiar capa y época modifica el estado y conserva 1000 observaciones.
+- En época 0, el lienzo de trayectorias está vacío. En épocas 1 y 2 se añaden segmentos; regresar a 0 los elimina. El recorrido completo solo se dibuja al activar su opción. El control no aparece en T2.
 - Filtrar una clase deja 100 imágenes; combinar errores y aislamiento actualiza el conteo.
 - Desactivar agrupamiento cambia el dibujo; el control de fuerza actualiza su valor.
 - Fijar una imagen muestra su etiqueta, predicción y seis vecinos.

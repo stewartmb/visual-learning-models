@@ -10,7 +10,7 @@ Relacionar con What–Why–How (16:17–16:49; 29:24–30:08). MNIST, 1000 IDs 
 
 ## 1:00–2:20 · Evolución entre épocas
 
-Abrir T1 en capa 4, época 0. Mostrar el resumen de trayectorias y reproducir. La captura de una capa en distintos momentos sigue la indicación de 44:07.
+Abrir T1 en capa 4, época 0: solo aparecen puntos iniciales. Reproducir y mostrar cómo se acumulan segmentos hasta la época activa. Activar «Mostrar recorrido completo» para consultar el resumen de las siete instantáneas. La captura de una capa en distintos momentos sigue la indicación de 44:07.
 
 En esta secuencia, NH pasa de 43.25% a 96.40%, y trustworthiness de 88.736% a 99.229%. Aclarar que NH describe vecindarios de clases en 2D y no es la exactitud de clasificación. No afirmar que toda representación no entrenada de MNIST debe verse mezclada.
 

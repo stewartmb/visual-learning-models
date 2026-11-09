@@ -1,6 +1,6 @@
 # Cómo aprende una red
 
-Explorador de representaciones de una red neuronal para **Visual Learning Models · UTEC**. Versión **0.1**, preparada para revisar el diseño interactuando con datos reales.
+Explorador de representaciones de una red neuronal para **Visual Learning Models · UTEC**. Versión **0.1.1**, preparada para revisar el diseño interactuando con datos reales.
 
 **T1:** una capa fija, siete épocas y trayectorias agrupadas. **T2:** una época fija, cuatro capas enlazadas con trayectorias agrupadas. Una imagen mantiene su identidad en todo el recorrido.
 
@@ -29,7 +29,7 @@ El HTML contiene los mismos datos, D3, imágenes y código que la aplicación Fl
 
 ## Un recorrido para empezar
 
-1. En **T1**, observar el resumen completo y reproducir las épocas. Cambiar la capa fija.
+1. En **T1**, empezar en época 0 con solo puntos y reproducir las épocas: las trayectorias se acumulan hasta el estado activo. Cambiar la capa fija. Activar **Mostrar recorrido completo (0–20)** para comparar toda la evolución simultáneamente.
 2. Desactivar **Agrupar trayectorias** y comparar. Ajustar fuerza y visibilidad.
 3. Seleccionar las clases **3 y 5**, ir a época **20**, activar **Solo errores** y fijar una imagen.
 4. Examinar la imagen, su historial de predicciones y los vecinos originales.

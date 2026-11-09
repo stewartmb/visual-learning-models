@@ -8,7 +8,7 @@
   const percent = v => `${(100 * v).toFixed(1)}%`;
   const state = {
     task: 't1', experiment: 'base', layer: 3, epochs: {t1: 0, t2: 6},
-    classes: new Set(), errors: false, isolate: false, trails: true, bundle: true,
+    classes: new Set(), errors: false, isolate: false, trails: true, bundle: true, fullTrails: false,
     strength: .45, opacity: .12, mode: 'pan', pinned: null, hover: null,
     detailLayer: 3, selected: new Set(), galleryPage: 0, confusion: null,
     transform: d3.zoomIdentity, playing: false, reveal: 3
@@ -91,7 +91,7 @@
         state.confusion = null;
         renderAll();
       });
-    for (const [id, prop] of [['show-trails','trails'], ['bundle','bundle'], ['errors-only','errors'], ['isolate','isolate']]) {
+    for (const [id, prop] of [['show-trails','trails'], ['bundle','bundle'], ['full-trails','fullTrails'], ['errors-only','errors'], ['isolate','isolate']]) {
       $(id).addEventListener('change', e => {state[prop] = e.target.checked; renderAll();});
     }
     $('strength').addEventListener('input', e => {state.strength = +e.target.value / 100; updateControls(); drawTrails();});
@@ -237,12 +237,20 @@
     $('play').textContent = state.playing ? 'Ⅱ Pausar' : temporal ? '▶ Recorrer épocas' : '▶ Recorrer capas';
     $('prev').disabled = epochIndex() === 0;
     $('next').disabled = epochIndex() === 6;
-    for (const [id, prop] of [['show-trails','trails'],['bundle','bundle'],['errors-only','errors'],['isolate','isolate']]) $(id).checked = state[prop];
+    for (const [id, prop] of [['show-trails','trails'],['bundle','bundle'],['full-trails','fullTrails'],['errors-only','errors'],['isolate','isolate']]) $(id).checked = state[prop];
+    $('full-trails-control').hidden = !temporal;
+    $('full-trails').disabled = !state.trails;
     $('strength-value').value = `${Math.round(state.strength*100)}%`;
     $('opacity-value').value = `${Math.round(state.opacity*100)}%`;
     $('strength').disabled = !state.bundle || !state.trails;
     $('opacity').disabled = !state.trails;
-    $('time-legend').hidden = !temporal;
+    $('time-legend').hidden = !temporal || (!state.fullTrails && epochIndex() === 0);
+    $('time-legend-end').textContent = state.fullTrails ? '20' : epoch();
+    const finalColor = d3.hsl(COLORS[0]);
+    const rampStart = finalColor.copy({l:Math.max(.18,finalColor.l*.42)}).formatRgb();
+    const rampEnd = finalColor.copy({l:Math.min(.67,finalColor.l)}).formatRgb();
+    const shownEnd = d3.interpolateHsl(rampStart,rampEnd)(state.fullTrails ? 1 : epochIndex()/6);
+    $('time-ramp').style.background = `linear-gradient(90deg,${rampStart},${shownEnd})`;
     $('epoch-strip').hidden = !temporal;
     d3.select('#epoch-buttons').selectAll('button').attr('aria-pressed', e => e === epoch());
     d3.select('#class-legend').selectAll('button').attr('aria-pressed', c => state.classes.has(c))
@@ -258,7 +266,11 @@
     $('quality-label').textContent = `${temporal?'':`Capa ${state.detailLayer+1} · `}NH₆ ${percent(q.neighborhood_hit)} · Trust₁₀ ${percent(q.trustworthiness)}`;
     $('quality-label').title = 'NH: vecinos de la misma clase en 2D. Trustworthiness: preservación de vecinos originales. Se evalúa la muestra completa, sin filtros.';
     $('chart-footnote').textContent = temporal
-      ? 'Cada trayectoria sigue una imagen entre épocas. El matiz indica clase; de oscuro a claro avanza el entrenamiento. Las miniaturas son instantáneas con intervalos desiguales.'
+      ? state.fullTrails
+        ? 'Recorrido completo 0–20: las curvas incluyen todas las épocas; los puntos muestran la época activa. El matiz indica clase y la luminancia indica avance.'
+        : epochIndex() === 0
+          ? 'Época 0: solo las posiciones iniciales, sin trayectorias. Avanza una época para empezar a construir el recorrido.'
+          : `Recorrido acumulado 0–${epoch()}: cada curva sigue una imagen hasta la época activa, sin segmentos de épocas posteriores. Las miniaturas permiten comparar todos los estados.`
       : 'Cada curva conecta la misma imagen entre capas. Los haces se organizan por clase verdadera; su forma es una ayuda de lectura, no una conexión entre neuronas.';
   }
 
@@ -373,6 +385,7 @@
     if (!state.trails) return;
     const f = focused(), selected = state.selected;
     const stages = frames.length-1;
+    const visibleStages = temporal ? (state.fullTrails ? stages : epochIndex()) : Math.min(stages,state.reveal);
     const alpha = state.bundle ? state.strength : 0;
     const drawOne = (i, stage, strong=false) => {
       const p0 = screen(frames[stage][i], temporal?0:stage);
@@ -409,12 +422,10 @@
       ctx.stroke();
     };
     if (temporal) {const p=panels[0];ctx.save();ctx.beginPath();ctx.rect(p.x,p.y,p.width,p.height);ctx.clip();}
-    for (let s=0;s<stages;s++) {
-      if (!temporal && s>=state.reveal) continue;
+    for (let s=0;s<visibleStages;s++) {
       for (let i=0;i<1000;i++) if (!emphasized(i)) drawOne(i,s);
     }
-    for (let s=0;s<stages;s++) {
-      if (!temporal && s>=state.reveal) continue;
+    for (let s=0;s<visibleStages;s++) {
       if (f !== null) drawOne(f,s,true);
       else for (const i of selected) if (included(i)) drawOne(i,s,true);
     }

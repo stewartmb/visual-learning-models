@@ -7,6 +7,7 @@ from flask import Flask, abort, jsonify, render_template, send_from_directory
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / 'static/data'
 app = Flask(__name__, root_path=str(ROOT))
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 
 @app.get('/')

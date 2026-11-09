@@ -13,7 +13,7 @@
 <div id="app">
   <header class="masthead">
     <div><p class="eyebrow"><span class="brand-mark"></span> UTEC / VISUAL LEARNING MODELS</p><h1>Cómo aprende una red<span class="title-dot">.</span></h1><p class="subtitle">Las mismas imágenes. Distintas representaciones.</p></div>
-    <div class="masthead-meta"><span class="edition">EXPLORADOR · V0.1</span><span>MNIST · 1 000 imágenes de prueba</span><button id="help-open" class="text-button">Cómo leer esta visualización ↗</button></div>
+    <div class="masthead-meta"><span class="edition">EXPLORADOR · V0.1.1</span><span>MNIST · 1 000 imágenes de prueba</span><button id="help-open" class="text-button">Cómo leer esta visualización ↗</button></div>
   </header>
 
   <div id="loading" role="status"><span class="loading-pulse"></span> Preparando las representaciones…</div>
@@ -42,10 +42,11 @@
         <section class="control-section">
           <div class="section-heading"><span class="step-label">02</span><h2>Trayectorias</h2></div>
           <label class="check"><input id="show-trails" type="checkbox" checked><span>Mostrar conexiones</span></label>
+          <label id="full-trails-control" class="check"><input id="full-trails" type="checkbox"><span>Mostrar recorrido completo (0–20)</span></label>
           <label class="check"><input id="bundle" type="checkbox" checked><span>Agrupar trayectorias</span></label>
           <label class="field range-label">Fuerza <output id="strength-value">45%</output><input id="strength" type="range" min="0" max="100" value="45"></label>
           <label class="field range-label">Visibilidad <output id="opacity-value">12%</output><input id="opacity" type="range" min="1" max="35" value="12"></label>
-          <div id="time-legend" class="time-legend"><span>Época 0</span><span class="time-ramp"></span><span>20</span></div>
+          <div id="time-legend" class="time-legend"><span>Época 0</span><span id="time-ramp" class="time-ramp"></span><span id="time-legend-end">20</span></div>
           <p class="control-note">Cada trayectoria sigue una imagen. El agrupamiento solo organiza su dibujo.</p>
         </section>
 
@@ -93,7 +94,7 @@
   </div>
 </div>
 
-<dialog id="help-dialog"><div class="dialog-heading"><p class="eyebrow">GUÍA DE EXPLORACIÓN</p><button class="dialog-close" aria-label="Cerrar guía">✕</button></div><h2>Sigue una imagen, encuentra un patrón.</h2><ol><li><b>Observa el conjunto.</b> En T1, las trayectorias resumen las épocas de una capa. En T2, conectan cuatro capas en una época.</li><li><b>Acerca y filtra.</b> Usa la rueda para zoom, arrastra para desplazar, o activa «Seleccionar región». Puedes combinar clases.</li><li><b>Comprueba los ejemplos.</b> Haz clic en una imagen para fijarla. El inspector conserva su identidad al cambiar de estado.</li><li><b>Prueba el agrupamiento.</b> Modifica la fuerza o desactívalo para distinguir datos y dibujo.</li></ol><p>La forma indica acierto o error en la predicción final. El color siempre indica la clase verdadera.</p></dialog>
+<dialog id="help-dialog"><div class="dialog-heading"><p class="eyebrow">GUÍA DE EXPLORACIÓN</p><button class="dialog-close" aria-label="Cerrar guía">✕</button></div><h2>Sigue una imagen, encuentra un patrón.</h2><ol><li><b>Observa el conjunto.</b> En T1, las trayectorias se acumulan hasta la época activa: en época 0 solo hay puntos. «Mostrar recorrido completo» permite ver todas las épocas a la vez. En T2, las curvas conectan cuatro capas en una época.</li><li><b>Acerca y filtra.</b> Usa la rueda para zoom, arrastra para desplazar, o activa «Seleccionar región». Puedes combinar clases.</li><li><b>Comprueba los ejemplos.</b> Haz clic en una imagen para fijarla. El inspector conserva su identidad al cambiar de estado.</li><li><b>Prueba el agrupamiento.</b> Modifica la fuerza o desactívalo para distinguir datos y dibujo.</li></ol><p>La forma indica acierto o error en la predicción final. El color siempre indica la clase verdadera.</p></dialog>
 <dialog id="method-dialog"><div class="dialog-heading"><p class="eyebrow">MÉTODO Y ALCANCE</p><button class="dialog-close" aria-label="Cerrar método">✕</button></div><h2>Los estados son reales. Las curvas los conectan.</h2><div id="method-content"></div><p><b>Referencias de diseño:</b> <a href="https://github.com/paolovasquezg/VisLearnModels" target="_blank" rel="noreferrer">Paolo Vásquez</a> · <a href="https://github.com/ricardoamiel/A-simple-Visual-Learning-Model-for-MNIST" target="_blank" rel="noreferrer">Ricardo Amiel</a> · <a href="https://webspace.science.uu.nl/~telea001/VisualAnalytics/NNHidden" target="_blank" rel="noreferrer">Rauber et al.</a></p></dialog>
 </body>
 </html>

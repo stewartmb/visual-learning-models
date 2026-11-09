@@ -1,4 +1,4 @@
-# Diseño visual · versión 0.1
+# Diseño visual · versión 0.1.1
 
 La referencia principal es el enunciado entregado. La grabación se consulta mediante el análisis exhaustivo HTML local, no mediante el SRT. El paper guía la metodología y los trabajos publicados orientan los idioms.
 
@@ -41,9 +41,11 @@ Las curvas Bézier usan controles atraídos hacia centroides de clase, adaptaci�
 
 La geometría interior es esquemática. El método usa etiquetas en el dibujo: un haz de líneas de igual clase no es evidencia independiente de que la red separó clases. La proyección no recibe etiquetas. Esta implementación no reproduce el algoritmo CUBu del paper.
 
+Desde v0.1.1, T1 muestra de forma predeterminada solo los segmentos hasta la época activa: época 0 sin líneas, época 1 con 0→1, época 2 con 0→1→2, etc. La opción **Mostrar recorrido completo (0–20)** es explícita y conserva el overview de todas las trayectorias. La escala de luminancia mantiene el significado temporal entre estados. La selección, el hover y la reproducción respetan el mismo límite temporal. T2 sigue conectando capas en una época fija.
+
 ## Mantra
 
-- Overview: toda la cohorte, resumen de trayectorias y miniaturas/paneles.
+- Overview: toda la cohorte, miniaturas/paneles y trayectorias acumuladas. El resumen temporal completo se activa mediante una opción explícita.
 - Zoom/filter: zoom, desplazamiento, clases, errores, matriz y brush.
 - Details: hover, selección fija, imagen original, historial, probabilidades y vecinos originales.
 
