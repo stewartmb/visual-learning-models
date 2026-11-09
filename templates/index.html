@@ -7,13 +7,14 @@
   <title>Cómo aprende una red · Visual Learning Models</title>
   <link rel="stylesheet" href="/static/style.css">
   <script defer src="/static/vendor/d3.v7.min.js"></script>
+  <script defer src="/static/trails.js"></script>
   <script defer src="/static/explorer.js"></script>
 </head>
 <body>
 <div id="app">
   <header class="masthead">
     <div><p class="eyebrow"><span class="brand-mark"></span> UTEC / VISUAL LEARNING MODELS</p><h1>Cómo aprende una red<span class="title-dot">.</span></h1><p class="subtitle">Las mismas imágenes. Distintas representaciones.</p></div>
-    <div class="masthead-meta"><span class="edition">EXPLORADOR · V0.1.1</span><span>MNIST · 1 000 imágenes de prueba</span><button id="help-open" class="text-button">Cómo leer esta visualización ↗</button></div>
+    <div class="masthead-meta"><span class="edition">EXPLORADOR · V0.1.2</span><span>MNIST · 1 000 imágenes de prueba</span><button id="help-open" class="text-button">Cómo leer esta visualización ↗</button></div>
   </header>
 
   <div id="loading" role="status"><span class="loading-pulse"></span> Preparando las representaciones…</div>
@@ -43,6 +44,7 @@
           <div class="section-heading"><span class="step-label">02</span><h2>Trayectorias</h2></div>
           <label class="check"><input id="show-trails" type="checkbox" checked><span>Mostrar conexiones</span></label>
           <label id="full-trails-control" class="check"><input id="full-trails" type="checkbox"><span>Mostrar recorrido completo (0–20)</span></label>
+          <label id="dim-initial-control" class="check"><input id="dim-initial" type="checkbox"><span>Atenuar primer tramo (0→1)</span></label>
           <label class="check"><input id="bundle" type="checkbox" checked><span>Agrupar trayectorias</span></label>
           <label class="field range-label">Fuerza <output id="strength-value">45%</output><input id="strength" type="range" min="0" max="100" value="45"></label>
           <label class="field range-label">Visibilidad <output id="opacity-value">12%</output><input id="opacity" type="range" min="1" max="35" value="12"></label>

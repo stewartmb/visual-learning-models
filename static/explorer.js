@@ -8,7 +8,7 @@
   const percent = v => `${(100 * v).toFixed(1)}%`;
   const state = {
     task: 't1', experiment: 'base', layer: 3, epochs: {t1: 0, t2: 6},
-    classes: new Set(), errors: false, isolate: false, trails: true, bundle: true, fullTrails: false,
+    classes: new Set(), errors: false, isolate: false, trails: true, bundle: true, fullTrails: false, dimInitial: false,
     strength: .45, opacity: .12, mode: 'pan', pinned: null, hover: null,
     detailLayer: 3, selected: new Set(), galleryPage: 0, confusion: null,
     transform: d3.zoomIdentity, playing: false, reveal: 3
@@ -91,7 +91,7 @@
         state.confusion = null;
         renderAll();
       });
-    for (const [id, prop] of [['show-trails','trails'], ['bundle','bundle'], ['full-trails','fullTrails'], ['errors-only','errors'], ['isolate','isolate']]) {
+    for (const [id, prop] of [['show-trails','trails'], ['bundle','bundle'], ['full-trails','fullTrails'], ['dim-initial','dimInitial'], ['errors-only','errors'], ['isolate','isolate']]) {
       $(id).addEventListener('change', e => {state[prop] = e.target.checked; renderAll();});
     }
     $('strength').addEventListener('input', e => {state.strength = +e.target.value / 100; updateControls(); drawTrails();});
@@ -237,9 +237,11 @@
     $('play').textContent = state.playing ? 'Ⅱ Pausar' : temporal ? '▶ Recorrer épocas' : '▶ Recorrer capas';
     $('prev').disabled = epochIndex() === 0;
     $('next').disabled = epochIndex() === 6;
-    for (const [id, prop] of [['show-trails','trails'],['bundle','bundle'],['full-trails','fullTrails'],['errors-only','errors'],['isolate','isolate']]) $(id).checked = state[prop];
+    for (const [id, prop] of [['show-trails','trails'],['bundle','bundle'],['full-trails','fullTrails'],['dim-initial','dimInitial'],['errors-only','errors'],['isolate','isolate']]) $(id).checked = state[prop];
     $('full-trails-control').hidden = !temporal;
     $('full-trails').disabled = !state.trails;
+    $('dim-initial-control').hidden = !temporal;
+    $('dim-initial').disabled = !state.trails;
     $('strength-value').value = `${Math.round(state.strength*100)}%`;
     $('opacity-value').value = `${Math.round(state.opacity*100)}%`;
     $('strength').disabled = !state.bundle || !state.trails;
@@ -396,20 +398,18 @@
         const a = panels[stage], b = panels[stage+1];
         if (p0[0]<a.x || p0[0]>a.x+a.width || p0[1]<a.y || p0[1]>a.y+a.height || p1[0]<b.x || p1[0]>b.x+b.width || p1[1]<b.y || p1[1]>b.y+b.height) return;
       }
-      const dx = p1[0]-p0[0], dy = p1[1]-p0[1];
-      const cx0 = p0[0]+dx/3+(c0[0]-p0[0])*alpha;
-      const cy0 = p0[1]+dy/3+(c0[1]-p0[1])*alpha;
-      const cx1 = p1[0]-dx/3+(c1[0]-p1[0])*alpha;
-      const cy1 = p1[1]-dy/3+(c1[1]-p1[1])*alpha;
+      const curve = VLMTrails.controls(p0,p1,c0,c1,alpha);
+      if (curve.distance === 0) return;
       let opacity;
       if (strong) opacity = f !== null ? .96 : .68;
       else if (!included(i)) opacity = state.isolate ? 0 : state.opacity*.06;
       else opacity = (f !== null || selected.size) ? state.opacity*.2 : state.opacity;
+      if (temporal && stage === 0 && state.dimInitial && !strong) opacity *= .12;
       if (!opacity) return;
       ctx.globalAlpha = opacity;
       ctx.lineWidth = strong ? 1.7 : .8;
       ctx.beginPath(); ctx.moveTo(...p0);
-      if (state.bundle) ctx.bezierCurveTo(cx0,cy0,cx1,cy1,...p1); else ctx.lineTo(...p1);
+      if (state.bundle) ctx.bezierCurveTo(...curve.first,...curve.second,...p1); else ctx.lineTo(...p1);
       if (temporal) {
         const color = d3.hsl(COLORS[label(i)]);
         const dark = color.copy({l:Math.max(.18,color.l*.42)}).formatRgb();
@@ -621,7 +621,8 @@
     $('method-content').innerHTML=`<p><b>Modelo:</b> MLP 784 → 128 → 128 → 128 → 128 → 10, ReLU y Adam. Semilla 42. Entrenamiento continuo durante 20 épocas, con instantáneas reales, incluida la época 0.</p>
       <p><b>Datos:</b> 50 000 imágenes de entrenamiento, 10 000 de validación y 10 000 de prueba. Se visualiza una muestra fija de 1 000 imágenes de prueba, 100 por dígito.</p>
       <p><b>Proyección:</b> AlignedUMAP no supervisado, 15 vecinos, min_dist 0.1 y regularización de alineación 0.01. Las etiquetas no intervienen en la proyección. Cada secuencia tiene un sistema de coordenadas propio; no se comparan posiciones absolutas entre capas seleccionadas o experimentos diferentes.</p>
-      <p><b>Agrupamiento:</b> curvas Bézier atraídas hacia centroides de clase, conservando las posiciones medidas. Esta adaptación usa etiquetas verdaderas para organizar el dibujo. La existencia de haces no demuestra por sí misma que el modelo haya separado clases. No reproduce el algoritmo GPU CUBu del paper.</p>
+      <p><b>Agrupamiento:</b> curvas Bézier atraídas hacia centroides de clase, conservando las posiciones medidas. La desviación está limitada respecto de la distancia entre extremos y no retrocede a lo largo de su conexión. Así se evitan arcos grandes en imágenes casi inmóviles. Esta adaptación usa etiquetas verdaderas para organizar el dibujo. La existencia de haces no demuestra por sí misma que el modelo haya separado clases. No reproduce el algoritmo GPU CUBu del paper.</p>
+      <p><b>Época 0:</b> corresponde a la red inicial sin entrenamiento, no a una proyección de píxeles originales. El tramo 0→1 permite comparar esa referencia con el primer estado entrenado. Se puede atenuar su dibujo de contexto para examinar cambios posteriores; seleccionar una imagen recupera todo su recorrido visible.</p>
       <p><b>Calidad:</b> NH₆ mide la fracción de vecinos de igual clase en 2D. Trust₁₀ mide preservación de vecindarios respecto de activaciones originales. La selección de vecinos del inspector se calcula en las activaciones originales.</p>
       <table><tr><td>Exactitud final · base · prueba completa</td><td>${percent(base.test_accuracy)}</td></tr><tr><td>Exactitud final · dilatación · prueba completa</td><td>${percent(ref.test_accuracy)}</td></tr><tr><td>Observaciones visualizadas</td><td>1 000 / 10 000</td></tr></table>
       <p><b>Límites:</b> la alineación regulariza el movimiento y puede atenuarlo. Distancias, áreas y curvas no son explicaciones causales. Las transiciones animadas interpolan posiciones: sus puntos intermedios no son estados del entrenamiento medidos. El refinamiento es un ensayo, no una mejora garantizada.</p>`;

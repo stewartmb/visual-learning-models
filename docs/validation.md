@@ -1,4 +1,4 @@
-# Validación de la versión 0.1.1
+# Validación de la versión 0.1.2
 
 Fecha: 9 de noviembre de 2026. Entorno de cálculo: macOS, Apple M2 Pro, Python 3.12, CPU, semilla 42. Las versiones están en el manifiesto.
 
@@ -13,6 +13,10 @@ Cuatro pruebas automatizadas verifican:
 
 Resultado: **4 pruebas aprobadas**.
 
+## Geometría de trayectorias
+
+Cuatro pruebas Node verifican extremos coincidentes, fuerza cero, ausencia de bucles en desplazamientos mínimos, los tres ejemplos de la auditoría y límites de desviación/avance sobre los 48000 segmentos temporales publicados con fuerza máxima. Las posiciones medidas no se modifican. Resultado: **4 pruebas aprobadas**.
+
 ## Interacción de navegador
 
 Recorrido automatizado con Chromium/Playwright sobre la aplicación Flask:
@@ -21,6 +25,7 @@ Recorrido automatizado con Chromium/Playwright sobre la aplicación Flask:
 - En época 0, el lienzo de trayectorias está vacío. En épocas 1 y 2 se añaden segmentos; regresar a 0 los elimina. El recorrido completo solo se dibuja al activar su opción. El control no aparece en T2.
 - Filtrar una clase deja 100 imágenes; combinar errores y aislamiento actualiza el conteo.
 - Desactivar agrupamiento cambia el dibujo; el control de fuerza actualiza su valor.
+- Atenuar el primer tramo cambia su dibujo de contexto; el control se oculta en T2 y no afecta el número de observaciones.
 - Fijar una imagen muestra su etiqueta, predicción y seis vecinos.
 - Selección rectangular produce una galería paginada; zoom y restablecimiento funcionan.
 - T2 muestra 4000 estados y permite inspeccionar una imagen por capa.

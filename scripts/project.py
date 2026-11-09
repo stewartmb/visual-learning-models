@@ -109,6 +109,7 @@ def run(cache):
     result['meta']['bundling'] = {'type': 'class-centroid attraction of cubic Bezier control points',
         'labels_used_in_drawing': True, 'labels_used_in_projection': False,
         'strength_default': .45, 'measured_waypoints_preserved': True,
+        'max_control_offset_ratio': .25, 'monotonic_along_chord': True,
         'is_original_paper_CUBu': False}
     dump(out / 'manifest.json', result['meta'])
     dump(out / 'dataset.json', result)

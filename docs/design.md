@@ -1,4 +1,4 @@
-# Diseño visual · versión 0.1.1
+# Diseño visual · versión 0.1.2
 
 La referencia principal es el enunciado entregado. La grabación se consulta mediante el análisis exhaustivo HTML local, no mediante el SRT. El paper guía la metodología y los trabajos publicados orientan los idioms.
 
@@ -39,9 +39,13 @@ T1 conecta 1000 imágenes a través de siete épocas: 6000 segmentos. T2 conecta
 
 Las curvas Bézier usan controles atraídos hacia centroides de clase, adaptación del precedente de Paolo. Fuerza inicial 0.45, visibilidad inicial 12% tras revisión visual. Se conservan todos los puntos de paso correspondientes a estados medidos. El usuario puede retirar el agrupamiento y mostrar conexiones rectas; también puede ocultar conexiones.
 
+Desde v0.1.2, la atracción se aplica únicamente en dirección perpendicular a la conexión entre extremos. Los controles mantienen posiciones longitudinales de 1/3 y 2/3 y una desviación transversal máxima del 25% de su distancia. Una saturación suave evita saltos al variar la fuerza. La curva avanza siempre entre sus extremos sin retroceder en esa dirección; extremos coincidentes no producen un bucle. La regla se aplica tanto en T1 como T2 y no cambia las proyecciones.
+
 La geometría interior es esquemática. El método usa etiquetas en el dibujo: un haz de líneas de igual clase no es evidencia independiente de que la red separó clases. La proyección no recibe etiquetas. Esta implementación no reproduce el algoritmo CUBu del paper.
 
 Desde v0.1.1, T1 muestra de forma predeterminada solo los segmentos hasta la época activa: época 0 sin líneas, época 1 con 0→1, época 2 con 0→1→2, etc. La opción **Mostrar recorrido completo (0–20)** es explícita y conserva el overview de todas las trayectorias. La escala de luminancia mantiene el significado temporal entre estados. La selección, el hover y la reproducción respetan el mismo límite temporal. T2 sigue conectando capas en una época fija.
+
+La referencia de época 0 se conserva por su valor para comparar antes/durante/después del entrenamiento. **Atenuar primer tramo (0→1)** reduce únicamente su opacidad de contexto al 12% del valor habitual; no cambia los datos, los demás segmentos ni los puntos. La trayectoria seleccionada conserva su énfasis para inspeccionar esa transición. El control se ofrece solo en T1.
 
 ## Mantra
 
