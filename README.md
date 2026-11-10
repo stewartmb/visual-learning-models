@@ -1,10 +1,10 @@
 # Cómo aprende una red
 
-Explorador de representaciones de una red neuronal para **Visual Learning Models · UTEC**. Versión **0.1.2**, preparada para revisar el diseño interactuando con datos reales.
+Explorador de representaciones de una red neuronal para **Visual Learning Models · UTEC**. Versión **0.2.0**, preparada para revisar el diseño interactuando con datos reales.
 
 **T1:** una capa fija, siete épocas y trayectorias agrupadas. **T2:** una época fija, cuatro capas enlazadas con trayectorias agrupadas. Una imagen mantiene su identidad en todo el recorrido.
 
-![Evolución entre capas e inspección de una imagen](docs/preview-t2.png)
+![Vista principal con controles compactos y ajustes bajo demanda](docs/clean-interface.png)
 
 ## Abrir la aplicación
 
@@ -29,16 +29,18 @@ El HTML contiene los mismos datos, D3, imágenes y código que la aplicación Fl
 
 ## Un recorrido para empezar
 
-1. En **T1**, empezar en época 0 con solo puntos y reproducir las épocas: las trayectorias se acumulan hasta el estado activo. Cambiar la capa fija. Activar **Mostrar recorrido completo (0–20)** para comparar toda la evolución simultáneamente.
-2. Desactivar **Agrupar trayectorias** y comparar. Ajustar fuerza y visibilidad.
+1. En **T1**, empezar en época 0 y usar las miniaturas como único selector de época, o reproducir la secuencia. La capa se elige en el control superior. En **Ajustes de vista → Recorrido → Completo (0–20)** se puede comparar toda la evolución.
+2. En **Ajustes de vista → Trayectorias**, comparar **Agrupadas**, **Rectas** y **Ocultas**. Fuerza, opacidad y velocidad están en ese mismo panel, plegado al abrir la página.
    La curvatura está limitada respecto de la distancia entre extremos: evita arcos grandes en imágenes casi inmóviles. **Atenuar primer tramo (0→1)** permite reducir ese contexto al examinar épocas posteriores; una imagen seleccionada recupera su trayectoria con énfasis normal.
 3. Seleccionar las clases **3 y 5**, ir a época **20**, activar **Solo errores** y fijar una imagen.
-4. Examinar la imagen, su historial de predicciones y los vecinos originales.
+4. El clic abre el inspector de esa imagen. **Historial y vecinos** despliega los datos complementarios; el historial es de lectura y conserva un único selector de época en la vista principal.
 5. Abrir **T2** y localizar la misma imagen en las cuatro capas.
 6. Seleccionar una región y revisar sus imágenes en la galería.
 7. Abrir **Diagnóstico y comparación del refinamiento**; pulsar una celda para recuperar sus ejemplos.
 
 La interacción sigue el mantra: **overview → zoom/filter → details on demand**. La comparación estática permanece disponible junto con la animación.
+
+La vista inicial da todo el ancho al gráfico. Las clases y «Solo errores» aparecen una sola vez y filtran directamente. Limpiar filtros, quitar selección y restablecer zoom se muestran únicamente cuando hay un estado que limpiar. El inspector permanece cerrado hasta seleccionar una imagen; los valores de calidad, la comparación y los ajustes son desplegables.
 
 ## Experimento y resultados incluidos
 

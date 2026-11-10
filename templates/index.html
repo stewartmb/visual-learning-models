@@ -11,10 +11,10 @@
   <script defer src="/static/explorer.js"></script>
 </head>
 <body>
-<div id="app">
+<div id="app" data-version="0.2.0">
   <header class="masthead">
-    <div><p class="eyebrow"><span class="brand-mark"></span> UTEC / VISUAL LEARNING MODELS</p><h1>Cómo aprende una red<span class="title-dot">.</span></h1><p class="subtitle">Las mismas imágenes. Distintas representaciones.</p></div>
-    <div class="masthead-meta"><span class="edition">EXPLORADOR · V0.1.2</span><span>MNIST · 1 000 imágenes de prueba</span><button id="help-open" class="text-button">Cómo leer esta visualización ↗</button></div>
+    <div><p class="eyebrow"><span class="brand-mark"></span> VISUAL LEARNING MODELS / UTEC</p><h1>Cómo aprende una red<span class="title-dot">.</span></h1></div>
+    <div class="masthead-meta"><button id="help-open" class="text-button">Guía</button><button id="method-open" class="text-button">Método y fuentes</button></div>
   </header>
 
   <div id="loading" role="status"><span class="loading-pulse"></span> Preparando las representaciones…</div>
@@ -26,77 +26,58 @@
         <button id="tab-t1" role="tab" aria-selected="true" aria-controls="chart-section" data-task="t1"><span>T1</span> Entre épocas</button>
         <button id="tab-t2" role="tab" aria-selected="false" aria-controls="chart-section" data-task="t2"><span>T2</span> Entre capas</button>
       </nav>
-      <label class="experiment-label">Experimento <select id="experiment"><option value="base">Modelo base</option><option value="refined">Modelo con dilatación</option></select></label>
+      <label class="experiment-label"><span class="sr-only">Experimento</span><select id="experiment" aria-label="Experimento"><option value="base">Modelo base</option><option value="refined">Modelo con dilatación</option></select></label>
     </div>
 
-    <main class="explorer-layout">
-      <aside class="controls" aria-label="Controles de exploración">
-        <section class="control-section">
-          <div class="section-heading"><span class="step-label">01</span><h2>Recorrer</h2></div>
-          <label id="layer-control" class="field">Capa fija<select id="layer"><option value="0">Capa 1 · 128 neuronas</option><option value="1">Capa 2 · 128 neuronas</option><option value="2">Capa 3 · 128 neuronas</option><option value="3" selected>Capa 4 · 128 neuronas</option></select></label>
-          <div class="field"><span id="epoch-label">Época activa</span><div id="epoch-buttons" class="epoch-buttons" role="group" aria-label="Época"></div></div>
-          <div class="playback"><button id="prev" aria-label="Época anterior">←</button><button id="play" class="play-button">▶ Recorrer épocas</button><button id="next" aria-label="Época siguiente">→</button></div>
-          <label class="field speed-field">Velocidad<select id="speed"><option value="1800">Lenta</option><option value="1100" selected>Normal</option><option value="650">Rápida</option></select></label>
-          <p class="control-note" id="task-note">La capa permanece fija. Cambia el entrenamiento.</p>
-        </section>
-
-        <section class="control-section">
-          <div class="section-heading"><span class="step-label">02</span><h2>Trayectorias</h2></div>
-          <label class="check"><input id="show-trails" type="checkbox" checked><span>Mostrar conexiones</span></label>
-          <label id="full-trails-control" class="check"><input id="full-trails" type="checkbox"><span>Mostrar recorrido completo (0–20)</span></label>
-          <label id="dim-initial-control" class="check"><input id="dim-initial" type="checkbox"><span>Atenuar primer tramo (0→1)</span></label>
-          <label class="check"><input id="bundle" type="checkbox" checked><span>Agrupar trayectorias</span></label>
-          <label class="field range-label">Fuerza <output id="strength-value">45%</output><input id="strength" type="range" min="0" max="100" value="45"></label>
-          <label class="field range-label">Visibilidad <output id="opacity-value">12%</output><input id="opacity" type="range" min="1" max="35" value="12"></label>
-          <div id="time-legend" class="time-legend"><span>Época 0</span><span id="time-ramp" class="time-ramp"></span><span id="time-legend-end">20</span></div>
-          <p class="control-note">Cada trayectoria sigue una imagen. El agrupamiento solo organiza su dibujo.</p>
-        </section>
-
-        <section class="control-section">
-          <div class="section-heading"><span class="step-label">03</span><h2>Filtrar</h2></div>
-          <p class="control-note legend-hint">Selecciona una o varias clases.</p>
-          <div id="class-legend" class="class-legend" role="group" aria-label="Clases verdaderas"></div>
-          <label class="check"><input id="errors-only" type="checkbox"><span>Solo errores</span></label>
-          <label class="check"><input id="isolate" type="checkbox"><span>Ocultar el resto</span></label>
-          <button id="clear-filters" class="quiet-button full-width">Restablecer filtros</button>
-        </section>
-        <p class="source-note">D3 · activaciones reales<br>Entrenamiento y prueba separados</p>
-      </aside>
-
+    <main id="explorer-layout" class="explorer-layout">
       <section id="chart-section" class="chart-section" role="tabpanel" aria-labelledby="tab-t1">
-        <div class="chart-heading"><div><p class="eyebrow" id="chart-kicker">EVOLUCIÓN DEL ENTRENAMIENTO</p><h2 id="chart-title">Una capa, siete estados</h2></div><span id="visible-count" class="count-label" aria-live="polite"></span></div>
-        <div class="chart-tools"><div class="mode-switch" role="group" aria-label="Modo del ratón"><button id="mode-pan" aria-pressed="true">Mover / zoom</button><button id="mode-brush" aria-pressed="false">Seleccionar región</button></div><div><button id="clear-selection" class="text-button">Limpiar selección</button><button id="reset-view" class="text-button">Restablecer zoom</button></div></div>
+        <div class="chart-heading"><h2 id="chart-title">Capa 4 · época 0</h2><span id="visible-count" class="count-label" aria-live="polite"></span></div>
+        <div class="chart-tools">
+          <div class="scope-controls">
+            <label id="layer-control" class="inline-field">Capa fija<select id="layer"><option value="0">Capa 1</option><option value="1">Capa 2</option><option value="2">Capa 3</option><option value="3" selected>Capa 4</option></select></label>
+            <label id="epoch-control" class="inline-field" hidden>Época fija<select id="epoch-select" aria-label="Época fija"></select></label>
+            <button id="play" class="play-button">▶ Reproducir</button>
+          </div>
+          <div class="interaction-tools"><div class="mode-switch" role="group" aria-label="Modo del ratón"><button id="mode-pan" aria-pressed="true">Mover / zoom</button><button id="mode-brush" aria-pressed="false">Seleccionar región</button></div><button id="clear-selection" class="text-button" hidden>Quitar selección</button><button id="reset-view" class="text-button" hidden>Restablecer zoom</button></div>
+        </div>
+        <div class="filter-bar"><span class="filter-label">Clase</span><div id="class-legend" class="class-legend" role="group" aria-label="Clases verdaderas"></div><label class="check"><input id="errors-only" type="checkbox"><span>Solo errores</span></label><button id="clear-filters" class="text-button" hidden>Limpiar filtros</button></div>
+        <details id="view-settings" class="view-settings"><summary>Ajustes de vista</summary><div class="settings-panel">
+          <label class="field">Trayectorias<select id="trail-style"><option value="bundled">Agrupadas</option><option value="straight">Rectas</option><option value="off">Ocultas</option></select></label>
+          <label id="full-trails-control" class="field">Recorrido<select id="trail-scope"><option value="current">Hasta la época activa</option><option value="full">Completo (0–20)</option></select></label>
+          <label class="field">Velocidad<select id="speed"><option value="1800">Lenta</option><option value="1100" selected>Normal</option><option value="650">Rápida</option></select></label>
+          <label class="field range-label">Agrupamiento <output id="strength-value">45%</output><input id="strength" type="range" min="0" max="100" value="45"></label>
+          <label class="field range-label">Opacidad <output id="opacity-value">12%</output><input id="opacity" type="range" min="1" max="35" value="12"></label>
+          <label id="dim-initial-control" class="check"><input id="dim-initial" type="checkbox"><span>Atenuar primer tramo (0→1)</span></label>
+        </div></details>
         <div class="plot-scroll"><div id="plot-wrap"><canvas id="trails-canvas" aria-hidden="true"></canvas><svg id="plot" role="img" aria-label="Proyecciones de activaciones de imágenes MNIST"></svg><div id="plot-tooltip" hidden></div></div></div>
-        <div class="plot-caption"><span><i class="circle-key"></i> Acierto <i class="triangle-key"></i> Error en la época activa</span><span id="quality-label"></span></div>
+        <div class="plot-caption"><span><i class="circle-key"></i> Acierto <i class="triangle-key"></i> Error <span class="inspection-hint">· Clic para examinar una imagen</span></span><div id="time-legend" class="time-legend"><span>Época 0</span><span id="time-ramp" class="time-ramp"></span><span id="time-legend-end">20</span></div></div>
         <div id="epoch-strip" class="epoch-strip" aria-label="Comparación de épocas"></div>
         <p id="chart-footnote" class="chart-footnote">Cada punto es una imagen. El color indica su clase verdadera; la curva une sus estados medidos.</p>
 
         <section id="gallery-section" class="gallery-section" hidden><div class="gallery-heading"><h3 id="gallery-title">Imágenes seleccionadas</h3><div><button id="gallery-prev" aria-label="Página anterior de imágenes">←</button><span id="gallery-page"></span><button id="gallery-next" aria-label="Página siguiente de imágenes">→</button></div></div><div id="gallery" class="gallery"></div></section>
 
         <details id="diagnostics" class="diagnostics"><summary>Diagnóstico y comparación del refinamiento <span>↗</span></summary><p class="diagnostic-note">Filas: clase verdadera · columnas: predicción. Porcentajes por fila sobre las mismas 1 000 imágenes. Haz clic en una celda para ver sus ejemplos.</p><div id="matrix-grid" class="matrix-grid"></div><p id="refinement-result" class="diagnostic-note"></p></details>
+        <details class="projection-quality"><summary>Calidad de la proyección</summary><p id="quality-label"></p><p>NH: vecinos de la misma clase en 2D. Trustworthiness: preservación de vecinos originales. Se evalúa la muestra completa, sin filtros.</p></details>
       </section>
 
-      <aside class="inspector" aria-label="Detalles de la imagen">
-        <div class="section-heading"><span class="step-label">04</span><h2>Mirar de cerca</h2></div>
-        <div id="inspector-empty"><div class="empty-digit">?</div><h3>Una imagen cuenta la historia</h3><p>Pasa sobre un punto para explorar. Haz clic para fijarlo y seguirlo entre épocas y capas.</p><div id="sample-preview" class="sample-preview"></div></div>
-        <div id="inspector-detail" hidden>
-          <div class="detail-top"><span id="sample-id" class="mono"></span><button id="unpin" class="text-button">Soltar</button></div>
+      <aside id="inspector" class="inspector" aria-label="Detalles de la imagen" hidden>
+        <div id="inspector-detail">
+          <div class="detail-top"><span id="sample-id" class="mono"></span><button id="unpin" class="text-button">Cerrar imagen</button></div>
           <canvas id="digit-image" width="28" height="28" role="img" aria-label="Imagen del dígito seleccionado"></canvas>
           <div class="prediction-line"><span>Real <b id="true-label"></b></span><span>Predicción <b id="pred-label"></b></span><span id="prediction-status"></span></div>
           <h3 class="detail-label">Salida del modelo <span id="detail-epoch"></span></h3>
           <svg id="probability-bars" role="img" aria-label="Probabilidades estimadas para las diez clases"></svg>
-          <p class="control-note">Longitud = probabilidad estimada (0–100%). Salida final del modelo.</p>
-          <h3 class="detail-label">Predicción durante el entrenamiento</h3><div id="prediction-history" class="prediction-history"></div>
-          <h3 class="detail-label">6 vecinos en activaciones <span id="neighbor-layer"></span></h3><div id="neighbors" class="neighbors"></div><p class="control-note">Vecinos calculados antes de proyectar a 2D.</p>
+          <p class="control-note">Probabilidad estimada · escala de 0 a 100%.</p>
+          <details class="inspector-more"><summary>Historial y vecinos</summary><h3 class="detail-label">Predicción por época</h3><div id="prediction-history" class="prediction-history" aria-label="Historial de predicciones, solo lectura"></div>
+          <h3 class="detail-label">6 vecinos en activaciones <span id="neighbor-layer"></span></h3><div id="neighbors" class="neighbors"></div><p class="control-note">Vecinos anteriores a la proyección 2D.</p></details>
         </div>
-        <div class="reading-note"><span>PARA INTERPRETAR</span><p>Una curva larga no significa más aprendizaje. Comprueba las imágenes, sus vecinos y sus predicciones.</p></div>
       </aside>
     </main>
-    <footer><span>Overview → Zoom / Filter → Details on demand</span><button id="method-open" class="text-button">Método, límites y fuentes ↗</button></footer>
+    <footer><span>MNIST · 1 000 imágenes de prueba</span><span>Overview → Zoom / Filter → Details on demand</span></footer>
   </div>
 </div>
 
-<dialog id="help-dialog"><div class="dialog-heading"><p class="eyebrow">GUÍA DE EXPLORACIÓN</p><button class="dialog-close" aria-label="Cerrar guía">✕</button></div><h2>Sigue una imagen, encuentra un patrón.</h2><ol><li><b>Observa el conjunto.</b> En T1, las trayectorias se acumulan hasta la época activa: en época 0 solo hay puntos. «Mostrar recorrido completo» permite ver todas las épocas a la vez. En T2, las curvas conectan cuatro capas en una época.</li><li><b>Acerca y filtra.</b> Usa la rueda para zoom, arrastra para desplazar, o activa «Seleccionar región». Puedes combinar clases.</li><li><b>Comprueba los ejemplos.</b> Haz clic en una imagen para fijarla. El inspector conserva su identidad al cambiar de estado.</li><li><b>Prueba el agrupamiento.</b> Modifica la fuerza o desactívalo para distinguir datos y dibujo.</li></ol><p>La forma indica acierto o error en la predicción final. El color siempre indica la clase verdadera.</p></dialog>
+<dialog id="help-dialog"><div class="dialog-heading"><p class="eyebrow">GUÍA DE EXPLORACIÓN</p><button class="dialog-close" aria-label="Cerrar guía">✕</button></div><h2>Sigue una imagen, encuentra un patrón.</h2><ol><li><b>Observa el conjunto.</b> En T1, las trayectorias se acumulan hasta la época activa: en época 0 solo hay puntos. En «Ajustes de vista», el recorrido completo permite comparar todas las épocas. En T2, las curvas conectan cuatro capas en una época.</li><li><b>Acerca y filtra.</b> Usa la rueda para zoom, arrastra para desplazar, o activa «Seleccionar región». Puedes combinar clases.</li><li><b>Comprueba los ejemplos.</b> Haz clic en una imagen para fijarla. El inspector conserva su identidad al cambiar de estado.</li><li><b>Prueba el agrupamiento.</b> En «Ajustes de vista», compara trayectorias agrupadas y rectas para distinguir datos y dibujo.</li></ol><p>La forma indica acierto o error en la predicción final. El color siempre indica la clase verdadera.</p></dialog>
 <dialog id="method-dialog"><div class="dialog-heading"><p class="eyebrow">MÉTODO Y ALCANCE</p><button class="dialog-close" aria-label="Cerrar método">✕</button></div><h2>Los estados son reales. Las curvas los conectan.</h2><div id="method-content"></div><p><b>Referencias de diseño:</b> <a href="https://github.com/paolovasquezg/VisLearnModels" target="_blank" rel="noreferrer">Paolo Vásquez</a> · <a href="https://github.com/ricardoamiel/A-simple-Visual-Learning-Model-for-MNIST" target="_blank" rel="noreferrer">Ricardo Amiel</a> · <a href="https://webspace.science.uu.nl/~telea001/VisualAnalytics/NNHidden" target="_blank" rel="noreferrer">Rauber et al.</a></p></dialog>
 </body>
 </html>

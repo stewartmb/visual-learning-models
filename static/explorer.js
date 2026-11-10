@@ -8,7 +8,7 @@
   const percent = v => `${(100 * v).toFixed(1)}%`;
   const state = {
     task: 't1', experiment: 'base', layer: 3, epochs: {t1: 0, t2: 6},
-    classes: new Set(), errors: false, isolate: false, trails: true, bundle: true, fullTrails: false, dimInitial: false,
+    classes: new Set(), errors: false, trails: true, bundle: true, fullTrails: false, dimInitial: false,
     strength: .45, opacity: .12, mode: 'pan', pinned: null, hover: null,
     detailLayer: 3, selected: new Set(), galleryPage: 0, confusion: null,
     transform: d3.zoomIdentity, playing: false, reveal: 3
@@ -20,7 +20,10 @@
   const epochIndex = () => state.epochs[state.task];
   const epoch = () => EPOCHS[epochIndex()];
   const seq = () => record().sequences[state.task === 't1' ? `t1-l${state.layer}` : `t2-e${epoch()}`];
-  const focused = () => state.pinned ?? state.hover;
+  const focused = () => {
+    if(state.pinned!==null && included(state.pinned))return state.pinned;
+    return state.hover!==null && included(state.hover)?state.hover:null;
+  };
   const label = i => DATA.samples.labels[i];
   const prediction = i => record().predictions[epochIndex()][i];
   const isError = i => prediction(i) !== label(i);
@@ -39,7 +42,7 @@
   }
 
   function pointOpacity(i) {
-    if (!included(i)) return state.isolate ? 0 : .045;
+    if (!included(i)) return 0;
     const hasSelection = focused() !== null || state.selected.size > 0;
     return hasSelection && !emphasized(i) ? .16 : .88;
   }
@@ -79,9 +82,8 @@
   }
 
   function buildControls() {
-    d3.select('#epoch-buttons').selectAll('button').data(EPOCHS).join('button')
-      .attr('type', 'button').attr('aria-label', e => `Época ${e}`)
-      .text(e => e).on('click', (_, e) => {stop(); setEpoch(EPOCHS.indexOf(e));});
+    d3.select('#epoch-select').selectAll('option').data(EPOCHS).join('option').attr('value',e=>e).text(e=>e);
+    $('epoch-select').onchange = e => {const index=EPOCHS.indexOf(+e.target.value);stop();setEpoch(index);};
     d3.select('#class-legend').selectAll('button').data(d3.range(10)).join('button')
       .attr('type', 'button').attr('aria-label', c => `Filtrar dígito ${c}`)
       .style('--class-color', c => COLORS[c]).text(c => c)
@@ -91,20 +93,20 @@
         state.confusion = null;
         renderAll();
       });
-    for (const [id, prop] of [['show-trails','trails'], ['bundle','bundle'], ['full-trails','fullTrails'], ['dim-initial','dimInitial'], ['errors-only','errors'], ['isolate','isolate']]) {
+    for (const [id, prop] of [['dim-initial','dimInitial'], ['errors-only','errors']]) {
       $(id).addEventListener('change', e => {state[prop] = e.target.checked; renderAll();});
     }
+    $('trail-style').onchange = e => {state.trails=e.target.value!=='off';state.bundle=e.target.value==='bundled';renderAll();};
+    $('trail-scope').onchange = e => {state.fullTrails=e.target.value==='full';renderAll();};
     $('strength').addEventListener('input', e => {state.strength = +e.target.value / 100; updateControls(); drawTrails();});
     $('opacity').addEventListener('input', e => {state.opacity = +e.target.value / 100; updateControls(); drawTrails();});
     $('layer').addEventListener('change', e => {const layer = +e.target.value; stop(); state.layer = layer; state.detailLayer = state.layer; miniatureKey = ''; renderAll(true);});
     $('experiment').addEventListener('change', e => {const experiment = e.target.value; stop(); state.experiment = experiment; state.confusion = null; miniatureKey = ''; renderAll(true);});
-    $('prev').onclick = () => {stop(); setEpoch(Math.max(0, epochIndex()-1));};
-    $('next').onclick = () => {stop(); setEpoch(Math.min(6, epochIndex()+1));};
     $('play').onclick = () => state.playing ? stop() : play();
     $('mode-pan').onclick = () => setMode('pan');
     $('mode-brush').onclick = () => {stop(); setMode('brush');};
     $('clear-filters').onclick = () => {
-      state.classes.clear(); state.errors = false; state.isolate = false; state.confusion = null;
+      state.classes.clear(); state.errors = false; state.confusion = null;
       renderAll();
     };
     $('clear-selection').onclick = () => {
@@ -121,8 +123,6 @@
     $('method-open').onclick = () => $('method-dialog').showModal();
     document.querySelectorAll('.dialog-close').forEach(b => b.onclick = () => b.closest('dialog').close());
     document.querySelectorAll('dialog').forEach(dialog => dialog.addEventListener('click', e => {if (e.target === dialog) dialog.close();}));
-    const previews = [0, 104, 271, 419, 605, 801];
-    makeTiles($('sample-preview'), previews, false);
   }
 
   function setupInteractions() {
@@ -130,6 +130,7 @@
       .filter(e => state.mode === 'pan' && (!e.button || e.type === 'wheel') && e.type !== 'dblclick')
       .on('zoom', e => {
         state.transform = e.transform;
+        updateActionVisibility();
         requestPlot();
       });
     svg.call(zoom);
@@ -232,14 +233,14 @@
     $('experiment').value = state.experiment;
     $('layer').value = state.layer;
     $('layer-control').hidden = !temporal;
-    $('epoch-label').textContent = temporal ? 'Época activa' : 'Época fija';
-    $('task-note').textContent = temporal ? 'La capa permanece fija. Cambia el entrenamiento.' : 'La época permanece fija. Compara las cuatro capas.';
-    $('play').textContent = state.playing ? 'Ⅱ Pausar' : temporal ? '▶ Recorrer épocas' : '▶ Recorrer capas';
-    $('prev').disabled = epochIndex() === 0;
-    $('next').disabled = epochIndex() === 6;
-    for (const [id, prop] of [['show-trails','trails'],['bundle','bundle'],['full-trails','fullTrails'],['dim-initial','dimInitial'],['errors-only','errors'],['isolate','isolate']]) $(id).checked = state[prop];
+    $('epoch-control').hidden = temporal;
+    $('epoch-select').value = epoch();
+    $('play').textContent = state.playing ? 'Ⅱ Pausar' : temporal ? '▶ Reproducir' : '▶ Recorrer capas';
+    for (const [id, prop] of [['dim-initial','dimInitial'],['errors-only','errors']]) $(id).checked = state[prop];
+    $('trail-style').value = !state.trails?'off':state.bundle?'bundled':'straight';
+    $('trail-scope').value = state.fullTrails?'full':'current';
     $('full-trails-control').hidden = !temporal;
-    $('full-trails').disabled = !state.trails;
+    $('trail-scope').disabled = !state.trails;
     $('dim-initial-control').hidden = !temporal;
     $('dim-initial').disabled = !state.trails;
     $('strength-value').value = `${Math.round(state.strength*100)}%`;
@@ -254,12 +255,10 @@
     const shownEnd = d3.interpolateHsl(rampStart,rampEnd)(state.fullTrails ? 1 : epochIndex()/6);
     $('time-ramp').style.background = `linear-gradient(90deg,${rampStart},${shownEnd})`;
     $('epoch-strip').hidden = !temporal;
-    d3.select('#epoch-buttons').selectAll('button').attr('aria-pressed', e => e === epoch());
     d3.select('#class-legend').selectAll('button').attr('aria-pressed', c => state.classes.has(c))
       .classed('is-muted', c => state.classes.size && !state.classes.has(c));
     document.querySelectorAll('[data-task]').forEach(b => b.setAttribute('aria-selected', b.dataset.task === state.task));
     $('chart-section').setAttribute('aria-labelledby', `tab-${state.task}`);
-    $('chart-kicker').textContent = temporal ? 'EVOLUCIÓN DEL ENTRENAMIENTO' : 'REPRESENTACIONES ENTRE CAPAS';
     $('chart-title').textContent = temporal ? `Capa ${state.layer+1} · época ${epoch()}` : `Época ${epoch()} · cuatro capas`;
     const n = d3.range(1000).filter(included).length;
     const suffix = state.confusion ? ` · ${state.confusion[0]} → ${state.confusion[1]}` : '';
@@ -267,13 +266,20 @@
     const q = seq().quality[temporal ? epochIndex() : state.detailLayer];
     $('quality-label').textContent = `${temporal?'':`Capa ${state.detailLayer+1} · `}NH₆ ${percent(q.neighborhood_hit)} · Trust₁₀ ${percent(q.trustworthiness)}`;
     $('quality-label').title = 'NH: vecinos de la misma clase en 2D. Trustworthiness: preservación de vecinos originales. Se evalúa la muestra completa, sin filtros.';
+    updateActionVisibility();
     $('chart-footnote').textContent = temporal
       ? state.fullTrails
-        ? 'Recorrido completo 0–20: las curvas incluyen todas las épocas; los puntos muestran la época activa. El matiz indica clase y la luminancia indica avance.'
+        ? 'Recorrido completo 0–20 · Los puntos corresponden a la época activa.'
         : epochIndex() === 0
-          ? 'Época 0: solo las posiciones iniciales, sin trayectorias. Avanza una época para empezar a construir el recorrido.'
-          : `Recorrido acumulado 0–${epoch()}: cada curva sigue una imagen hasta la época activa, sin segmentos de épocas posteriores. Las miniaturas permiten comparar todos los estados.`
-      : 'Cada curva conecta la misma imagen entre capas. Los haces se organizan por clase verdadera; su forma es una ayuda de lectura, no una conexión entre neuronas.';
+          ? 'Época 0 · Red sin entrenamiento. Elige una miniatura para avanzar.'
+          : `Recorrido acumulado 0–${epoch()} · Cada curva sigue la misma imagen.`
+      : 'Las conexiones siguen la misma imagen entre las cuatro capas.';
+  }
+
+  function updateActionVisibility() {
+    $('clear-filters').hidden = !(state.classes.size || state.errors || state.confusion);
+    $('clear-selection').hidden = state.selected.size === 0;
+    $('reset-view').hidden = state.transform.k === 1 && state.transform.x === 0 && state.transform.y === 0;
   }
 
   function makeGeometry() {
@@ -338,7 +344,7 @@
   function renderAll(reset=false) {
     if (!DATA || !svg) return;
     if (reset) {state.transform = d3.zoomIdentity; svg.property('__zoom',d3.zoomIdentity);}
-    updateControls(); makeGeometry(); renderPlot(); renderMiniatures(); updateInspector(); renderGallery();
+    updateControls(); updateInspector(); makeGeometry(); renderPlot(); renderMiniatures(); renderGallery();
     if ($('diagnostics').open) renderMatrices();
   }
 
@@ -360,19 +366,19 @@
     if (temporal) {
       const p = panels[0], x = state.transform.rescaleX(p.xScale), y = state.transform.rescaleY(p.yScale);
       axes.append('g').attr('class','axis').attr('transform',`translate(${p.x},${p.y+p.height})`)
-        .call(d3.axisBottom(x).ticks(5).tickSize(-p.height).tickFormat(d3.format('.1f')));
+        .call(d3.axisBottom(x).ticks(4).tickSize(-p.height).tickFormat(()=>''));
       axes.append('g').attr('class','axis').attr('transform',`translate(${p.x},${p.y})`)
-        .call(d3.axisLeft(y).ticks(5).tickSize(-p.width).tickFormat(d3.format('.1f')));
+        .call(d3.axisLeft(y).ticks(4).tickSize(-p.width).tickFormat(()=>''));
     }
     const labels = svg.select('.plot-labels'); labels.selectAll('*').remove();
     if (!temporal) {
       panels.forEach((p,i) => {
         labels.append('text').attr('class','layer-label').attr('x',p.x+p.width/2).attr('y',25).attr('text-anchor','middle').text(`CAPA ${i+1}`);
-        labels.append('text').attr('class','projection-label').attr('x',p.x+p.width/2).attr('y',geometry.height-10).attr('text-anchor','middle').text('128 activaciones → 2D');
         if (i<3) labels.append('text').attr('class','projection-label').attr('x',p.x+p.width+15).attr('y',25).attr('text-anchor','middle').text('→');
       });
     } else {
-      labels.append('text').attr('class','projection-label').attr('x',geometry.width-17).attr('y',geometry.height-7).attr('text-anchor','end').text('Proyección alineada · coordenadas relativas');
+      labels.append('text').attr('class','projection-label').attr('x',geometry.width-17).attr('y',geometry.height-7).attr('text-anchor','end').text('Dimensión 1 · AlignedUMAP');
+      labels.append('text').attr('class','projection-label').attr('transform',`translate(15,${geometry.height/2}) rotate(-90)`).attr('text-anchor','middle').text('Dimensión 2');
     }
   }
 
@@ -390,6 +396,7 @@
     const visibleStages = temporal ? (state.fullTrails ? stages : epochIndex()) : Math.min(stages,state.reveal);
     const alpha = state.bundle ? state.strength : 0;
     const drawOne = (i, stage, strong=false) => {
+      if(!included(i))return;
       const p0 = screen(frames[stage][i], temporal?0:stage);
       const p1 = screen(frames[stage+1][i], temporal?0:stage+1);
       const c0 = screen(centroids[stage][label(i)], temporal?0:stage);
@@ -402,7 +409,6 @@
       if (curve.distance === 0) return;
       let opacity;
       if (strong) opacity = f !== null ? .96 : .68;
-      else if (!included(i)) opacity = state.isolate ? 0 : state.opacity*.06;
       else opacity = (f !== null || selected.size) ? state.opacity*.2 : state.opacity;
       if (temporal && stage === 0 && state.dimInitial && !strong) opacity *= .12;
       if (!opacity) return;
@@ -476,7 +482,7 @@
   function pin(i,layer=state.detailLayer) {
     if (!Number.isInteger(i) || i<0 || i>=1000) return;
     stop(); state.pinned=i; state.hover=null; state.detailLayer=layer;
-    hideTooltip(); updateControls(); renderPlot(); updateInspector(); renderGallery();
+    hideTooltip(); renderAll();
   }
 
   function drawDigit(canvas,i) {
@@ -502,15 +508,15 @@
   }
 
   function updateInspector() {
-    const i=focused();
-    $('inspector-empty').hidden=i!==null;
-    $('inspector-detail').hidden=i===null;
+    const i=state.pinned;
+    $('inspector').hidden=i===null;
+    $('explorer-layout').classList.toggle('has-inspector',i!==null);
     if (i===null) {lastInspectorKey=''; return;}
     const l=state.task==='t1'?state.layer:state.detailLayer;
-    const key=`${state.experiment}:${i}:${epoch()}:${l}:${state.pinned!==null}`;
+    const key=`${state.experiment}:${i}:${epoch()}:${l}:${included(i)}`;
     if (key===lastInspectorKey) return;
     lastInspectorKey=key;
-    $('sample-id').textContent=`MNIST #${DATA.samples.ids[i]}${state.pinned!==null?' · FIJADA':''}`;
+    $('sample-id').textContent=`MNIST #${DATA.samples.ids[i]}${included(i)?'':' · fuera del filtro'}`;
     $('unpin').hidden=state.pinned===null;
     drawDigit($('digit-image'),i);
     $('digit-image').setAttribute('aria-label',`Imagen MNIST ${DATA.samples.ids[i]}, dígito verdadero ${label(i)}`);
@@ -529,11 +535,10 @@
     rows.select('.bar').attr('x',left).attr('y',3).attr('width',c=>Math.max(0,scale(probs[c]))).attr('height',9).attr('fill',c=>COLORS[c]);
     rows.select('.label').attr('x',1).attr('y',11).text(c=>c).attr('font-weight',c=>c===prediction(i)?700:400);
     rows.select('.value').attr('x',w-1).attr('y',11).attr('text-anchor','end').text(c=>`${Math.round(probs[c]*100)}%`);
-    const history=d3.select('#prediction-history').selectAll('button').data(EPOCHS).join(enter=> {
-      const b=enter.append('button').attr('type','button'); b.append('small'); b.append('span'); return b;
-    }).attr('aria-pressed',e=>e===epoch()).classed('is-error',(e,j)=>record().predictions[j][i]!==label(i))
-      .attr('aria-label',(e,j)=>`Época ${e}: predicción ${record().predictions[j][i]}`)
-      .on('click',(_,e)=>{stop();setEpoch(EPOCHS.indexOf(e));});
+    const history=d3.select('#prediction-history').selectAll('.prediction-cell').data(EPOCHS).join(enter=> {
+      const b=enter.append('span').attr('class','prediction-cell');b.append('small');b.append('span');return b;
+    }).classed('is-active',e=>e===epoch()).classed('is-error',(e,j)=>record().predictions[j][i]!==label(i))
+      .attr('aria-label',(e,j)=>`Época ${e}: predicción ${record().predictions[j][i]}`);
     history.select('small').text(e=>`E${e}`);history.select('span').text((e,j)=>record().predictions[j][i]);
     $('neighbor-layer').textContent=`· capa ${l+1}`;
     makeTiles($('neighbors'),record().neighbors[`${epoch()}_${l}`][i]);

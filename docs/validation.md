@@ -1,4 +1,4 @@
-# Validación de la versión 0.1.2
+# Validación de la versión 0.2.0
 
 Fecha: 9 de noviembre de 2026. Entorno de cálculo: macOS, Apple M2 Pro, Python 3.12, CPU, semilla 42. Las versiones están en el manifiesto.
 
@@ -23,7 +23,7 @@ Recorrido automatizado con Chromium/Playwright sobre la aplicación Flask:
 
 - Cambiar capa y época modifica el estado y conserva 1000 observaciones.
 - En época 0, el lienzo de trayectorias está vacío. En épocas 1 y 2 se añaden segmentos; regresar a 0 los elimina. El recorrido completo solo se dibuja al activar su opción. El control no aparece en T2.
-- Filtrar una clase deja 100 imágenes; combinar errores y aislamiento actualiza el conteo.
+- Filtrar una clase deja 100 imágenes; combinar errores actualiza el conteo y oculta directamente el resto, sin otro interruptor.
 - Desactivar agrupamiento cambia el dibujo; el control de fuerza actualiza su valor.
 - Atenuar el primer tramo cambia su dibujo de contexto; el control se oculta en T2 y no afecta el número de observaciones.
 - Fijar una imagen muestra su etiqueta, predicción y seis vecinos.
@@ -33,6 +33,8 @@ Recorrido automatizado con Chromium/Playwright sobre la aplicación Flask:
 - Matrices muestran 200 celdas; seleccionar la confusión 5 → 3 recupera tres imágenes del modelo base en época 20.
 - Cambiar de experimento actualiza correctamente el modelo seleccionado.
 - Diálogos de método y guía funcionan.
+- T1 tiene solo siete miniaturas para elegir época; T2 usa su selector propio. El historial es de lectura. Ajustes e inspector están cerrados inicialmente; las acciones de restablecer son contextuales. El gráfico inicial ocupa más de 1150 píxeles de ancho en una ventana de 1512 píxeles.
+- Una imagen fijada fuera del filtro conserva su inspector con etiqueta explícita, mientras sus marcas y curvas quedan excluidas del gráfico.
 - Anchura móvil de 390 píxeles sin desbordamiento global; las capas tienen desplazamiento horizontal contenido.
 
 Resultado: **recorrido aprobado, sin errores JavaScript**. La revisión visual incluyó las vistas principales, detalle, selección, matrices y móvil.

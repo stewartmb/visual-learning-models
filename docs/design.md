@@ -1,6 +1,18 @@
-# Diseño visual · versión 0.1.2
+# Diseño visual · versión 0.2.0
 
 La referencia principal es el enunciado entregado. La grabación se consulta mediante el análisis exhaustivo HTML local, no mediante el SRT. El paper guía la metodología y los trabajos publicados orientan los idioms.
+
+## Jerarquía y reducción de controles
+
+La vista principal tiene una sola área de filtros, con leyenda de clases y «Solo errores». Aplican directamente a puntos y líneas. Las observaciones excluidas permanecen en los datos y vuelven al limpiar el filtro. La selección de una región mantiene el contexto tenue de los otros casos incluidos.
+
+T1 tiene un único selector de época: las siete miniaturas. T2 tiene un selector compacto, porque sus paneles ya comparan capas. Se eliminaron los botones laterales de épocas y anterior/siguiente. El historial del inspector conserva sus predicciones como datos de lectura.
+
+Un selector de estilo sustituye la combinación de mostrar/ocultar y agrupar/desagrupar. Estilo, alcance temporal, fuerza, opacidad, velocidad y atenuación inicial están bajo **Ajustes de vista**, cerrado de forma predeterminada. Las métricas de calidad tienen su propio detalle plegado.
+
+No hay una columna de controles ni un inspector vacío. El inspector se abre con clic y se cierra con «Cerrar imagen». Hover muestra información breve y resalta sin modificar el ancho del gráfico. La selección fijada se mantiene al filtrar y muestra «fuera del filtro» cuando corresponde; no dibuja curvas o puntos excluidos. Limpiar filtros, quitar selección regional y restablecer zoom aparecen cuando son aplicables.
+
+Se redujeron el encabezado, las explicaciones permanentes y la repetición de anotaciones. Los ejes de T1 se rotulan como dimensiones de AlignedUMAP; las coordenadas numéricas normalizadas no añaden significado físico y no compiten visualmente con los datos. La tabla de métricas y el método siguen disponibles bajo demanda.
 
 ## What / Why / How
 
@@ -43,7 +55,7 @@ Desde v0.1.2, la atracción se aplica únicamente en dirección perpendicular a 
 
 La geometría interior es esquemática. El método usa etiquetas en el dibujo: un haz de líneas de igual clase no es evidencia independiente de que la red separó clases. La proyección no recibe etiquetas. Esta implementación no reproduce el algoritmo CUBu del paper.
 
-Desde v0.1.1, T1 muestra de forma predeterminada solo los segmentos hasta la época activa: época 0 sin líneas, época 1 con 0→1, época 2 con 0→1→2, etc. La opción **Mostrar recorrido completo (0–20)** es explícita y conserva el overview de todas las trayectorias. La escala de luminancia mantiene el significado temporal entre estados. La selección, el hover y la reproducción respetan el mismo límite temporal. T2 sigue conectando capas en una época fija.
+T1 muestra de forma predeterminada solo los segmentos hasta la época activa: época 0 sin líneas, época 1 con 0→1, época 2 con 0→1→2, etc. **Ajustes de vista → Recorrido → Completo (0–20)** conserva el overview de todas las trayectorias. La escala de luminancia mantiene el significado temporal entre estados. La selección, el hover y la reproducción respetan el mismo límite temporal. T2 sigue conectando capas en una época fija.
 
 La referencia de época 0 se conserva por su valor para comparar antes/durante/después del entrenamiento. **Atenuar primer tramo (0→1)** reduce únicamente su opacidad de contexto al 12% del valor habitual; no cambia los datos, los demás segmentos ni los puntos. La trayectoria seleccionada conserva su énfasis para inspeccionar esa transición. El control se ofrece solo en T1.
 
@@ -51,7 +63,7 @@ La referencia de época 0 se conserva por su valor para comparar antes/durante/d
 
 - Overview: toda la cohorte, miniaturas/paneles y trayectorias acumuladas. El resumen temporal completo se activa mediante una opción explícita.
 - Zoom/filter: zoom, desplazamiento, clases, errores, matriz y brush.
-- Details: hover, selección fija, imagen original, historial, probabilidades y vecinos originales.
+- Details: hover breve; clic para fijar y abrir imagen/probabilidades; historial y vecinos originales mediante un desplegable.
 
 Los filtros nunca recalculan las proyecciones. La selección sigue IDs. La galería es paginada. El mouse tiene modos separados para desplazamiento y selección de región. Se permite limpiar selección, filtros y zoom por separado.
 

@@ -3,6 +3,7 @@
 - This is the UTEC Visual Learning Models assignment. The user's assignment is the primary requirement; see `docs/requirements.md`.
 - Preserve T1 (epochs, fixed layer) and T2 (layers, fixed epoch), the persistent observation IDs, and the visualization mantra.
 - Keep both trail-bundling views, linked selection, raw-image inspection and static comparisons. Design decisions are in `docs/design.md`.
+- Keep one epoch selector per task (T1 thumbnails; T2 dropdown), one class/error filter area, read-only prediction history, and secondary drawing controls under the closed view-settings disclosure. Open image details on click; do not reserve space for an empty inspector.
 - Use only D3 for visualization. Flask serves precomputed data; page loads must never train models or fetch graphics dependencies.
 - Never substitute synthetic results for measured ones. Retain the true untrained epoch 0 and separate training/validation/test sets.
 - Distinguish drawing, projection, representation and model-output metrics. Bundling by class is a drawing aid, not independent evidence of learned separation.
