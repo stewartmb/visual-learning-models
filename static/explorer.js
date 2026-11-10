@@ -283,7 +283,7 @@
   }
 
   function updateActionVisibility() {
-    $('clear-filters').hidden = !(state.classes.size || state.errors || state.confusion);
+    $('clear-filters').disabled = !(state.classes.size || state.errors || state.confusion);
     $('clear-selection').hidden = state.selected.size === 0;
     $('reset-view').hidden = state.transform.k === 1 && state.transform.x === 0 && state.transform.y === 0;
     $('fit-focus').hidden = !(state.classes.size || state.errors || state.confusion || state.selected.size);

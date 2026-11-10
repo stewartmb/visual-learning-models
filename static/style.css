@@ -19,3 +19,5 @@ html,body{height:100%;overflow:hidden}#app{height:100dvh;max-width:none;width:10
 .plot-scroll.is-layers #plot-wrap{min-width:0}.plot-labels .layer-label,.plot-labels .projection-label{paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
 
 .control-rail .speed-field select{width:94px;flex-shrink:0}@media(max-width:760px){.masthead h1{font-size:17px;white-space:nowrap}.masthead .eyebrow{font-size:6px;letter-spacing:.3px}.masthead-meta{gap:8px}.masthead-meta .text-button{font-size:8px}}
+
+.control-rail .reset-filters{display:block;width:100%;margin:10px 0 0;padding:7px 8px;background:var(--surface);color:var(--focus);font-size:11px;border:1px solid #9caaa6}.control-rail .reset-filters:disabled{opacity:.55}

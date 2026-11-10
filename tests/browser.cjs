@@ -24,6 +24,8 @@ const output=path.resolve(process.env.QA_OUTPUT||'test-results');fs.mkdirSync(ou
  assert.equal(await page.locator('#inspector').isVisible(),true);
  assert.equal(await page.locator('#inspector-detail').isVisible(),false);
  assert.equal(await page.locator('#view-settings').count(),0);
+ assert.equal(await page.locator('#clear-filters').isVisible(),true);
+ assert.equal(await page.locator('#clear-filters').isDisabled(),true);
  assert.equal(await page.locator('#epoch-buttons').count(),0);
  assert.equal(await page.locator('#epoch-strip button').count(),7);
  assert.equal(await page.locator('.point').count(),1000);
@@ -43,6 +45,7 @@ const output=path.resolve(process.env.QA_OUTPUT||'test-results');fs.mkdirSync(ou
  await page.screenshot({path:output+'/overview.png',fullPage:true});
  const positions=await page.locator('.point').evaluateAll(es=>es.map(e=>[e.transform.baseVal.consolidate().matrix.e,e.transform.baseVal.consolidate().matrix.f].map(v=>+v.toFixed(5))));
  await page.check('#errors-only');
+ assert.equal(await page.locator('#clear-filters').isEnabled(),true);
  const nErrors=await page.evaluate(()=>VLM.data.samples.labels.filter((y,i)=>VLM.data.experiments.base.predictions[6][i]!==y).length);
  assert.equal(await page.locator('.point[pointer-events="auto"]').count(),nErrors);
  assert.equal(await page.locator('.point[pointer-events="none"]').count(),1000-nErrors);
@@ -50,7 +53,11 @@ const output=path.resolve(process.env.QA_OUTPUT||'test-results');fs.mkdirSync(ou
  assert.ok(+(await page.locator('.point[pointer-events="none"]').first().getAttribute('opacity'))>0);
  assert.deepEqual(await page.locator('.point').evaluateAll(es=>es.map(e=>[e.transform.baseVal.consolidate().matrix.e,e.transform.baseVal.consolidate().matrix.f].map(v=>+v.toFixed(5)))),positions);
  await sameBox(box);await page.screenshot({path:output+'/errors-context.png',fullPage:true});
- await page.click('#clear-filters');await page.locator('#class-legend button').nth(5).click();
+ await page.click('#clear-filters');
+ assert.equal(await page.locator('#clear-filters').isVisible(),true);
+ assert.equal(await page.locator('#clear-filters').isDisabled(),true);
+ assert.equal(await page.locator('#errors-only').isChecked(),false);
+ await page.locator('#class-legend button').nth(5).click();
  assert.equal(await page.locator('.point[pointer-events="auto"]').count(),100);
  assert.equal(await page.locator('.class-reference').count(),10);
  await page.click('#fit-focus');await page.waitForTimeout(200);
@@ -118,7 +125,7 @@ const output=path.resolve(process.env.QA_OUTPUT||'test-results');fs.mkdirSync(ou
  assert.deepEqual(await page.evaluate(()=>VLM.getState().confusion),[5,3]);assert.equal(await page.evaluate(()=>VLM.getState().selected.length),3);
  assert.equal(await page.locator('.class-reference').count(),40);await sameBox(layerBox);
  await page.selectOption('#experiment','refined');await page.click('#clear-selection');
- if(await page.locator('#clear-filters').isVisible())await page.click('#clear-filters');
+ if(await page.locator('#clear-filters').isEnabled())await page.click('#clear-filters');
  await page.click('#tab-t1');await chooseEpoch(0);await page.click('#play');await page.waitForTimeout(850);await page.click('#play');
  assert.ok(await page.evaluate(()=>VLM.getState().epochs.t1)>0);assert.equal(await page.evaluate(()=>VLM.getState().playing),false);
  await page.click('#method-open');assert.equal(await page.locator('#method-dialog').isVisible(),true);

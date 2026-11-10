@@ -24,6 +24,7 @@ Recorrido automatizado con Chromium/Playwright sobre la aplicación Flask:
 - Cambiar capa y época modifica el estado y conserva 1000 observaciones.
 - En época 0, el lienzo de trayectorias está vacío. En épocas 1 y 2 se añaden segmentos; regresar a 0 los elimina. El recorrido completo solo se dibuja al activar su opción. El control no aparece en T2.
 - Filtrar una clase destaca 100 imágenes; los demás casos siguen como contexto gris tenue. Solo errores destaca 28 casos del modelo base en época 20. Ambos conservan diez referencias de clase, coordenadas y tamaño del mapa.
+- «Limpiar filtros» permanece visible, se habilita con filtros y vuelve a deshabilitarse tras restablecerlos.
 - Desactivar agrupamiento cambia el dibujo; el control de fuerza actualiza su valor.
 - Atenuar el primer tramo cambia su dibujo de contexto; el control se oculta en T2 y no afecta el número de observaciones.
 - Hover muestra imagen, etiqueta, predicción, principales puntuaciones, historial y seis vecinos sin cambiar opacidades ni el lienzo de curvas. Clic fija el caso y atenúa el resto; hover sobre otro caso no sustituye la selección fijada.
