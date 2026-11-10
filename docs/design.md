@@ -1,18 +1,18 @@
-# Diseño visual · versión 0.2.0
+# Diseño visual · versión 0.3.0
 
 La referencia principal es el enunciado entregado. La grabación se consulta mediante el análisis exhaustivo HTML local, no mediante el SRT. El paper guía la metodología y los trabajos publicados orientan los idioms.
 
 ## Jerarquía y reducción de controles
 
-La vista principal tiene una sola área de filtros, con leyenda de clases y «Solo errores». Aplican directamente a puntos y líneas. Las observaciones excluidas permanecen en los datos y vuelven al limpiar el filtro. La selección de una región mantiene el contexto tenue de los otros casos incluidos.
+El espacio de trabajo reserva controles a la izquierda, mapa en el centro e inspección a la derecha. Los tres mantienen su tamaño: hover, filtros, selección y ajustes no desplazan el mapa. El encabezado, la barra de herramientas y las miniaturas son compactos; la proyección usa la altura restante de la ventana. En una ventana de 1512 × 1050, T1 dispone de unos 810 píxeles de altura para el mapa.
 
-T1 tiene un único selector de época: las siete miniaturas. T2 tiene un selector compacto, porque sus paneles ya comparan capas. Se eliminaron los botones laterales de épocas y anterior/siguiente. El historial del inspector conserva sus predicciones como datos de lectura.
+Una sola leyenda permite combinar clases, con un único filtro «Solo errores». Los casos fuera del filtro conservan puntos pequeños, grises y tenues; sus trayectorias no se dibujan. Los números 0–9 sitúan la mediana de cada clase calculada con toda la cohorte, sin alterar la proyección. Son referencias de clase, no límites ni regiones de decisión. Cuando la mezcla es alta (NH < 0.6), solo se rotulan las clases filtradas para evitar sugerir grupos separados. «Acercar al filtro» permite ajustar explícitamente el zoom; filtrar no cambia las coordenadas ni la escala.
 
-Un selector de estilo sustituye la combinación de mostrar/ocultar y agrupar/desagrupar. Estilo, alcance temporal, fuerza, opacidad, velocidad y atenuación inicial están bajo **Ajustes de vista**, cerrado de forma predeterminada. Las métricas de calidad tienen su propio detalle plegado.
+T1 conserva siete miniaturas como único selector de época; T2 tiene un selector compacto. Trayectorias, recorrido, fuerza, opacidad y velocidad permanecen en la columna izquierda. No hay secciones desplegables que cambien el tamaño del mapa. Diagnóstico, guía y método usan diálogos superpuestos. En móvil, los controles se abren sobre la vista.
 
-No hay una columna de controles ni un inspector vacío. El inspector se abre con clic y se cierra con «Cerrar imagen». Hover muestra información breve y resalta sin modificar el ancho del gráfico. La selección fijada se mantiene al filtrar y muestra «fuera del filtro» cuando corresponde; no dibuja curvas o puntos excluidos. Limpiar filtros, quitar selección regional y restablecer zoom aparecen cuando son aplicables.
+El hover actualiza la imagen, etiqueta, predicción, tres mayores puntuaciones más clase real, historial breve y seis vecinos originales en el panel derecho. Solo añade un contorno al punto; no atenúa los demás ni modifica las curvas. El clic fija la imagen y atenúa las demás. Al salir de otro punto se recupera el detalle fijado. La galería de selección regional ocupa ese mismo panel.
 
-Se redujeron el encabezado, las explicaciones permanentes y la repetición de anotaciones. Los ejes de T1 se rotulan como dimensiones de AlignedUMAP; las coordenadas numéricas normalizadas no añaden significado físico y no compiten visualmente con los datos. La tabla de métricas y el método siguen disponibles bajo demanda.
+T2 distribuye las cuatro capas en 2 × 2 cuando la altura disponible lo favorece, con orden explícito L1 → L2 ↓ L3 ← L4. En superficies anchas y bajas conserva cuatro columnas. Todos los paneles usan la misma escala isotrópica. Esta disposición aumenta el espacio útil de las proyecciones; las conexiones siguen uniendo estados medidos de la misma imagen.
 
 ## What / Why / How
 
@@ -34,10 +34,10 @@ Se redujeron el encabezado, las explicaciones permanentes y la repetición de an
 |---|---|
 | Estado de una imagen | Punto en coordenadas x/y de una proyección |
 | Clase verdadera | Matiz fijo Tableau10, dominio explícito 0–9 |
-| Acierto/error final del modelo | Círculo/triángulo con área aproximadamente igual |
+| Acierto/error final del modelo | Círculo/triángulo; errores ligeramente ampliados para localizarlos |
 | Identidad entre estados | Trayectoria individual con extremos medidos |
 | Avance temporal T1 | Luminancia ordenada dentro del matiz de clase |
-| Orden de capas T2 | Posición horizontal de panel |
+| Orden de capas T2 | Posición y flechas de orden de panel |
 | Selección | Borde oscuro y mayor énfasis; resto atenuado |
 | Probabilidad estimada | Longitud de barra en escala común 0–1 |
 | Imagen original | Posición espacial de píxeles y escala de grises |
@@ -55,7 +55,7 @@ Desde v0.1.2, la atracción se aplica únicamente en dirección perpendicular a 
 
 La geometría interior es esquemática. El método usa etiquetas en el dibujo: un haz de líneas de igual clase no es evidencia independiente de que la red separó clases. La proyección no recibe etiquetas. Esta implementación no reproduce el algoritmo CUBu del paper.
 
-T1 muestra de forma predeterminada solo los segmentos hasta la época activa: época 0 sin líneas, época 1 con 0→1, época 2 con 0→1→2, etc. **Ajustes de vista → Recorrido → Completo (0–20)** conserva el overview de todas las trayectorias. La escala de luminancia mantiene el significado temporal entre estados. La selección, el hover y la reproducción respetan el mismo límite temporal. T2 sigue conectando capas en una época fija.
+T1 muestra de forma predeterminada solo los segmentos hasta la época activa: época 0 sin líneas, época 1 con 0→1, época 2 con 0→1→2, etc. **Trayectorias → Recorrido → Completo (0–20)** conserva el overview de todas las trayectorias. La escala de luminancia mantiene el significado temporal entre estados. La selección y la reproducción respetan el mismo límite temporal. T2 sigue conectando capas en una época fija.
 
 La referencia de época 0 se conserva por su valor para comparar antes/durante/después del entrenamiento. **Atenuar primer tramo (0→1)** reduce únicamente su opacidad de contexto al 12% del valor habitual; no cambia los datos, los demás segmentos ni los puntos. La trayectoria seleccionada conserva su énfasis para inspeccionar esa transición. El control se ofrece solo en T1.
 
@@ -63,7 +63,7 @@ La referencia de época 0 se conserva por su valor para comparar antes/durante/d
 
 - Overview: toda la cohorte, miniaturas/paneles y trayectorias acumuladas. El resumen temporal completo se activa mediante una opción explícita.
 - Zoom/filter: zoom, desplazamiento, clases, errores, matriz y brush.
-- Details: hover breve; clic para fijar y abrir imagen/probabilidades; historial y vecinos originales mediante un desplegable.
+- Details: hover en un panel derecho estable; clic para fijar, atenuar el resto y seguir una trayectoria. Historial y vecinos visibles sin desplegables.
 
 Los filtros nunca recalculan las proyecciones. La selección sigue IDs. La galería es paginada. El mouse tiene modos separados para desplazamiento y selección de región. Se permite limpiar selección, filtros y zoom por separado.
 

@@ -1,4 +1,4 @@
-# Validación de la versión 0.2.0
+# Validación de la versión 0.3.0
 
 Fecha: 9 de noviembre de 2026. Entorno de cálculo: macOS, Apple M2 Pro, Python 3.12, CPU, semilla 42. Las versiones están en el manifiesto.
 
@@ -23,19 +23,19 @@ Recorrido automatizado con Chromium/Playwright sobre la aplicación Flask:
 
 - Cambiar capa y época modifica el estado y conserva 1000 observaciones.
 - En época 0, el lienzo de trayectorias está vacío. En épocas 1 y 2 se añaden segmentos; regresar a 0 los elimina. El recorrido completo solo se dibuja al activar su opción. El control no aparece en T2.
-- Filtrar una clase deja 100 imágenes; combinar errores actualiza el conteo y oculta directamente el resto, sin otro interruptor.
+- Filtrar una clase destaca 100 imágenes; los demás casos siguen como contexto gris tenue. Solo errores destaca 28 casos del modelo base en época 20. Ambos conservan diez referencias de clase, coordenadas y tamaño del mapa.
 - Desactivar agrupamiento cambia el dibujo; el control de fuerza actualiza su valor.
 - Atenuar el primer tramo cambia su dibujo de contexto; el control se oculta en T2 y no afecta el número de observaciones.
-- Fijar una imagen muestra su etiqueta, predicción y seis vecinos.
+- Hover muestra imagen, etiqueta, predicción, principales puntuaciones, historial y seis vecinos sin cambiar opacidades ni el lienzo de curvas. Clic fija el caso y atenúa el resto; hover sobre otro caso no sustituye la selección fijada.
 - Selección rectangular produce una galería paginada; zoom y restablecimiento funcionan.
-- T2 muestra 4000 estados y permite inspeccionar una imagen por capa.
+- T2 muestra 4000 estados y 40 referencias de clase; adapta dos filas con orden explícito y permite inspeccionar una imagen por capa.
 - Reproducción de épocas y revelado de capas pueden detenerse; el revelado se reanuda.
 - Matrices muestran 200 celdas; seleccionar la confusión 5 → 3 recupera tres imágenes del modelo base en época 20.
 - Cambiar de experimento actualiza correctamente el modelo seleccionado.
 - Diálogos de método y guía funcionan.
-- T1 tiene solo siete miniaturas para elegir época; T2 usa su selector propio. El historial es de lectura. Ajustes e inspector están cerrados inicialmente; las acciones de restablecer son contextuales. El gráfico inicial ocupa más de 1150 píxeles de ancho en una ventana de 1512 píxeles.
-- Una imagen fijada fuera del filtro conserva su inspector con etiqueta explícita, mientras sus marcas y curvas quedan excluidas del gráfico.
-- Anchura móvil de 390 píxeles sin desbordamiento global; las capas tienen desplazamiento horizontal contenido.
+- T1 tiene siete miniaturas para elegir época; T2 usa su selector propio. El historial es de lectura. Controles e inspector ocupan columnas estables. El mapa supera 750 píxeles de altura en una ventana de 1512 × 1050; filtros, hover, selección, ajustes y diagnóstico no cambian su posición ni tamaño.
+- Una imagen fijada fuera del filtro conserva el detalle con etiqueta explícita; su punto pasa al contexto y su curva no se dibuja.
+- Anchura móvil de 390 píxeles sin desbordamiento global; controles superpuestos que no desplazan el mapa y capas en dos filas.
 
 Resultado: **recorrido aprobado, sin errores JavaScript**. La revisión visual incluyó las vistas principales, detalle, selección, matrices y móvil.
 

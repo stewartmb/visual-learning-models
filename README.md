@@ -1,10 +1,10 @@
 # Cómo aprende una red
 
-Explorador de representaciones de una red neuronal para **Visual Learning Models · UTEC**. Versión **0.2.0**, preparada para revisar el diseño interactuando con datos reales.
+Explorador de representaciones de una red neuronal para **Visual Learning Models · UTEC**. Versión **0.3.0**, preparada para revisar el diseño interactuando con datos reales.
 
 **T1:** una capa fija, siete épocas y trayectorias agrupadas. **T2:** una época fija, cuatro capas enlazadas con trayectorias agrupadas. Una imagen mantiene su identidad en todo el recorrido.
 
-![Vista principal con controles compactos y ajustes bajo demanda](docs/clean-interface.png)
+![Errores sobre el contexto de clases, con controles e inspección estables](docs/context-interface.png)
 
 ## Abrir la aplicación
 
@@ -29,18 +29,18 @@ El HTML contiene los mismos datos, D3, imágenes y código que la aplicación Fl
 
 ## Un recorrido para empezar
 
-1. En **T1**, empezar en época 0 y usar las miniaturas como único selector de época, o reproducir la secuencia. La capa se elige en el control superior. En **Ajustes de vista → Recorrido → Completo (0–20)** se puede comparar toda la evolución.
-2. En **Ajustes de vista → Trayectorias**, comparar **Agrupadas**, **Rectas** y **Ocultas**. Fuerza, opacidad y velocidad están en ese mismo panel, plegado al abrir la página.
+1. En **T1**, empezar en época 0 y usar las miniaturas como único selector de época, o reproducir la secuencia. La capa se elige en el panel izquierdo. En **Trayectorias → Recorrido → Completo (0–20)** se puede comparar toda la evolución.
+2. En el panel izquierdo **Trayectorias**, comparar **Agrupadas**, **Rectas** y **Ocultas**. Fuerza, opacidad y velocidad están en ese mismo panel, siempre visible.
    La curvatura está limitada respecto de la distancia entre extremos: evita arcos grandes en imágenes casi inmóviles. **Atenuar primer tramo (0→1)** permite reducir ese contexto al examinar épocas posteriores; una imagen seleccionada recupera su trayectoria con énfasis normal.
 3. Seleccionar las clases **3 y 5**, ir a época **20**, activar **Solo errores** y fijar una imagen.
-4. El clic abre el inspector de esa imagen. **Historial y vecinos** despliega los datos complementarios; el historial es de lectura y conserva un único selector de época en la vista principal.
+4. Al pasar sobre un punto, el panel derecho muestra imagen, etiqueta, predicción, puntuaciones principales, historial y vecinos originales. El clic fija la imagen y atenúa las demás; hover no cambia la opacidad del mapa.
 5. Abrir **T2** y localizar la misma imagen en las cuatro capas.
 6. Seleccionar una región y revisar sus imágenes en la galería.
-7. Abrir **Diagnóstico y comparación del refinamiento**; pulsar una celda para recuperar sus ejemplos.
+7. Abrir **Diagnóstico**; pulsar una celda para recuperar sus ejemplos.
 
 La interacción sigue el mantra: **overview → zoom/filter → details on demand**. La comparación estática permanece disponible junto con la animación.
 
-La vista inicial da todo el ancho al gráfico. Las clases y «Solo errores» aparecen una sola vez y filtran directamente. Limpiar filtros, quitar selección y restablecer zoom se muestran únicamente cuando hay un estado que limpiar. El inspector permanece cerrado hasta seleccionar una imagen; los valores de calidad, la comparación y los ajustes son desplegables.
+El mapa aprovecha la altura de la ventana, con controles a la izquierda e inspección fija a la derecha. Los filtros conservan una nube tenue de referencia y números que identifican la posición central de cada clase; «Acercar al filtro» aplica zoom cuando se solicita. Los controles no desplazan el mapa. T2 usa dos filas con flechas de orden cuando el espacio lo favorece, o cuatro columnas en ventanas anchas y bajas. Diagnóstico y método se abren sobre la vista.
 
 ## Experimento y resultados incluidos
 
@@ -68,7 +68,7 @@ Las proyecciones se calculan con **AlignedUMAP**, enlazando los mismos identific
 - Círculo/triángulo = acierto/error de la salida final en la época activa.
 - Conexión = identidad entre estados; nunca una conexión neuronal.
 - Luminancia en T1 = avance de época; posición de panel en T2 = orden de capa.
-- Tamaño constante; selección mediante contorno y foco/contexto.
+- Tamaño de marca para legibilidad: contexto reducido, errores ampliados ligeramente y selección fijada con énfasis; hover añade contorno.
 
 El agrupamiento usa etiquetas para ordenar líneas. **La existencia de haces no demuestra aprendizaje.** La proyección y el dibujo tienen limitaciones diferentes. Una curva larga no significa que el modelo aprendió más, y los estados intermedios de la animación no son checkpoints medidos.
 

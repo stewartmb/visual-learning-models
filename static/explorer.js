@@ -9,7 +9,7 @@
   const state = {
     task: 't1', experiment: 'base', layer: 3, epochs: {t1: 0, t2: 6},
     classes: new Set(), errors: false, trails: true, bundle: true, fullTrails: false, dimInitial: false,
-    strength: .45, opacity: .12, mode: 'pan', pinned: null, hover: null,
+    strength: .45, opacity: .12, mode: 'pan', pinned: null, hover: null, hoverLayer: 3,
     detailLayer: 3, selected: new Set(), galleryPage: 0, confusion: null,
     transform: d3.zoomIdentity, playing: false, reveal: 3
   };
@@ -22,7 +22,7 @@
   const seq = () => record().sequences[state.task === 't1' ? `t1-l${state.layer}` : `t2-e${epoch()}`];
   const focused = () => {
     if(state.pinned!==null && included(state.pinned))return state.pinned;
-    return state.hover!==null && included(state.hover)?state.hover:null;
+    return null;
   };
   const label = i => DATA.samples.labels[i];
   const prediction = i => record().predictions[epochIndex()][i];
@@ -42,9 +42,9 @@
   }
 
   function pointOpacity(i) {
-    if (!included(i)) return 0;
+    if (!included(i)) return focused()!==null?.035:.16;
     const hasSelection = focused() !== null || state.selected.size > 0;
-    return hasSelection && !emphasized(i) ? .16 : .88;
+    return hasSelection && !emphasized(i) ? .14 : .9;
   }
 
   async function boot() {
@@ -82,6 +82,9 @@
   }
 
   function buildControls() {
+    const closeControls=()=>{$('app').classList.remove('controls-open');$('controls-scrim').hidden=true;$('controls-toggle').setAttribute('aria-expanded','false');};
+    $('controls-toggle').onclick=()=>{const open=$('app').classList.toggle('controls-open');$('controls-scrim').hidden=!open;$('controls-toggle').setAttribute('aria-expanded',String(open));};
+    $('controls-scrim').onclick=closeControls;
     d3.select('#epoch-select').selectAll('option').data(EPOCHS).join('option').attr('value',e=>e).text(e=>e);
     $('epoch-select').onchange = e => {const index=EPOCHS.indexOf(+e.target.value);stop();setEpoch(index);};
     d3.select('#class-legend').selectAll('button').data(d3.range(10)).join('button')
@@ -114,10 +117,11 @@
       renderAll();
     };
     $('reset-view').onclick = () => {state.transform = d3.zoomIdentity; svg.call(zoom.transform, d3.zoomIdentity);};
+    $('fit-focus').onclick = fitFocus;
     $('unpin').onclick = () => {state.pinned = null; state.hover = null; renderAll();};
     $('gallery-prev').onclick = () => {state.galleryPage = Math.max(0, state.galleryPage-1); renderGallery();};
     $('gallery-next').onclick = () => {state.galleryPage++; renderGallery();};
-    $('diagnostics').addEventListener('toggle', () => {if ($('diagnostics').open) renderMatrices();});
+    $('diagnostics-open').onclick = () => {$('diagnostics').showModal();renderMatrices();};
     document.querySelectorAll('[data-task]').forEach(b => b.onclick = () => setTask(b.dataset.task));
     $('help-open').onclick = () => $('help-dialog').showModal();
     $('method-open').onclick = () => $('method-dialog').showModal();
@@ -154,9 +158,10 @@
     svg.append('g').attr('class','backgrounds');
     svg.append('g').attr('class','axes');
     svg.append('g').attr('class','points');
+    svg.append('g').attr('class','class-references').attr('pointer-events','none');
     svg.append('g').attr('class','brush');
     svg.append('g').attr('class','plot-labels').attr('pointer-events','none');
-    svg.on('mouseleave', () => {if (state.hover !== null) {state.hover = null; hideTooltip(); requestPlot(); updateInspector();}});
+    svg.on('mouseleave', () => {if (state.hover !== null) {state.hover = null; markHover();updateInspector();}});
   }
 
   function setTask(task) {
@@ -185,6 +190,7 @@
         const t = d3.easeCubicInOut(Math.min(1, elapsed / duration));
         animatePositions = old.map((p,i) => [p[0]+(next[i][0]-p[0])*t, p[1]+(next[i][1]-p[1])*t]);
         drawPoints();
+        drawClassReferences();
         if (t === 1) {animation.stop(); animation = null; animatePositions = null;}
       });
     }
@@ -280,26 +286,43 @@
     $('clear-filters').hidden = !(state.classes.size || state.errors || state.confusion);
     $('clear-selection').hidden = state.selected.size === 0;
     $('reset-view').hidden = state.transform.k === 1 && state.transform.x === 0 && state.transform.y === 0;
+    $('fit-focus').hidden = !(state.classes.size || state.errors || state.confusion || state.selected.size);
+  }
+
+  function fitFocus() {
+    const points=[];
+    const frames=state.task==='t1'?[geometry.frames[epochIndex()]]:geometry.frames;
+    frames.forEach((frame,l)=>frame.forEach((p,i)=>{
+      if(!included(i)||(state.selected.size&&!state.selected.has(i)))return;
+      const panel=geometry.panels[state.task==='t1'?0:l];
+      points.push([panel.xScale(p[0]),panel.yScale(p[1])]);
+    }));
+    if(!points.length)return;
+    const p=geometry.panels[0],xs=d3.extent(points,a=>a[0]),ys=d3.extent(points,a=>a[1]);
+    const k=Math.min(12,.8*Math.min(p.width/Math.max(12,xs[1]-xs[0]),p.height/Math.max(12,ys[1]-ys[0])));
+    const transform=d3.zoomIdentity.translate(p.width/2,p.height/2).scale(Math.max(.7,k)).translate(-(xs[0]+xs[1])/2,-(ys[0]+ys[1])/2);
+    svg.call(zoom.transform,transform);
   }
 
   function makeGeometry() {
     const temporal = state.task === 't1';
     $('plot-wrap').parentElement.classList.toggle('is-layers', !temporal);
-    $('plot-wrap').style.height = temporal ? '' : '390px';
     const width = $('plot-wrap').clientWidth, height = $('plot-wrap').clientHeight;
-    const margin = temporal ? {l:38,r:18,t:22,b:33} : {l:12,r:12,t:42,b:28};
-    const gap = 30;
-    const panelWidth = temporal ? width-margin.l-margin.r : (width-margin.l-margin.r-gap*3)/4;
-    const panelHeight = height-margin.t-margin.b;
+    const margin = temporal ? {l:25,r:12,t:18,b:26} : {l:8,r:8,t:30,b:15};
+    const gap = 22;
+    const rows=!temporal&&height>width*.5?2:1,columns=temporal?1:4/rows;
+    const panelWidth = (width-margin.l-margin.r-gap*(columns-1))/columns;
+    const panelHeight = (height-margin.t-margin.b-gap*(rows-1))/rows;
     const side = Math.min(panelWidth, panelHeight);
-    const unit = side/2.16;
+    const unit = side/2.08;
     const panels = d3.range(temporal ? 1 : 4).map(i => {
-      const x = margin.l + i*(panelWidth+gap), y = margin.t;
-      const xScale = d3.scaleLinear().domain([-1.08,1.08]).range([panelWidth/2-side/2,panelWidth/2+side/2]);
-      const yScale = d3.scaleLinear().domain([-1.08,1.08]).range([panelHeight/2+side/2,panelHeight/2-side/2]);
+      const row=rows===2&&i>=2?1:0,column=rows===2?(i<2?i:3-i):i;
+      const x = margin.l + column*(panelWidth+gap), y = margin.t+row*(panelHeight+gap);
+      const xScale = d3.scaleLinear().domain([-1.04,1.04]).range([panelWidth/2-side/2,panelWidth/2+side/2]);
+      const yScale = d3.scaleLinear().domain([-1.04,1.04]).range([panelHeight/2+side/2,panelHeight/2-side/2]);
       return {x,y,width:panelWidth,height:panelHeight,xScale,yScale,unit};
     });
-    geometry = {width,height,panels,temporal,frames:seq().frames};
+    geometry = {width,height,panels,temporal,rows,frames:seq().frames};
     geometry.centroids = geometry.frames.map(frame => d3.range(10).map(c => {
       const points = frame.filter((_,i) => label(i) === c);
       return [d3.mean(points,p=>p[0]), d3.mean(points,p=>p[1])];
@@ -354,7 +377,35 @@
     requestAnimationFrame(() => {renderQueued = false; renderPlot();});
   }
 
-  function renderPlot() {if (geometry) {drawStructure(); drawTrails(); drawPoints();}}
+  function renderPlot() {if (geometry) {drawStructure(); drawTrails(); drawPoints();drawClassReferences();}}
+
+  function drawClassReferences() {
+    const groups=svg.select('.class-references').selectAll('g.reference-panel').data(geometry.panels).join('g')
+      .attr('class','reference-panel').attr('clip-path',(_,l)=>`url(#panel-clip-${l})`)
+      .attr('display',(_,l)=>!geometry.temporal&&l>state.reveal?'none':null);
+    groups.each(function(panel,l){
+      const frame=geometry.temporal?(animatePositions||geometry.frames[epochIndex()]):geometry.frames[l];
+      const q=seq().quality[geometry.temporal?epochIndex():l].neighborhood_hit;
+      const classes=q<.6?[...state.classes]:d3.range(10);
+      const nodes=classes.map(c=>{
+        const points=frame.filter((_,i)=>label(i)===c);
+        const anchor=screen([d3.median(points,p=>p[0]),d3.median(points,p=>p[1])],l);
+        return {c,ax:anchor[0],ay:anchor[1],x:anchor[0]+12,y:anchor[1]-13};
+      }).filter(n=>n.ax>=panel.x&&n.ax<=panel.x+panel.width&&n.ay>=panel.y&&n.ay<=panel.y+panel.height);
+      if(nodes.length){
+        const simulation=d3.forceSimulation(nodes).force('x',d3.forceX(n=>n.ax+12).strength(.25))
+          .force('y',d3.forceY(n=>n.ay-13).strength(.25)).force('collision',d3.forceCollide(12)).stop();
+        for(let t=0;t<24;t++)simulation.tick();
+      }
+      nodes.forEach(n=>{n.x=Math.max(panel.x+12,Math.min(panel.x+panel.width-12,n.x));n.y=Math.max(panel.y+12,Math.min(panel.y+panel.height-12,n.y));});
+      const refs=d3.select(this).selectAll('g.class-reference').data(nodes,n=>n.c).join(enter=>{
+        const g=enter.append('g').attr('class','class-reference');g.append('line');g.append('circle');g.append('text');return g;
+      }).attr('aria-label',n=>`Referencia de la clase ${n.c}, mediana de sus 100 imágenes`);
+      refs.select('line').attr('x1',n=>n.ax).attr('y1',n=>n.ay).attr('x2',n=>n.x).attr('y2',n=>n.y).attr('stroke',n=>COLORS[n.c]);
+      refs.select('circle').attr('cx',n=>n.x).attr('cy',n=>n.y).attr('r',geometry.temporal?10:8).attr('stroke',n=>COLORS[n.c]);
+      refs.select('text').attr('x',n=>n.x).attr('y',n=>n.y).text(n=>n.c);
+    });
+  }
 
   function drawStructure() {
     const {panels,temporal} = geometry;
@@ -373,8 +424,13 @@
     const labels = svg.select('.plot-labels'); labels.selectAll('*').remove();
     if (!temporal) {
       panels.forEach((p,i) => {
-        labels.append('text').attr('class','layer-label').attr('x',p.x+p.width/2).attr('y',25).attr('text-anchor','middle').text(`CAPA ${i+1}`);
-        if (i<3) labels.append('text').attr('class','projection-label').attr('x',p.x+p.width+15).attr('y',25).attr('text-anchor','middle').text('→');
+        labels.append('text').attr('class','layer-label').attr('x',p.x+p.width/2).attr('y',p.y-9).attr('text-anchor','middle').text(`CAPA ${i+1}`);
+        if (i<3){
+          const next=panels[i+1],vertical=next.y!==p.y;
+          const x=vertical?p.x+p.width/2:next.x>p.x?(p.x+p.width+next.x)/2:(next.x+next.width+p.x)/2;
+          const y=vertical?(p.y+p.height+next.y)/2+3:p.y-9;
+          labels.append('text').attr('class','projection-label').attr('x',x).attr('y',y).attr('text-anchor','middle').text(vertical?'↓':next.x>p.x?'→':'←');
+        }
       });
     } else {
       labels.append('text').attr('class','projection-label').attr('x',geometry.width-17).attr('y',geometry.height-7).attr('text-anchor','end').text('Dimensión 1 · AlignedUMAP');
@@ -409,11 +465,14 @@
       if (curve.distance === 0) return;
       let opacity;
       if (strong) opacity = f !== null ? .96 : .68;
-      else opacity = (f !== null || selected.size) ? state.opacity*.2 : state.opacity;
+      else {
+        const base=state.classes.size||state.errors||state.confusion?Math.max(.3,state.opacity):state.opacity;
+        opacity=(f!==null||selected.size)?base*.18:base;
+      }
       if (temporal && stage === 0 && state.dimInitial && !strong) opacity *= .12;
       if (!opacity) return;
       ctx.globalAlpha = opacity;
-      ctx.lineWidth = strong ? 1.7 : .8;
+      ctx.lineWidth = strong ? 2 : 1;
       ctx.beginPath(); ctx.moveTo(...p0);
       if (state.bundle) ctx.bezierCurveTo(...curve.first,...curve.second,...p1); else ctx.lineTo(...p1);
       if (temporal) {
@@ -447,42 +506,31 @@
     groups.each(function(_, panelIndex) {
       const local = points.filter(p=>p.panel===panelIndex);
       d3.select(this).selectAll('path.point').data(local,p=>p.i).join('path')
-        .attr('class',p=>`point${emphasized(p.i)?' is-focus':''}`)
+        .attr('class',p=>`point${emphasized(p.i)?' is-focus':''}${state.hover===p.i?' is-hover':''}`)
         .attr('data-sample',p=>p.i).attr('data-id',p=>DATA.samples.ids[p.i]).attr('data-layer',p=>p.layer)
         .attr('transform',p=>`translate(${p.x},${p.y})`)
-        .attr('d',p=>d3.symbol().type(isError(p.i)?d3.symbolTriangle:d3.symbolCircle).size(emphasized(p.i)?65:geometry.temporal?16:13)())
-        .attr('fill',p=>COLORS[label(p.i)]).attr('opacity',p=>pointOpacity(p.i))
+        .attr('d',p=>d3.symbol().type(isError(p.i)?d3.symbolTriangle:d3.symbolCircle).size(emphasized(p.i)?90:!included(p.i)?12:isError(p.i)?34:geometry.temporal?22:18)())
+        .attr('fill',p=>included(p.i)?COLORS[label(p.i)]:'#aab5b0').attr('opacity',p=>pointOpacity(p.i))
         .attr('pointer-events',p=>included(p.i)?'auto':'none')
         .on('mouseenter',function(e,p) {
           if (state.mode==='brush') return;
-          state.hover=p.i; state.detailLayer=p.layer;
-          showTooltip(e,p); requestPlot(); updateInspector(); updateControls();
+          state.hover=p.i;state.hoverLayer=p.layer;
+          markHover();updateInspector();
         })
-        .on('mousemove',function(e,p) {positionTooltip(e);})
         .on('mouseleave',function() {
-          state.hover=null; hideTooltip(); requestPlot(); updateInspector();
+          state.hover=null;markHover();updateInspector();
         })
         .on('click',function(e,p) {e.stopPropagation(); pin(p.i,p.layer);});
       d3.select(this).selectAll('path.is-focus').raise();
     });
   }
 
-  function showTooltip(event,p) {
-    const tip=$('plot-tooltip'); tip.className='plot-tooltip'; tip.hidden=false;
-    tip.innerHTML=`<b>Imagen #${DATA.samples.ids[p.i]}</b> · real ${label(p.i)}<small>Predicción ${prediction(p.i)} · capa ${p.layer+1} · época ${epoch()}</small>`;
-    positionTooltip(event);
-  }
-  function positionTooltip(event) {
-    const box=$('plot-wrap').getBoundingClientRect(), tip=$('plot-tooltip');
-    tip.style.left=`${Math.min(geometry.width-tip.offsetWidth-10,Math.max(5,event.clientX-box.left+13))}px`;
-    tip.style.top=`${Math.max(6,event.clientY-box.top-tip.offsetHeight-10)}px`;
-  }
-  function hideTooltip() {$('plot-tooltip').hidden=true;}
+  function markHover(){svg.select('.points').selectAll('.point').classed('is-hover',p=>p.i===state.hover);}
 
   function pin(i,layer=state.detailLayer) {
     if (!Number.isInteger(i) || i<0 || i>=1000) return;
     stop(); state.pinned=i; state.hover=null; state.detailLayer=layer;
-    hideTooltip(); renderAll();
+    renderAll();
   }
 
   function drawDigit(canvas,i) {
@@ -508,15 +556,18 @@
   }
 
   function updateInspector() {
-    const i=state.pinned;
-    $('inspector').hidden=i===null;
-    $('explorer-layout').classList.toggle('has-inspector',i!==null);
-    if (i===null) {lastInspectorKey=''; return;}
-    const l=state.task==='t1'?state.layer:state.detailLayer;
-    const key=`${state.experiment}:${i}:${epoch()}:${l}:${included(i)}`;
+    const i=state.hover??state.pinned;
+    $('inspector-empty').hidden=i!==null;
+    $('inspector-detail').hidden=i===null;
+    $('app').classList.toggle('has-preview',i!==null);
+    if (i===null) {lastInspectorKey='';$('preview-status').textContent='Vista previa';$('unpin').hidden=true;return;}
+    const l=state.task==='t1'?state.layer:state.hover!==null?state.hoverLayer:state.detailLayer;
+    const preview=state.hover!==null&&state.hover!==state.pinned;
+    const key=`${state.experiment}:${i}:${epoch()}:${l}:${included(i)}:${preview}:${state.pinned}`;
     if (key===lastInspectorKey) return;
     lastInspectorKey=key;
     $('sample-id').textContent=`MNIST #${DATA.samples.ids[i]}${included(i)?'':' · fuera del filtro'}`;
+    $('preview-status').textContent=preview||state.pinned===null?'Vista previa':'Fijada';
     $('unpin').hidden=state.pinned===null;
     drawDigit($('digit-image'),i);
     $('digit-image').setAttribute('aria-label',`Imagen MNIST ${DATA.samples.ids[i]}, dígito verdadero ${label(i)}`);
@@ -524,17 +575,20 @@
     $('prediction-status').textContent=isError(i)?'△ error':'○ acierto';
     $('detail-epoch').textContent=`· época ${epoch()}`;
     const probs=record().probabilities[epochIndex()][i];
-    const w=$('probability-bars').clientWidth||220, h=195, left=18, right=39;
+    const w=$('probability-bars').clientWidth||220, left=18, right=43;
+    const ranking=d3.range(10).sort((a,b)=>probs[b]-probs[a]).slice(0,3);
+    if(!ranking.includes(label(i)))ranking.push(label(i));
+    const h=ranking.length*20;
     const scale=d3.scaleLinear().domain([0,1]).range([0,w-left-right]);
-    const bars=d3.select('#probability-bars').attr('viewBox',`0 0 ${w} ${h}`);
-    const rows=bars.selectAll('g').data(d3.range(10)).join(enter=> {
+    const bars=d3.select('#probability-bars').attr('viewBox',`0 0 ${w} ${h}`).style('height',`${h}px`);
+    const rows=bars.selectAll('g').data(ranking,c=>c).join(enter=> {
       const g=enter.append('g'); g.append('rect').attr('class','track'); g.append('rect').attr('class','bar');
       g.append('text').attr('class','label'); g.append('text').attr('class','value'); return g;
-    }).attr('transform',c=>`translate(0,${c*19})`);
+    }).attr('transform',(c,j)=>`translate(0,${j*20})`);
     rows.select('.track').attr('x',left).attr('y',3).attr('width',scale(1)).attr('height',9).attr('fill','#eeeee7');
     rows.select('.bar').attr('x',left).attr('y',3).attr('width',c=>Math.max(0,scale(probs[c]))).attr('height',9).attr('fill',c=>COLORS[c]);
     rows.select('.label').attr('x',1).attr('y',11).text(c=>c).attr('font-weight',c=>c===prediction(i)?700:400);
-    rows.select('.value').attr('x',w-1).attr('y',11).attr('text-anchor','end').text(c=>`${Math.round(probs[c]*100)}%`);
+    rows.select('.value').attr('x',w-1).attr('y',11).attr('text-anchor','end').text(c=>`${(probs[c]*100).toFixed(1)}%`);
     const history=d3.select('#prediction-history').selectAll('.prediction-cell').data(EPOCHS).join(enter=> {
       const b=enter.append('span').attr('class','prediction-cell');b.append('small');b.append('span');return b;
     }).classed('is-active',e=>e===epoch()).classed('is-error',(e,j)=>record().predictions[j][i]!==label(i))
@@ -607,6 +661,7 @@
           state.confusion=state.confusion?.[0]===d.real&&state.confusion?.[1]===d.pred?null:[d.real,d.pred];
           state.selected=new Set(d3.range(1000).filter(i=>state.confusion&&label(i)===d.real&&DATA.experiments[exp].predictions[epochIndex()][i]===d.pred));
           state.galleryPage=0;miniatureKey='';renderAll(true);
+          $('diagnostics').close();
         }).selectAll('title').data(d=>[d]).join('title').text(d=>`Real ${d.real} → predicción ${d.pred}: ${d.count} imágenes (${Math.round(d.value*100)}%)`);
       s.selectAll('text.cell-value').data(cells.filter(d=>d.count>0)).join('text').attr('class','cell-value')
         .attr('x',d=>39.5+d.pred*24).attr('y',d=>29+d.real*24).attr('text-anchor','middle')
