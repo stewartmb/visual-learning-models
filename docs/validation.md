@@ -1,4 +1,4 @@
-# Validación de la versión 0.4.0
+# Validación de la versión 0.4.1
 
 Fecha: 10 de noviembre de 2026. Entorno de cálculo: macOS, Apple M2 Pro, Python 3.12, CPU, semilla 42. Las versiones están en el manifiesto.
 

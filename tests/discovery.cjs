@@ -47,6 +47,11 @@ const output=path.resolve(process.env.QA_OUTPUT||'test-results/discovery');fs.mk
  assert.ok(evidence.includes('data:image/png;base64,'));
  const payload=JSON.parse(evidence.match(/<script id="evidence-data" type="application\/json">([^<]+)<\/script>/)[1]);
  assert.equal(payload.comparison.fixed,6);assert.equal(payload.comparison.new,8);assert.equal(payload.visible.length,8);assert.equal(payload.sample.id,data.samples.ids[index]);
+ await page.click('#diagnostics-open');await page.locator('.matrix-cell').nth(53).click();
+ assert.equal(await page.evaluate(()=>VLM.getState().outcome),null);assert.equal(await page.locator('.point[pointer-events="auto"]').count(),3);await sameBox();
+ await epoch(15);const confused15=data.samples.labels.filter((y,i)=>y===5&&pred[5][i]===3).length;
+ assert.equal(await page.evaluate(()=>VLM.getState().selected.length),confused15);
+ await epoch(20);assert.equal(await page.evaluate(()=>VLM.getState().selected.length),3);
  await page.click('#unpin');await page.locator('#class-legend button').nth(5).click();
  const subset=data.samples.labels.flatMap((y,i)=>y===5?[i]:[]),stats=analysis.summarize(data.samples.labels,pred[5],pred[6],subset);
  for(const [key,n] of Object.entries(stats).filter(([k])=>['fixed','new','persistent','steady'].includes(k)))assert.equal(await page.locator(`[data-outcome="${key}"] strong`).innerText(),String(n));

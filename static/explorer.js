@@ -194,6 +194,7 @@
     if (animation) {animation.stop(); animation = null;}
     animatePositions = null;
     state.epochs[state.task] = index;
+    if(state.confusion)state.selected=new Set(d3.range(1000).filter(i=>label(i)===state.confusion[0]&&prediction(i)===state.confusion[1]));
     state.hover = null;
     state.reveal = 3;
     if (state.task === 't2') state.transform = d3.zoomIdentity;
@@ -693,7 +694,7 @@
         .classed('active',d=>exp===state.experiment&&state.confusion?.[0]===d.real&&state.confusion?.[1]===d.pred)
         .attr('x',d=>28+d.pred*24).attr('y',d=>14+d.real*24).attr('width',23).attr('height',23)
         .attr('fill',d=>color(d.value)).on('click',(_,d)=> {
-          stop();state.experiment=exp;state.classes.clear();state.errors=false;
+          stop();state.experiment=exp;state.classes.clear();state.errors=false;state.outcome=null;
           state.confusion=state.confusion?.[0]===d.real&&state.confusion?.[1]===d.pred?null:[d.real,d.pred];
           state.selected=new Set(d3.range(1000).filter(i=>state.confusion&&label(i)===d.real&&DATA.experiments[exp].predictions[epochIndex()][i]===d.pred));
           state.galleryPage=0;miniatureKey='';renderAll(true);

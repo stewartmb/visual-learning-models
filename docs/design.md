@@ -1,4 +1,4 @@
-# Diseño visual · versión 0.4.0
+# Diseño visual · versión 0.4.1
 
 La referencia principal es el enunciado entregado. La grabación se consulta mediante el análisis exhaustivo HTML local, no mediante el SRT. El paper guía la metodología y los trabajos publicados orientan los idioms.
 

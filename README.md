@@ -1,6 +1,6 @@
 # Cómo aprende una red
 
-Explorador de representaciones de una red neuronal para **Visual Learning Models · UTEC**. Versión **0.4.0**, preparada para revisar el diseño interactuando con datos reales.
+Explorador de representaciones de una red neuronal para **Visual Learning Models · UTEC**. Versión **0.4.1**, preparada para revisar el diseño interactuando con datos reales.
 
 **T1:** una capa fija, siete épocas y trayectorias agrupadas. **T2:** una época fija, cuatro capas enlazadas con trayectorias agrupadas. Una imagen mantiene su identidad en todo el recorrido.
 
