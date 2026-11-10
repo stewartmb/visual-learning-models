@@ -31,12 +31,16 @@ def export(target):
     css = (ROOT / 'static/style.css').read_text()
     d3 = (ROOT / 'static/vendor/d3.v7.min.js').read_text()
     trails = (ROOT / 'static/trails.js').read_text()
-    js = (ROOT / 'static/explorer.js').read_text()
+    learning = (ROOT / 'static/learning.js').read_text()
+    # Exported evidence contains a script tag inside a JavaScript template literal.
+    # Escape its closing tag before embedding the source in an HTML script element.
+    js = (ROOT / 'static/explorer.js').read_text().replace('</script', '<\\/script')
     data = (folder / 'dataset.json').read_text().replace('</', '<\\/')
     image = base64.b64encode((folder / 'digits.png').read_bytes()).decode()
     html = html.replace('  <link rel="stylesheet" href="/static/style.css">', '<style>'+css+'</style>')
     html = html.replace('  <script defer src="/static/vendor/d3.v7.min.js"></script>', '<script>'+d3+'</script>')
     html = html.replace('  <script defer src="/static/trails.js"></script>', '<script>'+trails+'</script>')
+    html = html.replace('  <script defer src="/static/learning.js"></script>', '<script>'+learning+'</script>')
     html = html.replace('  <script defer src="/static/explorer.js"></script>', '')
     html = html.replace('</body>', f'<script>window.VLM_DATA={data};window.VLM_ATLAS="data:image/png;base64,{image}";</script>\n<script>{js}</script>\n</body>')
     target.parent.mkdir(parents=True, exist_ok=True)

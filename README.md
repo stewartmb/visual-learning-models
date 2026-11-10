@@ -1,10 +1,10 @@
 # Cómo aprende una red
 
-Explorador de representaciones de una red neuronal para **Visual Learning Models · UTEC**. Versión **0.3.0**, preparada para revisar el diseño interactuando con datos reales.
+Explorador de representaciones de una red neuronal para **Visual Learning Models · UTEC**. Versión **0.4.0**, preparada para revisar el diseño interactuando con datos reales.
 
 **T1:** una capa fija, siete épocas y trayectorias agrupadas. **T2:** una época fija, cuatro capas enlazadas con trayectorias agrupadas. Una imagen mantiene su identidad en todo el recorrido.
 
-![Errores sobre el contexto de clases, con controles e inspección estables](docs/context-interface.png)
+![Errores sobre el contexto de clases, con controles e inspección estables](docs/discovery-comparison.png)
 
 ## Abrir la aplicación
 
@@ -29,18 +29,21 @@ El HTML contiene los mismos datos, D3, imágenes y código que la aplicación Fl
 
 ## Un recorrido para empezar
 
-1. En **T1**, empezar en época 0 y usar las miniaturas como único selector de época, o reproducir la secuencia. La capa se elige en el panel izquierdo. En **Trayectorias → Recorrido → Completo (0–20)** se puede comparar toda la evolución.
-2. En el panel izquierdo **Trayectorias**, comparar **Agrupadas**, **Rectas** y **Ocultas**. Fuerza, opacidad y velocidad están en ese mismo panel, siempre visible.
-   La curvatura está limitada respecto de la distancia entre extremos: evita arcos grandes en imágenes casi inmóviles. **Atenuar primer tramo (0→1)** permite reducir ese contexto al examinar épocas posteriores; una imagen seleccionada recupera su trayectoria con énfasis normal.
-3. Seleccionar las clases **3 y 5**, ir a época **20**, activar **Solo errores** y fijar una imagen.
-4. Al pasar sobre un punto, el panel derecho muestra imagen, etiqueta, predicción, puntuaciones principales, historial y vecinos originales. El clic fija la imagen y atenúa las demás; hover no cambia la opacidad del mapa.
-5. Abrir **T2** y localizar la misma imagen en las cuatro capas.
-6. Seleccionar una región y revisar sus imágenes en la galería.
-7. Abrir **Diagnóstico**; pulsar una celda para recuperar sus ejemplos.
+1. Observa el conjunto inicial en **T1**, época 0; reproduce la secuencia o cambia de época con las siete miniaturas.
+2. Pulsa **Investigar 15 → 20**. El comparador separa imágenes que pasan a acertar, empiezan a fallar, siguen erradas y siguen correctas.
+3. Elige **Empiezan a fallar (8)**. Revisa sus imágenes y fija un ejemplo: el círculo vacío es A y el símbolo lleno B. Ambos extremos son posiciones medidas de la misma secuencia; en este modo se reemplaza el recorrido acumulado por la comparación directa.
+4. Comprueba su predicción y cuántos de los seis vecinos originales conserva. Los vecinos nuevos tienen una marca inferior; **Conectar vecinos en el mapa** permite localizar las relaciones calculadas en activaciones.
+5. Pulsa **Guardar evidencia** para descargar un HTML autónomo con mapa, imagen fijada, predicciones, selección, IDs y límites de interpretación.
+6. Desactiva el comparador y pasa a **T2**. Las cuatro capas permanecen visibles y el inspector compara vecinos con la primera capa. La curva muestra NH y fidelidad de vecindarios por capa.
+7. Usa **Diagnóstico** para recuperar imágenes de una confusión concreta, o selecciona una región para abrir su galería.
 
-La interacción sigue el mantra: **overview → zoom/filter → details on demand**. La comparación estática permanece disponible junto con la animación.
+El mantra se mantiene: **overview → zoom/filter → details on demand**. Hover actualiza detalles sin atenuar el mapa; clic fija una imagen. Controles e inspector ocupan columnas estables. Las herramientas no desplazan la proyección y los filtros conservan contexto tenue.
 
-El mapa aprovecha la altura de la ventana, con controles a la izquierda e inspección fija a la derecha. Los filtros conservan una nube tenue de referencia y números que identifican la posición central de cada clase; «Acercar al filtro» aplica zoom cuando se solicita. Los controles no desplazan el mapa. T2 usa dos filas con flechas de orden cuando el espacio lo favorece, o cuatro columnas en ventanas anchas y bajas. Diagnóstico y método se abren sobre la vista.
+Los contornos de clases usan densidad estimada, con parámetros fijos entre estados. No son fronteras del clasificador ni prueban la existencia de grupos separados. Pueden tener varias islas; los ejemplos aislados siguen presentes. Al comparar, «Acercar al filtro» incluye posiciones A y B. La curva temporal usa exactitud y NH sobre las mismas 1 000 imágenes, con épocas espaciadas uniformemente como checkpoints, aunque sus intervalos de entrenamiento son desiguales.
+
+### Un hallazgo que se puede comprobar
+
+De época 15 a 20, en la muestra fija, **6 imágenes pasan de error a acierto, 8 empiezan a fallar, 20 siguen erradas y 966 siguen correctas**. Los errores pasan de 26 a 28. Esto describe esa cohorte: no significa que todo entrenamiento adicional perjudique al modelo. La comparación de predicciones es medida; su relación con una trayectoria o cambio de vecinos es exploratoria y no una explicación causal.
 
 ## Experimento y resultados incluidos
 
@@ -49,15 +52,13 @@ El mapa aprovecha la altura de la ventana, con controles a la izquierda e inspec
 - Muestra visual fija: 1 000 imágenes de prueba, 100 por clase.
 - MLP `784 → 128 → 128 → 128 → 128 → 10`, ReLU; Adam, tasa 0.001, lotes de 128.
 - Semilla 42; checkpoints reales en épocas 0, 1, 2, 5, 10, 15 y 20.
-- Refinamiento: dilatación 3×3 en un 25% fijo de imágenes de entrenamiento. Validación y prueba permanecen originales. Misma inicialización, partición y orden de lotes.
+- Un único modelo entrenado con imágenes originales, con validación y prueba separadas.
 
-| Resultado final | Base | Dilatación |
-|---|---:|---:|
-| Exactitud, prueba completa (n=10 000) | 97.80% | 97.30% |
-| Exactitud, muestra visual (n=1 000) | 97.20% | 96.60% |
-| Errores, muestra visual | 28 | 34 |
-
-La intervención **no mejoró** la exactitud final en este ensayo. En la muestra, corrigió 12 imágenes antes erróneas y volvió erróneas 18 antes correctas. Un único ensayo no permite inferir significancia ni superioridad general de un método.
+| Resultado final | Modelo MLP |
+|---|---:|
+| Exactitud, prueba completa (n=10 000) | 97.80% |
+| Exactitud, muestra visual (n=1 000) | 97.20% |
+| Errores, muestra visual | 28 |
 
 ## Método visual
 
@@ -97,8 +98,8 @@ Se calcula además un **t-SNE conjunto** de la última capa a través de épocas
 |---|---|
 | `app.py`, `templates/`, `static/` | Aplicación Flask y D3 local |
 | `static/data/dataset.json` | Cohorte, predicciones, probabilidades, vecinos, proyecciones y métricas |
-| `static/data/nodes.csv` | 112 000 estados de observaciones, con IDs y coordenadas |
-| `static/data/edges.csv` | 90 000 conexiones entre estados consecutivos de la misma imagen |
+| `static/data/nodes.csv` | 56 000 estados de observaciones, con IDs y coordenadas |
+| `static/data/edges.csv` | 45 000 conexiones entre estados consecutivos de la misma imagen |
 | `static/data/digits.png` | Atlas de las 1 000 imágenes originales |
 | `static/data/manifest.json` | Configuración, particiones, versiones y resultados |
 | `static/data/sha256.json` | Integridad de los archivos de datos |
@@ -122,7 +123,7 @@ npx playwright install chromium
 npm test
 ```
 
-La validación cubre identidades entre estados, particiones, probabilidades, integridad CSV/JSON, API, filtros, selección, detalle, agrupamiento, zoom, reproducción, matrices, cambio de experimento y adaptación móvil. Ver [validación de esta versión](docs/validation.md).
+La validación incluye las 49 parejas de épocas, partición exhaustiva de transiciones, comparación de vecinos por ID y exportación de evidencia. También cubre identidades entre estados, particiones, probabilidades, integridad CSV/JSON, API, filtros, selección, detalle, agrupamiento, zoom, reproducción, matriz de confusión y adaptación móvil. Ver [validación de esta versión](docs/validation.md).
 
 ## Fuentes y atribución
 

@@ -79,5 +79,5 @@ test('all published temporal segments remain bounded at maximum grouping strengt
       }
     }
   }
-  assert.ok(checked>47000);
+  assert.ok(checked>23000);
 });

@@ -72,9 +72,8 @@ def run(cache):
     report = {'seed': SEED, 'epochs': EPOCHS, 'architecture': [784, 128, 128, 128, 128, 10],
               'train_count': 50000, 'validation_count': 10000, 'test_count': 10000, 'sample_count': 1000,
               'optimizer': {'name': 'Adam', 'learning_rate': .001, 'batch_size': 128},
-              'intervention': {'name': 'dilation', 'kernel': 3, 'train_fraction': .25, 'validation_and_test': 'original'},
               'split_sha256': sha(cache / 'splits.npz'), 'experiments': {}}
-    for name in ['base', 'refined']:
+    for name in ['base']:
         target = cache / f'{name}-activations.npz'
         metrics_file = cache / f'{name}-training.json'
         if target.exists() and metrics_file.exists():
@@ -86,11 +85,6 @@ def run(cache):
         model.load_state_dict(initial)
         opt = torch.optim.Adam(model.parameters(), lr=.001)
         x = xtrain.clone()
-        if name == 'refined':
-            dilation_rng = np.random.default_rng(SEED + 1)
-            augmented = torch.as_tensor(dilation_rng.choice(len(x), len(x) // 4, replace=False))
-            x[augmented] = F.max_pool2d(x[augmented], 3, stride=1, padding=1)
-            np.save(cache / 'dilated-train-indices.npy', augmented.numpy())
         x = x.flatten(1)
         order_rng = torch.Generator().manual_seed(SEED)
         arrays = {}

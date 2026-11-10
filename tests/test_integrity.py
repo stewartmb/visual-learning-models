@@ -18,6 +18,9 @@ def test_fixed_cohort_and_states():
     assert data['meta']['epochs'] == [0, 1, 2, 5, 10, 15, 20]
     assert data['meta']['train_count'] == 50000
     assert data['meta']['validation_count'] == data['meta']['test_count'] == 10000
+    assert set(data['experiments']) == set(data['meta']['experiments']) == {'base'}
+    assert 'intervention' not in data['meta']
+    assert not (DATA / 'refined.json').exists()
     for experiment in data['experiments'].values():
         for seq, record in experiment['sequences'].items():
             assert len(record['frames']) == (4 if seq.startswith('t2-') else 7)
@@ -35,15 +38,13 @@ def test_fixed_cohort_and_states():
         for rows in experiment['neighbors'].values():
             assert len(rows) == 1000
             assert all(len(row) == 6 and len(set(row)) == 6 and i not in row and all(0 <= j < 1000 for j in row) for i, row in enumerate(rows))
-    # Both experiments genuinely start from the same untrained network.
-    assert data['experiments']['base']['predictions'][0] == data['experiments']['refined']['predictions'][0]
-    assert data['experiments']['base']['probabilities'][0] == data['experiments']['refined']['probabilities'][0]
 
 
 def test_csv_edges_preserve_identity_and_consecutive_states():
     with (DATA / 'nodes.csv').open() as f:
         nodes = {row['node_id']: row for row in csv.DictReader(f)}
-    assert len(nodes) == 112000
+    assert len(nodes) == 56000
+    assert {row['experiment'] for row in nodes.values()} == {'base'}
     count = 0
     with (DATA / 'edges.csv').open() as f:
         for edge in csv.DictReader(f):
@@ -56,7 +57,7 @@ def test_csv_edges_preserve_identity_and_consecutive_states():
             else:
                 assert a['epoch'] == b['epoch'] and int(a['layer'])+1 == int(b['layer'])
             count += 1
-    assert count == 90000
+    assert count == 45000
 
 
 def test_published_file_hashes():
@@ -77,4 +78,5 @@ def test_flask_contract():
     assert client.get('/api/manifest').status_code == 200
     assert len(client.get('/api/sequence/base/t1-l3').json['frames']) == 7
     assert client.get('/api/sequence/nope/t1-l3').status_code == 404
+    assert client.get('/api/sequence/refined/t1-l3').status_code == 404
     assert client.get('/api/sequence/base/nope').status_code == 404

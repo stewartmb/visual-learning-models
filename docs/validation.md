@@ -1,13 +1,13 @@
-# Validación de la versión 0.3.0
+# Validación de la versión 0.4.0
 
-Fecha: 9 de noviembre de 2026. Entorno de cálculo: macOS, Apple M2 Pro, Python 3.12, CPU, semilla 42. Las versiones están en el manifiesto.
+Fecha: 10 de noviembre de 2026. Entorno de cálculo: macOS, Apple M2 Pro, Python 3.12, CPU, semilla 42. Las versiones están en el manifiesto.
 
 ## Datos y servidor
 
 Cuatro pruebas automatizadas verifican:
 
-1. Cohorte fija, 100 imágenes por clase, estados finitos, siete épocas/cuatro capas, probabilidades y predicciones, vecinos sin autoenlaces y misma red inicial entre experimentos.
-2. 112000 nodos y 90000 aristas, con IDs, secuencia y estados consecutivos correctos.
+1. Cohorte fija, 100 imágenes por clase, estados finitos, siete épocas/cuatro capas, probabilidades y predicciones, vecinos sin autoenlaces y un único modelo en los datos distribuidos.
+2. 56000 nodos y 45000 aristas, con IDs, secuencia y estados consecutivos correctos.
 3. SHA-256 de todos los archivos de datos publicados.
 4. Página, salud, datos, manifiesto y selección de secuencias; entradas inválidas devuelven 404.
 
@@ -15,7 +15,7 @@ Resultado: **4 pruebas aprobadas**.
 
 ## Geometría de trayectorias
 
-Cuatro pruebas Node verifican extremos coincidentes, fuerza cero, ausencia de bucles en desplazamientos mínimos, los tres ejemplos de la auditoría y límites de desviación/avance sobre los 48000 segmentos temporales publicados con fuerza máxima. Las posiciones medidas no se modifican. Resultado: **4 pruebas aprobadas**.
+Cuatro pruebas Node verifican extremos coincidentes, fuerza cero, ausencia de bucles en desplazamientos mínimos, los tres ejemplos de la auditoría y límites de desviación/avance sobre los 24000 segmentos temporales publicados con fuerza máxima. Las posiciones medidas no se modifican. Resultado: **4 pruebas aprobadas**.
 
 ## Interacción de navegador
 
@@ -31,8 +31,8 @@ Recorrido automatizado con Chromium/Playwright sobre la aplicación Flask:
 - Selección rectangular produce una galería paginada; zoom y restablecimiento funcionan.
 - T2 muestra 4000 estados y 40 referencias de clase; adapta dos filas con orden explícito y permite inspeccionar una imagen por capa.
 - Reproducción de épocas y revelado de capas pueden detenerse; el revelado se reanuda.
-- Matrices muestran 200 celdas; seleccionar la confusión 5 → 3 recupera tres imágenes del modelo base en época 20.
-- Cambiar de experimento actualiza correctamente el modelo seleccionado.
+- La matriz muestra 100 celdas; seleccionar la confusión 5 → 3 recupera tres imágenes en época 20.
+- Se distribuye un único modelo y no aparece un selector de experimentos.
 - Diálogos de método y guía funcionan.
 - T1 tiene siete miniaturas para elegir época; T2 usa su selector propio. El historial es de lectura. Controles e inspector ocupan columnas estables. El mapa supera 750 píxeles de altura en una ventana de 1512 × 1050; filtros, hover, selección, ajustes y diagnóstico no cambian su posición ni tamaño.
 - Una imagen fijada fuera del filtro conserva el detalle con etiqueta explícita; su punto pasa al contexto y su curva no se dibuja.
@@ -40,6 +40,15 @@ Recorrido automatizado con Chromium/Playwright sobre la aplicación Flask:
 
 Resultado: **recorrido aprobado, sin errores JavaScript**. La revisión visual incluyó las vistas principales, detalle, selección, matrices y móvil.
 
-El HTML sin conexión también se abrió directamente desde archivo y se comprobaron las dos tareas, cambio de experimento, época y capa. Resultado: **aprobado, sin errores JavaScript ni solicitudes HTTP externas**.
+El HTML sin conexión también se abrió directamente desde archivo y se comprobaron las dos tareas, época, capa y diagnóstico del único modelo. Resultado: **aprobado, sin errores JavaScript ni solicitudes HTTP externas**.
 
 Las pruebas comprueban consistencia de la implementación, no prueban validez causal de una interpretación ni calidad perceptual universal de las proyecciones.
+
+
+## Comparación y evidencia
+
+Cuatro pruebas Node adicionales verifican las categorías contra la verdad (incluyendo error→otro error), las cifras 6/8/20/966 de épocas 15→20, la partición y reversión de las 49 parejas de épocas y las intersecciones de vecinos originales por ID. Resultado: 4 aprobadas.
+
+El recorrido de descubrimiento comprueba activación manual y guiada, filtros combinados por clase, cero coincidencias, referencia A igual a B, conservación de posición/tamaño del mapa, extremos A/B medidos (tolerancia 0.001 píxeles por precisión de matrices SVG), vecinos conservados/nuevos y sus vínculos en las cuatro capas. La exportación se descarga y se comprueba que contiene PNG, muestra fijada, referencia y conteos verificables. El recorrido funciona también desde HTML offline sin solicitudes externas.
+
+La densidad tiene un único nivel con parámetros fijos; no se interpreta como frontera, cobertura probabilística ni densidad en activaciones originales. Los límites de estas verificaciones siguen siendo consistencia de datos e implementación; no son un estudio de usabilidad ni una validación causal.

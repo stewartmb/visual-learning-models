@@ -37,7 +37,7 @@ def dataset():
 
 @app.get('/api/sequence/<experiment>/<sequence>')
 def sequence(experiment, sequence):
-    if experiment not in ('base', 'refined'):
+    if experiment != 'base':
         abort(404)
     file = DATA / f'{experiment}.json'
     if not file.exists():

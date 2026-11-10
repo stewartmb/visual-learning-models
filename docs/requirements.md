@@ -19,11 +19,12 @@ La autoridad es `Tarea_Visual_Learning_Models.pdf`, proporcionado por el estudia
 | Datos nodes y edges | CSV con identidades, estados y conexiones consecutivas; ver tests |
 | ZIP único | Proyecto completo, datos precalculados y dependencias mínimas; sin necesidad de entrenar para abrirlo |
 | Sustentación obligatoria | Guion de ocho minutos en `presentation-guide.md`; corresponde al estudiante exponer |
-| Justificación y conclusiones | Diseño, métricas de calidad, ejemplos y refinamiento con resultado informado |
+| Comparación con evidencia | Transiciones de predicciones medidas, comparación A/B de vecinos originales y HTML exportable con IDs |
+| Justificación y conclusiones | Diseño, métricas de calidad y ejemplos que explican representaciones y errores |
 
 ## Ambigüedades conservadas
 
-El PDF menciona colaboradores, puentes, medidas de redes y cuatro tareas, aunque define explícitamente dos tareas sobre representaciones neuronales. No se inventa un requisito de PageRank o una red social. Se cubren las dos tareas explícitas y cuatro preguntas analíticas: épocas, capas, diagnóstico y refinamiento.
+El PDF menciona colaboradores, puentes, medidas de redes y cuatro tareas, aunque define explícitamente dos tareas sobre representaciones neuronales. No se inventa un requisito de PageRank o una red social. Se cubren las dos tareas explícitas con preguntas de análisis sobre épocas, capas, confusiones y calidad de la proyección.
 
 El paper define una T2 sobre neuronas; el enunciado define su T2 sobre capas. Se sigue el enunciado. El paper descarta animación masiva de puntos, mientras la tarea exige animación; se combina animación controlada con comparación estática.
 

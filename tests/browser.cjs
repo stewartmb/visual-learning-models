@@ -119,12 +119,15 @@ const output=path.resolve(process.env.QA_OUTPUT||'test-results');fs.mkdirSync(ou
  assert.equal(await page.evaluate(()=>VLM.getState().playing),false);assert.equal(await page.evaluate(()=>VLM.getState().reveal),1);
  assert.equal(await page.locator('.reference-panel[display="none"]').count(),2);
  await page.click('#play');await page.waitForTimeout(1500);assert.equal(await page.evaluate(()=>VLM.getState().reveal),3);
- await page.click('#diagnostics-open');assert.equal(await page.locator('.matrix-cell').count(),200);await sameBox(layerBox);
+ await page.click('#diagnostics-open');assert.equal(await page.locator('.matrix-cell').count(),100);await sameBox(layerBox);
  await page.locator('.matrix-item').first().locator('.matrix-cell').nth(53).click();
  assert.equal(await page.locator('#diagnostics').isVisible(),false);
  assert.deepEqual(await page.evaluate(()=>VLM.getState().confusion),[5,3]);assert.equal(await page.evaluate(()=>VLM.getState().selected.length),3);
  assert.equal(await page.locator('.class-reference').count(),40);await sameBox(layerBox);
- await page.selectOption('#experiment','refined');await page.click('#clear-selection');
+ assert.equal(await page.locator('#experiment').count(),0);
+ assert.deepEqual(await page.evaluate(()=>Object.keys(VLM.data.experiments)),['base']);
+ assert.equal(await page.getByText(/dilataci[oó]n|refinamiento/i).count(),0);
+ await page.click('#clear-selection');
  if(await page.locator('#clear-filters').isEnabled())await page.click('#clear-filters');
  await page.click('#tab-t1');await chooseEpoch(0);await page.click('#play');await page.waitForTimeout(850);await page.click('#play');
  assert.ok(await page.evaluate(()=>VLM.getState().epochs.t1)>0);assert.equal(await page.evaluate(()=>VLM.getState().playing),false);

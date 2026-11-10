@@ -1,4 +1,4 @@
-# Diseño visual · versión 0.3.0
+# Diseño visual · versión 0.4.0
 
 La referencia principal es el enunciado entregado. La grabación se consulta mediante el análisis exhaustivo HTML local, no mediante el SRT. El paper guía la metodología y los trabajos publicados orientan los idioms.
 
@@ -8,17 +8,37 @@ El espacio de trabajo reserva controles a la izquierda, mapa en el centro e insp
 
 Una sola leyenda permite combinar clases, con un único filtro «Solo errores». El botón con borde «Limpiar filtros» permanece visible debajo: se habilita al activar filtros y queda deshabilitado cuando no hay ninguno. Los casos fuera del filtro conservan puntos pequeños, grises y tenues; sus trayectorias no se dibujan. Los números 0–9 sitúan la mediana de cada clase calculada con toda la cohorte, sin alterar la proyección. Son referencias de clase, no límites ni regiones de decisión. Cuando la mezcla es alta (NH < 0.6), solo se rotulan las clases filtradas para evitar sugerir grupos separados. «Acercar al filtro» permite ajustar explícitamente el zoom; filtrar no cambia las coordenadas ni la escala.
 
-T1 conserva siete miniaturas como único selector de época; T2 tiene un selector compacto. Trayectorias, recorrido, fuerza, opacidad y velocidad permanecen en la columna izquierda. No hay secciones desplegables que cambien el tamaño del mapa. Diagnóstico, guía y método usan diálogos superpuestos. En móvil, los controles se abren sobre la vista.
+T1 conserva siete miniaturas como único selector de época; T2 tiene un selector compacto. Trayectorias, recorrido, fuerza, opacidad y velocidad permanecen en la columna izquierda. En comparación directa se retiran controles de agrupamiento que no aplican. No hay secciones desplegables que cambien el tamaño del mapa. Diagnóstico, guía y método usan diálogos superpuestos. En móvil, los controles se abren sobre la vista.
 
 El hover actualiza la imagen, etiqueta, predicción, tres mayores puntuaciones más clase real, historial breve y seis vecinos originales en el panel derecho. Solo añade un contorno al punto; no atenúa los demás ni modifica las curvas. El clic fija la imagen y atenúa las demás. Al salir de otro punto se recupera el detalle fijado. La galería de selección regional ocupa ese mismo panel.
 
 T2 distribuye las cuatro capas en 2 × 2 cuando la altura disponible lo favorece, con orden explícito L1 → L2 ↓ L3 ← L4. En superficies anchas y bajas conserva cuatro columnas. Todos los paneles usan la misma escala isotrópica. Esta disposición aumenta el espacio útil de las proyecciones; las conexiones siguen uniendo estados medidos de la misma imagen.
 
+## Comparar, encontrar un caso y comprobarlo
+
+T1 incorpora comparación explícita A→B. Las miniaturas siguen siendo el único selector de B; el control A tiene otra función: elegir la referencia. La curva es de lectura y no añade otro selector. La comparación es estática y pausa la reproducción; al salir vuelven los recorridos acumulados y su animación.
+
+Los cuatro filtros son una partición de la cohorte según corrección respecto de la etiqueta verdadera: error→acierto, acierto→error, error→error y acierto→acierto. «Siguen fallando» no implica misma clase predicha. Se pueden combinar con clases; sus conteos usan esas clases, no el filtro de errores ni la selección regional. Al elegir una transición se limpian filtros incompatibles de errores y matriz, y la galería muestra sus ejemplos. «Limpiar filtros» retira la transición y clases, sin cambiar A/B.
+
+El círculo vacío muestra A y el símbolo lleno B; la conexión directa preserva los dos extremos medidos. Se dibujan pares para cambios de error, la selección regional o la imagen fijada, evitando duplicar las 1000 trayectorias de todo el conjunto. «Siguen acertando» mantiene puntos y permite fijar un caso sin añadir 966 conexiones. No se conectan coordenadas de secuencias independientes. El zoom explícito ajusta conjuntamente A y B.
+
+La comparación de seis vecinos usa IDs calculados en las activaciones originales. En T1 contrasta A/B en la capa fija; en T2 compara la capa inspeccionada con capa 1, en la misma época. Un borde inferior distingue vecinos nuevos. Los vínculos opcionales del mapa corresponden a esos vecinos originales, aunque puedan quedar separados en 2D; solo se activan con una imagen fijada, nunca por hover.
+
+La curva de T1 compara exactitud y NH de la misma cohorte de 1000 imágenes. En T2 compara NH con trustworthiness de cada capa. Ambas usan escala porcentual común, con definiciones y sin interpretación causal. T1 muestra una referencia A punteada y B continua. Los intervalos entre checkpoints no son uniformes en entrenamiento.
+
+«Guardar evidencia» captura mapa y datos de un mismo estado, con predicciones, cohortes, selección, vecinos e imagen fijada, en un HTML autónomo. El reporte conserva IDs y límites de interpretación; no produce explicaciones causales automáticas.
+
+## Contexto de clases sin bolitas
+
+Contornos KDE de D3, calculados con las 100 imágenes de cada clase, independientemente de filtros. La cuadrícula canónica es 512×512 en el dominio normalizado [-1.04,1.04]², bandwidth 9 y umbral .008 puntos/píxel². Los parámetros son fijos para evitar reescalar cada clase/estado a una apariencia de separación. Hay un nivel, borde fino y relleno tenue; las etiquetas son números simples con halo claro, sin círculo. No se asigna un porcentaje de cobertura al contorno.
+
+Si NH<.6 se muestran únicamente clases elegidas, para reducir saturación en estados muy mezclados. Durante la transición animada se retiran temporalmente los contornos: las posiciones intermedias son interpolaciones, no nuevas estimaciones de densidad. Al terminar reaparece el estado medido. El interruptor «Contexto de clases» retira contornos y etiquetas sin mover puntos.
+
 ## What / Why / How
 
-**What:** 1000 imágenes de MNIST con IDs fijos, etiquetas verdaderas, activaciones de cuatro capas en siete épocas, predicciones y probabilidades estimadas. Dos experimentos con las mismas particiones e inicialización.
+**What:** 1000 imágenes de MNIST con IDs fijos, etiquetas verdaderas, activaciones de cuatro capas en siete épocas, predicciones y probabilidades estimadas de un único MLP entrenado con imágenes originales.
 
-**Why:** entender cambios durante el entrenamiento; comparar capas; diagnosticar imágenes difíciles; evaluar una intervención. Las dos tareas principales son las del enunciado: épocas y capas. No se implementa como tarea principal la T2 de relaciones entre neuronas del paper.
+**Why:** entender cambios durante el entrenamiento, comparar capas y diagnosticar imágenes difíciles. Las dos tareas principales son las del enunciado: épocas y capas. No se implementa como tarea principal la T2 de relaciones entre neuronas del paper.
 
 | Vista | Idiom | Se fija | Se compara |
 |---|---|---|---|
@@ -26,7 +46,7 @@ T2 distribuye las cuatro capas en 2 × 2 cuando la altura disponible lo favorece
 | T2 | Scatterplots yuxtapuestos con trayectorias agrupadas entre paneles | Época | Capas |
 | Inspector | Imagen, barras horizontales y secuencia de predicciones | ID de imagen | Clases y estados |
 | Galería | Small multiples de imágenes | Selección de IDs | Ejemplos originales |
-| Diagnóstico | Matrices de confusión yuxtapuestas | Época y cohorte | Predicción vs. verdad; base vs. refinado |
+| Diagnóstico | Matriz de confusión | Época y cohorte | Predicción vs. clase verdadera |
 
 ## Marcas y canales
 
@@ -71,7 +91,7 @@ La reproducción temporal termina en la última instantánea y puede pausarse. E
 
 ## Integridad de comparación
 
-AlignedUMAP relaciona estados mediante IDs. La alineación regulariza movimientos y puede suprimir parte de los cambios; no garantiza fidelidad. Se conserva escala isotrópica por secuencia completa. Las secuencias de capas o experimentos distintos tienen sistemas de coordenadas propios; no se anima una transición entre sistemas independientes como si midiera desplazamiento comparable.
+AlignedUMAP relaciona estados mediante IDs. La alineación regulariza movimientos y puede suprimir parte de los cambios; no garantiza fidelidad. Se conserva escala isotrópica por secuencia completa. Las secuencias distintas tienen sistemas de coordenadas propios; no se anima una transición entre sistemas independientes como si midiera desplazamiento comparable.
 
 Los vecinos del inspector se calculan en activaciones, no en 2D. NH con k=6 evalúa mezcla de clases en la proyección; trustworthiness con k=10 evalúa preservación de vecindarios originales. Se informa la capa a la que corresponden las métricas de T2.
 
@@ -82,6 +102,7 @@ Los segmentos animados interpolan estados medidos. Una mayor separación o traye
 - Paper, sección 5.4: trayectorias de observaciones entre capas y épocas; problema de comparabilidad de proyecciones.
 - Paolo Vásquez: capas yuxtapuestas, color de clase y agrupamiento mediante centroides.
 - Ricardo Amiel: miniaturas temporales, filtros e inspector de imágenes.
-- Clase: What–Why–How; entendimiento, diagnóstico y refinamiento; recuperar ejemplos; estabilidad de la evolución; conclusiones y mantra.
+- Implementación compartida por un compañero, revisada localmente: motivación de la curva coordinada y de vincular representación con comportamiento; datos, comparador y código nuevos se implementan sobre nuestro modelo.
+- Clase: What–Why–How; entendimiento y diagnóstico mediante ejemplos; estabilidad de la evolución; conclusiones y mantra.
 
 El código es original. Los datos y resultados se generaron para esta versión.

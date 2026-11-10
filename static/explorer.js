@@ -11,11 +11,15 @@
     classes: new Set(), errors: false, trails: true, bundle: true, fullTrails: false, dimInitial: false,
     strength: .45, opacity: .12, mode: 'pan', pinned: null, hover: null, hoverLayer: 3,
     detailLayer: 3, selected: new Set(), galleryPage: 0, confusion: null,
-    transform: d3.zoomIdentity, playing: false, reveal: 3
+    transform: d3.zoomIdentity, playing: false, reveal: 3,
+    compare: false, reference: 5, outcome: null, regions: true, neighborLinks: false, compareOpacity: .6
   };
   let DATA, atlas, geometry, svg, ctx, zoom, brush;
   let timer = null, animation = null, animatePositions = null, brushBusy = false;
   let renderQueued = false, lastInspectorKey = '', lastMatrixKey = '', miniatureKey = '';
+  const contourCache=new Map();
+  const comparing=()=>state.task==='t1'&&state.compare;
+  const outcomeOf=i=>VLMAnalysis.transition(label(i),record().predictions[state.reference][i],prediction(i));
   const record = () => DATA.experiments[state.experiment];
   const epochIndex = () => state.epochs[state.task];
   const epoch = () => EPOCHS[epochIndex()];
@@ -30,6 +34,7 @@
 
   function included(i) {
     if (state.classes.size && !state.classes.has(label(i))) return false;
+    if (comparing() && state.outcome && outcomeOf(i)!==state.outcome) return false;
     if (state.errors && !isError(i)) return false;
     if (state.confusion && (label(i) !== state.confusion[0] || prediction(i) !== state.confusion[1])) return false;
     return true;
@@ -85,6 +90,14 @@
     const closeControls=()=>{$('app').classList.remove('controls-open');$('controls-scrim').hidden=true;$('controls-toggle').setAttribute('aria-expanded','false');};
     $('controls-toggle').onclick=()=>{const open=$('app').classList.toggle('controls-open');$('controls-scrim').hidden=!open;$('controls-toggle').setAttribute('aria-expanded',String(open));};
     $('controls-scrim').onclick=closeControls;
+    d3.select('#reference-epoch').selectAll('option').data(EPOCHS).join('option').attr('value',(_,i)=>i).text(e=>`Época ${e}`);
+    $('reference-epoch').onchange=e=>{const reference=+e.target.value;stop();state.reference=reference;state.selected.clear();state.hover=null;renderAll();};
+    $('compare-on').onchange=e=>{const checked=e.target.checked;stop();state.compare=checked;state.outcome=null;state.selected.clear();state.hover=null;renderAll();};
+    $('regions-on').onchange=e=>{state.regions=e.target.checked;renderPlot();};
+    $('explore-learning').onclick=()=>{stop();state.task='t1';state.layer=3;state.reference=5;state.compare=true;state.outcome=null;state.classes.clear();state.errors=false;state.confusion=null;state.pinned=null;state.hover=null;state.selected.clear();state.epochs.t1=6;miniatureKey='';renderAll(true);};
+    $('neighbor-links').onclick=()=>{state.neighborLinks=!state.neighborLinks;updateInspector();renderPlot();};
+    $('save-evidence').onclick=saveEvidence;
+    $('inspector-close').onclick=()=>$('app').classList.add('detail-dismissed');
     d3.select('#epoch-select').selectAll('option').data(EPOCHS).join('option').attr('value',e=>e).text(e=>e);
     $('epoch-select').onchange = e => {const index=EPOCHS.indexOf(+e.target.value);stop();setEpoch(index);};
     d3.select('#class-legend').selectAll('button').data(d3.range(10)).join('button')
@@ -102,14 +115,13 @@
     $('trail-style').onchange = e => {state.trails=e.target.value!=='off';state.bundle=e.target.value==='bundled';renderAll();};
     $('trail-scope').onchange = e => {state.fullTrails=e.target.value==='full';renderAll();};
     $('strength').addEventListener('input', e => {state.strength = +e.target.value / 100; updateControls(); drawTrails();});
-    $('opacity').addEventListener('input', e => {state.opacity = +e.target.value / 100; updateControls(); drawTrails();});
+    $('opacity').addEventListener('input', e => {if(comparing())state.compareOpacity=+e.target.value/100;else state.opacity = +e.target.value / 100; updateControls(); drawTrails();drawComparison();});
     $('layer').addEventListener('change', e => {const layer = +e.target.value; stop(); state.layer = layer; state.detailLayer = state.layer; miniatureKey = ''; renderAll(true);});
-    $('experiment').addEventListener('change', e => {const experiment = e.target.value; stop(); state.experiment = experiment; state.confusion = null; miniatureKey = ''; renderAll(true);});
     $('play').onclick = () => state.playing ? stop() : play();
     $('mode-pan').onclick = () => setMode('pan');
     $('mode-brush').onclick = () => {stop(); setMode('brush');};
     $('clear-filters').onclick = () => {
-      state.classes.clear(); state.errors = false; state.confusion = null;
+      state.classes.clear(); state.errors = false; state.confusion = null;state.outcome=null;
       renderAll();
     };
     $('clear-selection').onclick = () => {
@@ -157,6 +169,9 @@
     svg.append('defs');
     svg.append('g').attr('class','backgrounds');
     svg.append('g').attr('class','axes');
+    svg.append('g').attr('class','class-regions').attr('pointer-events','none');
+    svg.append('g').attr('class','comparison-marks').attr('pointer-events','none');
+    svg.append('g').attr('class','neighbor-marks').attr('pointer-events','none');
     svg.append('g').attr('class','points');
     svg.append('g').attr('class','class-references').attr('pointer-events','none');
     svg.append('g').attr('class','brush');
@@ -168,7 +183,7 @@
     if (!['t1','t2'].includes(task)) return;
     stop(); state.task = task; state.hover = null; state.reveal = 3;
     state.detailLayer = task === 't1' ? state.layer : 3;
-    state.confusion = null;
+    state.confusion = null;state.outcome=null;
     miniatureKey = '';
     renderAll(true);
   }
@@ -191,7 +206,7 @@
         animatePositions = old.map((p,i) => [p[0]+(next[i][0]-p[0])*t, p[1]+(next[i][1]-p[1])*t]);
         drawPoints();
         drawClassReferences();
-        if (t === 1) {animation.stop(); animation = null; animatePositions = null;}
+        if (t === 1) {animation.stop(); animation = null; animatePositions = null;renderPlot();}
       });
     }
   }
@@ -236,24 +251,28 @@
   function updateControls() {
     if (!DATA) return;
     const temporal = state.task === 't1';
-    $('experiment').value = state.experiment;
     $('layer').value = state.layer;
     $('layer-control').hidden = !temporal;
     $('epoch-control').hidden = temporal;
     $('epoch-select').value = epoch();
-    $('play').textContent = state.playing ? 'Ⅱ Pausar' : temporal ? '▶ Reproducir' : '▶ Recorrer capas';
+    $('play').disabled=comparing();
+    $('play').textContent = comparing()?'Comparación A → B':state.playing ? 'Ⅱ Pausar' : temporal ? '▶ Reproducir' : '▶ Recorrer capas';
     for (const [id, prop] of [['dim-initial','dimInitial'],['errors-only','errors']]) $(id).checked = state[prop];
-    $('trail-style').value = !state.trails?'off':state.bundle?'bundled':'straight';
+    $('trail-style').value = comparing()?'straight':!state.trails?'off':state.bundle?'bundled':'straight';
+    $('trail-style').disabled=comparing();$('trail-style').closest('label').hidden=comparing();
+    $('strength').closest('label').hidden=comparing();
+    $('trails-heading').textContent=comparing()?'Conexiones A → B':'Trayectorias';
     $('trail-scope').value = state.fullTrails?'full':'current';
-    $('full-trails-control').hidden = !temporal;
-    $('trail-scope').disabled = !state.trails;
-    $('dim-initial-control').hidden = !temporal;
-    $('dim-initial').disabled = !state.trails;
+    $('full-trails-control').hidden = !temporal||comparing();
+    $('trail-scope').disabled = !state.trails||comparing();
+    $('dim-initial-control').hidden = !temporal||comparing();
+    $('dim-initial').disabled = !state.trails||comparing();
     $('strength-value').value = `${Math.round(state.strength*100)}%`;
-    $('opacity-value').value = `${Math.round(state.opacity*100)}%`;
-    $('strength').disabled = !state.bundle || !state.trails;
+    $('opacity-value').value = `${Math.round((comparing()?state.compareOpacity:state.opacity)*100)}%`;
+    $('opacity').value=Math.round((comparing()?state.compareOpacity:state.opacity)*100);
+    $('strength').disabled = !state.bundle || !state.trails||comparing();
     $('opacity').disabled = !state.trails;
-    $('time-legend').hidden = !temporal || (!state.fullTrails && epochIndex() === 0);
+    $('time-legend').hidden = comparing() || !temporal || (!state.fullTrails && epochIndex() === 0);
     $('time-legend-end').textContent = state.fullTrails ? '20' : epoch();
     const finalColor = d3.hsl(COLORS[0]);
     const rampStart = finalColor.copy({l:Math.max(.18,finalColor.l*.42)}).formatRgb();
@@ -267,13 +286,15 @@
     $('chart-section').setAttribute('aria-labelledby', `tab-${state.task}`);
     $('chart-title').textContent = temporal ? `Capa ${state.layer+1} · época ${epoch()}` : `Época ${epoch()} · cuatro capas`;
     const n = d3.range(1000).filter(included).length;
+    $('inspector-empty').querySelector('p').textContent=n===0?'Ninguna imagen cumple esta combinación. Limpia los filtros o elige otro tipo de cambio.':'Pasa sobre un punto para ver su imagen y predicción. Haz clic para fijarlo.';
     const suffix = state.confusion ? ` · ${state.confusion[0]} → ${state.confusion[1]}` : '';
     $('visible-count').textContent = `${n.toLocaleString('es-PE')} / 1 000 imágenes${suffix}`;
     const q = seq().quality[temporal ? epochIndex() : state.detailLayer];
     $('quality-label').textContent = `${temporal?'':`Capa ${state.detailLayer+1} · `}NH₆ ${percent(q.neighborhood_hit)} · Trust₁₀ ${percent(q.trustworthiness)}`;
     $('quality-label').title = 'NH: vecinos de la misma clase en 2D. Trustworthiness: preservación de vecinos originales. Se evalúa la muestra completa, sin filtros.';
+    renderComparisonControls();renderEvolution();
     updateActionVisibility();
-    $('chart-footnote').textContent = temporal
+    $('chart-footnote').textContent = comparing()?`A: época ${EPOCHS[state.reference]} ○ → B: época ${epoch()} ● · Posiciones medidas. Selecciona un cambio o fija una imagen.`:temporal
       ? state.fullTrails
         ? 'Recorrido completo 0–20 · Los puntos corresponden a la época activa.'
         : epochIndex() === 0
@@ -283,15 +304,15 @@
   }
 
   function updateActionVisibility() {
-    $('clear-filters').disabled = !(state.classes.size || state.errors || state.confusion);
+    $('clear-filters').disabled = !(state.classes.size || state.errors || state.confusion || state.outcome);
     $('clear-selection').hidden = state.selected.size === 0;
     $('reset-view').hidden = state.transform.k === 1 && state.transform.x === 0 && state.transform.y === 0;
-    $('fit-focus').hidden = !(state.classes.size || state.errors || state.confusion || state.selected.size);
+    $('fit-focus').hidden = !(state.classes.size || state.errors || state.confusion || state.selected.size || state.outcome);
   }
 
   function fitFocus() {
     const points=[];
-    const frames=state.task==='t1'?[geometry.frames[epochIndex()]]:geometry.frames;
+    const frames=state.task==='t1'?(comparing()?[geometry.frames[state.reference],geometry.frames[epochIndex()]]:[geometry.frames[epochIndex()]]):geometry.frames;
     frames.forEach((frame,l)=>frame.forEach((p,i)=>{
       if(!included(i)||(state.selected.size&&!state.selected.has(i)))return;
       const panel=geometry.panels[state.task==='t1'?0:l];
@@ -377,9 +398,10 @@
     requestAnimationFrame(() => {renderQueued = false; renderPlot();});
   }
 
-  function renderPlot() {if (geometry) {drawStructure(); drawTrails(); drawPoints();drawClassReferences();}}
+  function renderPlot() {if (geometry) {drawStructure(); drawTrails();drawRegions();drawComparison();drawNeighborLinks();drawPoints();drawClassReferences();}}
 
   function drawClassReferences() {
+    if(animatePositions)svg.select('.class-regions').attr('visibility','hidden');
     const groups=svg.select('.class-references').selectAll('g.reference-panel').data(geometry.panels).join('g')
       .attr('class','reference-panel').attr('clip-path',(_,l)=>`url(#panel-clip-${l})`)
       .attr('display',(_,l)=>!geometry.temporal&&l>state.reveal?'none':null);
@@ -399,11 +421,11 @@
       }
       nodes.forEach(n=>{n.x=Math.max(panel.x+12,Math.min(panel.x+panel.width-12,n.x));n.y=Math.max(panel.y+12,Math.min(panel.y+panel.height-12,n.y));});
       const refs=d3.select(this).selectAll('g.class-reference').data(nodes,n=>n.c).join(enter=>{
-        const g=enter.append('g').attr('class','class-reference');g.append('line');g.append('circle');g.append('text');return g;
+        const g=enter.append('g').attr('class','class-reference');g.append('line');g.append('text');return g;
       }).attr('aria-label',n=>`Referencia de la clase ${n.c}, mediana de sus 100 imágenes`);
       refs.select('line').attr('x1',n=>n.ax).attr('y1',n=>n.ay).attr('x2',n=>n.x).attr('y2',n=>n.y).attr('stroke',n=>COLORS[n.c]);
-      refs.select('circle').attr('cx',n=>n.x).attr('cy',n=>n.y).attr('r',geometry.temporal?10:8).attr('stroke',n=>COLORS[n.c]);
       refs.select('text').attr('x',n=>n.x).attr('y',n=>n.y).text(n=>n.c);
+      refs.style('display',state.regions?null:'none');
     });
   }
 
@@ -446,7 +468,7 @@
       ctx.globalAlpha = 1;
       panels.forEach((p,i) => {ctx.fillStyle = i%2 ? '#f5f5ef' : '#f9f9f4';ctx.fillRect(p.x,p.y,p.width,p.height);});
     }
-    if (!state.trails) return;
+    if (!state.trails || comparing()) return;
     const f = focused(), selected = state.selected;
     const stages = frames.length-1;
     const visibleStages = temporal ? (state.fullTrails ? stages : epochIndex()) : Math.min(stages,state.reveal);
@@ -529,6 +551,7 @@
 
   function pin(i,layer=state.detailLayer) {
     if (!Number.isInteger(i) || i<0 || i>=1000) return;
+    $('app').classList.remove('detail-dismissed');
     stop(); state.pinned=i; state.hover=null; state.detailLayer=layer;
     renderAll();
   }
@@ -560,10 +583,10 @@
     $('inspector-empty').hidden=i!==null;
     $('inspector-detail').hidden=i===null;
     $('app').classList.toggle('has-preview',i!==null);
-    if (i===null) {lastInspectorKey='';$('preview-status').textContent='Vista previa';$('unpin').hidden=true;return;}
+    if (i===null) {lastInspectorKey='';$('preview-status').textContent='Vista previa';$('unpin').hidden=true;$('neighbor-links').disabled=true;return;}
     const l=state.task==='t1'?state.layer:state.hover!==null?state.hoverLayer:state.detailLayer;
     const preview=state.hover!==null&&state.hover!==state.pinned;
-    const key=`${state.experiment}:${i}:${epoch()}:${l}:${included(i)}:${preview}:${state.pinned}`;
+    const key=`${state.experiment}:${i}:${epoch()}:${l}:${included(i)}:${preview}:${state.pinned}:${comparing()}:${state.reference}:${state.neighborLinks}`;
     if (key===lastInspectorKey) return;
     lastInspectorKey=key;
     $('sample-id').textContent=`MNIST #${DATA.samples.ids[i]}${included(i)?'':' · fuera del filtro'}`;
@@ -595,16 +618,29 @@
       .attr('aria-label',(e,j)=>`Época ${e}: predicción ${record().predictions[j][i]}`);
     history.select('small').text(e=>`E${e}`);history.select('span').text((e,j)=>record().predictions[j][i]);
     $('neighbor-layer').textContent=`· capa ${l+1}`;
-    makeTiles($('neighbors'),record().neighbors[`${epoch()}_${l}`][i]);
+    const now=record().neighbors[`${epoch()}_${l}`][i];
+    makeTiles($('neighbors'),now);
+    const baseline=comparing()?record().neighbors[`${EPOCHS[state.reference]}_${l}`][i]:state.task==='t2'?record().neighbors[`${epoch()}_0`][i]:null;
+    $('sample-comparison').hidden=!comparing();
+    $('sample-comparison').textContent=comparing()?`Predicción: ${record().predictions[state.reference][i]} → ${prediction(i)} · real ${label(i)}`:'';
+    if(baseline){
+      const changed=VLMAnalysis.neighbors(baseline,now),baseName=comparing()?`época ${EPOCHS[state.reference]}`:'capa 1';
+      $('neighbor-change').textContent=`Conserva ${changed.retained.length}/6 vecinos respecto a ${baseName}. ${changed.arrived.length} nuevos.`;
+      d3.select('#neighbors').selectAll('button').classed('neighbor-arrived',j=>changed.arrived.includes(j)).attr('title',j=>`#${DATA.samples.ids[j]} · ${changed.arrived.includes(j)?'nuevo vecino':'vecino conservado'} · clase ${label(j)}`);
+    }else{$('neighbor-change').textContent='Seis vecinos en las activaciones originales.';d3.select('#neighbors').selectAll('button').classed('neighbor-arrived',false);}
+    $('neighbor-links').disabled=state.pinned===null;
+    $('neighbor-links').setAttribute('aria-pressed',String(state.neighborLinks));
+    $('neighbor-links').textContent=state.neighborLinks?'Ocultar vínculos de vecinos':'Conectar vecinos en el mapa';
   }
 
   function renderGallery() {
-    const ids=[...state.selected].filter(included);
+    const ids=state.selected.size?[...state.selected].filter(included):comparing()&&state.outcome?d3.range(1000).filter(included):[];
     $('gallery-section').hidden=ids.length===0;
+    $('app').classList.toggle('has-gallery',ids.length>0);
     if (!ids.length) return;
     const pages=Math.ceil(ids.length/30);
     state.galleryPage=Math.max(0,Math.min(state.galleryPage,pages-1));
-    $('gallery-title').textContent=`${ids.length} imágenes seleccionadas`;
+    $('gallery-title').textContent=`${ids.length} ${state.selected.size?'imágenes seleccionadas':'casos de este cambio'}`;
     $('gallery-page').textContent=`${state.galleryPage+1} / ${pages}`;
     $('gallery-prev').disabled=state.galleryPage===0;
     $('gallery-next').disabled=state.galleryPage===pages-1;
@@ -640,7 +676,7 @@
     const key=`${epoch()}:${state.experiment}:${state.confusion?.join('-')}`;
     if (key===lastMatrixKey) return;
     lastMatrixKey=key;
-    const containers=d3.select('#matrix-grid').selectAll('div.matrix-item').data(['base','refined']).join(enter=> {
+    const containers=d3.select('#matrix-grid').selectAll('div.matrix-item').data(['base']).join(enter=> {
       const d=enter.append('div').attr('class','matrix-item');d.append('h3');d.append('p');d.append('svg').attr('role','img');return d;
     });
     containers.each(function(exp) {
@@ -649,7 +685,7 @@
       predictions.forEach((p,i)=>counts[label(i)][p]++);
       const cells=counts.flatMap((row,real)=>row.map((count,pred)=>({real,pred,count,value:count/100})));
       const m=DATA.meta.experiments[exp].history[epochIndex()];
-      block.select('h3').text(exp==='base'?'Modelo base':'Modelo con dilatación');
+      block.select('h3').text('Clasificación de dígitos MNIST');
       block.select('p').text(`Época ${epoch()} · prueba completa: ${percent(m.test_accuracy)} (n=10 000)`);
       const s=block.select('svg').attr('viewBox','0 0 290 285').attr('aria-label',`Matriz de confusión ${exp}, época ${epoch()}`);
       const color=d3.scaleSequential(d3.interpolatePurples).domain([0,1]);
@@ -670,22 +706,162 @@
       s.selectAll('text.col-label').data(d3.range(10)).join('text').attr('class','col-label').attr('x',d=>39.5+d*24).attr('y',267).attr('text-anchor','middle').text(d=>d);
       s.selectAll('text.axis-label').data([{x:148,y:281,text:'Clase predicha'}]).join('text').attr('class','axis-label').attr('x',d=>d.x).attr('y',d=>d.y).attr('text-anchor','middle').attr('fill','#687573').text(d=>d.text);
     });
-    const base=DATA.meta.experiments.base.history[epochIndex()].test_accuracy;
-    const refined=DATA.meta.experiments.refined.history[epochIndex()].test_accuracy;
-    const delta=(refined-base)*100;
-    $('refinement-result').textContent=`Intervención: dilatación 3×3 en el 25% del entrenamiento; prueba sin modificar. Diferencia de exactitud en época ${epoch()}: ${delta>=0?'+':''}${delta.toFixed(2)} puntos porcentuales. Un ensayo con semilla fija; no es una estimación de significancia estadística.`;
+  }
+
+  function comparisonStats(){
+    const ids=d3.range(DATA.samples.ids.length).filter(i=>!state.classes.size||state.classes.has(label(i)));
+    return VLMAnalysis.summarize(DATA.samples.labels,record().predictions[state.reference],record().predictions[epochIndex()],ids);
+  }
+
+  function renderComparisonControls(){
+    const active=comparing();
+    $('app').classList.toggle('is-comparing',active);
+    $('comparison-controls').hidden=state.task!=='t1';
+    $('compare-on').checked=state.compare;
+    $('reference-epoch').value=state.reference;$('reference-epoch').disabled=!active;
+    $('regions-on').checked=state.regions;
+    $('comparison-direction').textContent=active?`A ${EPOCHS[state.reference]} → B ${epoch()} · B se elige abajo.`:'B se elige en las miniaturas.';
+    $('transition-filters').hidden=!active;
+    const stats=comparisonStats();
+    const names={fixed:'Pasan a acierto',new:'Empiezan a fallar',persistent:'Siguen fallando',steady:'Siguen acertando'};
+    const buttons=d3.select('#transition-filters').selectAll('button').data(['fixed','new','persistent','steady']).join(enter=>{
+      const b=enter.append('button').attr('type','button');b.append('strong');b.append('span');return b;
+    }).attr('data-outcome',d=>d).attr('aria-pressed',d=>d===state.outcome).attr('aria-label',d=>`${names[d]}: ${stats[d]} imágenes`)
+      .on('click',(_,d)=>{$('app').classList.remove('detail-dismissed');stop();state.outcome=state.outcome===d?null:d;state.errors=false;state.confusion=null;state.selected.clear();state.pinned=null;state.hover=null;renderAll();});
+    buttons.select('strong').text(d=>stats[d]);buttons.select('span').text(d=>names[d]);
+    $('comparison-summary').textContent=active?`${stats.beforeErrors} → ${stats.afterErrors} errores · ${stats.n} imágenes${state.classes.size?' de las clases elegidas':''}.`:'';
+  }
+
+  function drawRegions(){
+    svg.select('.class-regions').attr('visibility',animatePositions?'hidden':null);
+    const groups=svg.select('.class-regions').selectAll('g.region-panel').data(geometry.panels).join('g')
+      .attr('class','region-panel').attr('clip-path',(_,l)=>`url(#panel-clip-${l})`)
+      .attr('display',(_,l)=>!state.regions||(!geometry.temporal&&l>state.reveal)?'none':null);
+    groups.each(function(_,l){
+      const fi=geometry.temporal?epochIndex():l,frame=geometry.frames[fi];
+      const classes=seq().quality[fi].neighborhood_hit<.6?[...state.classes]:d3.range(10);
+      const shapes=classes.map(c=>{
+        const key=`${state.experiment}:${state.task}:${state.task==='t1'?state.layer:epoch()}:${fi}:${c}`;
+        if(!contourCache.has(key)){
+          const points=frame.filter((_,i)=>label(i)===c).map(p=>[(p[0]+1.04)*512/2.08,(1.04-p[1])*512/2.08]);
+          // One fixed density level and bandwidth, in normalized coordinates, across every state.
+          const region=d3.contourDensity().size([512,512]).bandwidth(9).thresholds([.008])(points)[0];
+          contourCache.set(key,region);
+        }
+        return {c,shape:contourCache.get(key)};
+      });
+      const projection=d3.geoTransform({point(x,y){const p=screen([x*2.08/512-1.04,1.04-y*2.08/512],l);this.stream.point(...p);}});
+      const path=d3.geoPath(projection);
+      d3.select(this).selectAll('path.class-region').data(shapes,d=>d.c).join('path').attr('class','class-region')
+        .attr('data-class',d=>d.c).attr('d',d=>path(d.shape)).attr('fill',d=>COLORS[d.c]).attr('fill-opacity',.025)
+        .attr('stroke',d=>COLORS[d.c]).attr('stroke-width',d=>state.classes.has(d.c)?1.3:.8)
+        .attr('stroke-opacity',d=>state.classes.size&&!state.classes.has(d.c)?.15:.4);
+    });
+  }
+
+  function drawComparison(){
+    const group=svg.select('.comparison-marks').attr('clip-path','url(#panel-clip-0)');
+    let ids=[];
+    if(comparing()){
+      if(focused()!==null)ids=[focused()];
+      else if(state.selected.size)ids=[...state.selected].filter(included);
+      else if(state.outcome&&state.outcome!=='steady')ids=d3.range(1000).filter(included);
+    }
+    const pairs=ids.map(i=>({i,a:screen(geometry.frames[state.reference][i],0),b:screen(geometry.frames[epochIndex()][i],0)}));
+    group.selectAll('line.comparison-link').data(state.trails?pairs:[],d=>d.i).join('line').attr('class','comparison-link')
+      .attr('x1',d=>d.a[0]).attr('y1',d=>d.a[1]).attr('x2',d=>d.b[0]).attr('y2',d=>d.b[1])
+      .attr('stroke',d=>COLORS[label(d.i)]).attr('stroke-width',1.25).attr('stroke-opacity',state.compareOpacity)
+      .attr('stroke-dasharray','3 3');
+    group.selectAll('circle.reference-point').data(pairs,d=>d.i).join('circle').attr('class','reference-point')
+      .attr('data-sample',d=>d.i).attr('cx',d=>d.a[0]).attr('cy',d=>d.a[1]).attr('r',4.5)
+      .attr('fill','#fffefa').attr('stroke',d=>COLORS[label(d.i)]).attr('stroke-width',1.6);
+  }
+
+  function drawNeighborLinks(){
+    const pinned=focused(),links=[];
+    if(state.neighborLinks&&pinned!==null){
+      geometry.panels.forEach((_,l)=>{
+        if(!geometry.temporal&&l>state.reveal)return;
+        const layer=geometry.temporal?state.layer:l,frame=geometry.frames[geometry.temporal?epochIndex():l];
+        const a=screen(frame[pinned],l);
+        for(const i of record().neighbors[`${epoch()}_${layer}`][pinned])links.push({i,l,a,b:screen(frame[i],l)});
+      });
+    }
+    const groups=svg.select('.neighbor-marks').selectAll('g').data(geometry.panels).join('g').attr('clip-path',(_,l)=>`url(#panel-clip-${l})`);
+    groups.each(function(_,l){
+      const local=links.filter(d=>d.l===l),g=d3.select(this);
+      g.selectAll('line').data(local,d=>d.i).join('line').attr('x1',d=>d.a[0]).attr('y1',d=>d.a[1]).attr('x2',d=>d.b[0]).attr('y2',d=>d.b[1]).attr('stroke','#435d67').attr('stroke-width',.8).attr('stroke-opacity',.7);
+      g.selectAll('circle.neighbor-ring').data(local,d=>d.i).join('circle').attr('class','neighbor-ring').attr('cx',d=>d.b[0]).attr('cy',d=>d.b[1]).attr('r',5).attr('fill','none').attr('stroke',d=>COLORS[label(d.i)]).attr('stroke-width',1.6);
+    });
+  }
+
+  function renderEvolution(){
+    const temporal=state.task==='t1',width=$('evolution-chart').clientWidth||225,height=128;
+    const x=d3.scalePoint().domain(d3.range(temporal?7:4)).range([25,width-9]),y=d3.scaleLinear().domain([0,1]).range([99,23]);
+    const values=temporal?[
+      {name:'Exactitud',color:'#202d32',v:DATA.meta.experiments.base.history.map(h=>h.sample_accuracy)},
+      {name:'NH',color:'#287f8e',v:seq().quality.map(q=>q.neighborhood_hit)}
+    ]:[{name:'NH',color:'#287f8e',v:seq().quality.map(q=>q.neighborhood_hit)},
+       {name:'Fidelidad',color:'#202d32',v:seq().quality.map(q=>q.trustworthiness)}];
+    const chart=d3.select('#evolution-chart').attr('viewBox',`0 0 ${width} ${height}`);chart.selectAll('*').remove();
+    $('evolution-title').textContent=temporal?'Separación y aciertos':'Representación por capa';
+    values.forEach((d,j)=>{chart.append('line').attr('x1',25+j*98).attr('x2',37+j*98).attr('y1',8).attr('y2',8).attr('stroke',d.color).attr('stroke-width',2);chart.append('text').attr('x',41+j*98).attr('y',11).text(d.name);});
+    chart.append('g').attr('class','evolution-axis').attr('transform','translate(25,0)').call(d3.axisLeft(y).tickValues([0,.5,1]).tickFormat(d3.format('.0%')).tickSize(-(width-34))).call(g=>g.select('.domain').remove());
+    chart.append('g').attr('class','evolution-axis').attr('transform','translate(0,99)').call(d3.axisBottom(x).tickFormat(i=>temporal?EPOCHS[i]:`C${i+1}`).tickSize(0)).call(g=>g.select('.domain').remove());
+    if(comparing())chart.append('line').attr('class','reference-cursor').attr('x1',x(state.reference)).attr('x2',x(state.reference)).attr('y1',22).attr('y2',99).attr('stroke','#8a9891').attr('stroke-dasharray','3 3');
+    if(temporal)chart.append('line').attr('x1',x(epochIndex())).attr('x2',x(epochIndex())).attr('y1',22).attr('y2',99).attr('stroke','#aab5b0');
+    values.forEach(d=>{
+      chart.append('path').attr('d',d3.line().x((_,i)=>x(i)).y(y)(d.v)).attr('fill','none').attr('stroke',d.color).attr('stroke-width',1.6);
+      chart.append('g').selectAll('circle').data(d.v).join('circle').attr('cx',(_,i)=>x(i)).attr('cy',y).attr('r',(_,i)=>temporal&&i===epochIndex()?3.6:2.1).attr('fill',d.color).append('title').text((v,i)=>`${temporal?'Época '+EPOCHS[i]:'Capa '+(i+1)} · ${d.name}: ${percent(v)}`);
+    });
+    $('evolution-note').textContent=temporal?'Misma cohorte: 1 000 imágenes. NH: vecinos de igual clase en 2D. Épocas a intervalos desiguales.':'NH: mezcla por clase. Fidelidad: trustworthiness de los vecinos originales. Muestra completa.';
+  }
+
+  async function saveEvidence(){
+    stop();$('save-evidence').disabled=true;$('evidence-status').textContent='Preparando evidencia…';
+    try{
+      // Keep the capture and the reported state together throughout asynchronous image decoding.
+      const snapshot={task:state.task,layer:state.layer+1,epoch:epoch(),reference:comparing()?EPOCHS[state.reference]:null,
+        outcome:state.outcome,classes:[...state.classes],errorsOnly:state.errors,confusion:state.confusion,
+        visible:d3.range(1000).filter(included).map(i=>DATA.samples.ids[i]),selection:[...state.selected].filter(included).map(i=>DATA.samples.ids[i]),comparison:comparing()?comparisonStats():null,
+        seed:DATA.meta.seed,projection:DATA.meta.projection.name,quality:seq().quality,
+        sample:state.pinned===null?null:{id:DATA.samples.ids[state.pinned],truth:label(state.pinned),prediction:prediction(state.pinned),
+          referencePrediction:comparing()?record().predictions[state.reference][state.pinned]:null,
+          neighbors:record().neighbors[`${epoch()}_${state.task==='t1'?state.layer:state.detailLayer}`][state.pinned].map(i=>DATA.samples.ids[i])}};
+      if(snapshot.sample){
+        const selected=state.pinned,layer=state.task==='t1'?state.layer:state.detailLayer;
+        const reference=comparing()?record().neighbors[`${EPOCHS[state.reference]}_${layer}`][selected]:state.task==='t2'?record().neighbors[`${epoch()}_0`][selected]:null;
+        snapshot.sample.referenceNeighbors=reference?reference.map(i=>DATA.samples.ids[i]):null;
+        snapshot.sample.retainedNeighbors=reference?reference.filter(i=>record().neighbors[`${epoch()}_${layer}`][selected].includes(i)).map(i=>DATA.samples.ids[i]):null;
+        const digit=document.createElement('canvas');digit.width=digit.height=28;drawDigit(digit,selected);snapshot.sample.image=digit.toDataURL('image/png');
+      }
+      const width=geometry.width,height=geometry.height;
+      const canvas=document.createElement('canvas');canvas.width=width*2;canvas.height=height*2;
+      const c=canvas.getContext('2d');c.scale(2,2);c.fillStyle='#fffefa';c.fillRect(0,0,width,height);c.drawImage($('trails-canvas'),0,0,width,height);
+      const clone=$('plot').cloneNode(true),style=document.createElementNS('http://www.w3.org/2000/svg','style');
+      style.textContent='.axis line{stroke:#e8e9e2}.axis path{stroke:none}.point{stroke:#ffffff80;stroke-width:.4}.point.is-focus{stroke:#202d32;stroke-width:1.8}.class-reference line{stroke-width:.7;opacity:.55}.class-reference text{font:12px monospace;fill:#202d32;text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:#fffefa;stroke-width:3px}.layer-label,.projection-label{font:10px monospace;fill:#687573}';clone.prepend(style);
+      const url=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml;charset=utf-8'}));
+      const overlay=new Image();try{overlay.src=url;await overlay.decode();c.drawImage(overlay,0,0,width,height);}finally{URL.revokeObjectURL(url);}
+      const title=snapshot.reference===null?`${snapshot.task.toUpperCase()} · época ${snapshot.epoch}`:`Época ${snapshot.reference} → ${snapshot.epoch} · capa ${snapshot.layer}`;
+      const stats=snapshot.comparison;
+      const content=`<!doctype html><html lang="es"><meta charset="utf-8"><title>Evidencia · ${title}</title><style>body{max-width:1100px;margin:35px auto;padding:0 24px;font:16px/1.7 system-ui;color:#202d32}h1{font:36px Georgia}img{max-width:100%;border:1px solid #ddd}small{color:#687573}pre{white-space:pre-wrap;font-size:12px;background:#f7f5f0;padding:18px}strong{color:#245d70}</style><h1>${title}</h1><p>MNIST · ${snapshot.visible.length} imágenes cumplen los filtros de una cohorte fija de 1 000. ${snapshot.selection.length} seleccionadas por región.</p>${stats?`<p><strong>${stats.fixed}</strong> pasan de error a acierto; <strong>${stats.new}</strong> de acierto a error; <strong>${stats.persistent}</strong> siguen erradas y ${stats.steady} siguen correctas. Errores: ${stats.beforeErrors} → ${stats.afterErrors}. Cálculo sobre ${stats.n} imágenes de las clases elegidas, independiente de otros filtros.</p>`:''}${snapshot.sample?`<img alt="Imagen original seleccionada" src="${snapshot.sample.image}" style="width:96px;image-rendering:pixelated"><p>Ejemplo fijado: <b>MNIST #${snapshot.sample.id}</b>, etiqueta ${snapshot.sample.truth}, predicción ${snapshot.sample.referencePrediction===null?'':snapshot.sample.referencePrediction+' → '}${snapshot.sample.prediction}. ${snapshot.sample.retainedNeighbors===null?'':`Conserva ${snapshot.sample.retainedNeighbors.length}/6 vecinos originales respecto a la referencia.`}</p>`:''}<figure><img alt="Mapa y selección capturados" src="${canvas.toDataURL('image/png')}"><figcaption>Posiciones de AlignedUMAP. El color indica clase verdadera; ○ referencia y símbolo lleno estado activo al comparar.</figcaption></figure><p>Los vecinos se calculan en activaciones originales. Los contornos muestran concentración estimada en 2D, no regiones de decisión. Distancias y trayectorias no demuestran causalmente aprendizaje; la alineación puede atenuar cambios. Las transiciones de clasificación sí se obtienen de predicciones medidas.</p><small>Visual Learning Models · evidencia exportada localmente. Semilla ${snapshot.seed}. No se modificaron ni eliminaron ejemplos difíciles.</small><details><summary>Datos para verificar y reproducir la selección</summary><pre>${JSON.stringify(snapshot,null,2)}</pre></details><script id="evidence-data" type="application/json">${JSON.stringify(snapshot)}</script></html>`;
+      const blobURL=URL.createObjectURL(new Blob([content],{type:'text/html;charset=utf-8'})),a=document.createElement('a');a.href=blobURL;a.download=`evidencia-${snapshot.task}-${snapshot.reference===null?'':snapshot.reference+'-'}${snapshot.epoch}.html`;a.click();setTimeout(()=>URL.revokeObjectURL(blobURL),1000);
+      $('evidence-status').textContent='Evidencia guardada con mapa, selección y datos.';
+    }catch(e){$('evidence-status').textContent='No se pudo exportar: '+e.message;}
+    finally{$('save-evidence').disabled=false;}
   }
 
   function makeMethod() {
-    const meta=DATA.meta,base=meta.experiments.base.history.at(-1),ref=meta.experiments.refined.history.at(-1);
+    const meta=DATA.meta,base=meta.experiments.base.history.at(-1);
     $('method-content').innerHTML=`<p><b>Modelo:</b> MLP 784 → 128 → 128 → 128 → 128 → 10, ReLU y Adam. Semilla 42. Entrenamiento continuo durante 20 épocas, con instantáneas reales, incluida la época 0.</p>
       <p><b>Datos:</b> 50 000 imágenes de entrenamiento, 10 000 de validación y 10 000 de prueba. Se visualiza una muestra fija de 1 000 imágenes de prueba, 100 por dígito.</p>
-      <p><b>Proyección:</b> AlignedUMAP no supervisado, 15 vecinos, min_dist 0.1 y regularización de alineación 0.01. Las etiquetas no intervienen en la proyección. Cada secuencia tiene un sistema de coordenadas propio; no se comparan posiciones absolutas entre capas seleccionadas o experimentos diferentes.</p>
+      <p><b>Proyección:</b> AlignedUMAP no supervisado, 15 vecinos, min_dist 0.1 y regularización de alineación 0.01. Las etiquetas no intervienen en la proyección. Cada secuencia tiene un sistema de coordenadas propio; no se comparan posiciones absolutas entre secuencias distintas.</p>
       <p><b>Agrupamiento:</b> curvas Bézier atraídas hacia centroides de clase, conservando las posiciones medidas. La desviación está limitada respecto de la distancia entre extremos y no retrocede a lo largo de su conexión. Así se evitan arcos grandes en imágenes casi inmóviles. Esta adaptación usa etiquetas verdaderas para organizar el dibujo. La existencia de haces no demuestra por sí misma que el modelo haya separado clases. No reproduce el algoritmo GPU CUBu del paper.</p>
+      <p><b>Comparación:</b> A y B usan posiciones medidas de la misma secuencia. Los grupos de cambio se calculan con predicciones y etiquetas reales, no con distancias 2D. Un error persistente puede cambiar de clase predicha sin llegar a acertar. Los contornos son densidades por clase con ancho y umbral fijos; no fronteras de decisión. La exactitud de la curva usa las mismas 1 000 imágenes que NH.</p>
       <p><b>Época 0:</b> corresponde a la red inicial sin entrenamiento, no a una proyección de píxeles originales. El tramo 0→1 permite comparar esa referencia con el primer estado entrenado. Se puede atenuar su dibujo de contexto para examinar cambios posteriores; seleccionar una imagen recupera todo su recorrido visible.</p>
       <p><b>Calidad:</b> NH₆ mide la fracción de vecinos de igual clase en 2D. Trust₁₀ mide preservación de vecindarios respecto de activaciones originales. La selección de vecinos del inspector se calcula en las activaciones originales.</p>
-      <table><tr><td>Exactitud final · base · prueba completa</td><td>${percent(base.test_accuracy)}</td></tr><tr><td>Exactitud final · dilatación · prueba completa</td><td>${percent(ref.test_accuracy)}</td></tr><tr><td>Observaciones visualizadas</td><td>1 000 / 10 000</td></tr></table>
-      <p><b>Límites:</b> la alineación regulariza el movimiento y puede atenuarlo. Distancias, áreas y curvas no son explicaciones causales. Las transiciones animadas interpolan posiciones: sus puntos intermedios no son estados del entrenamiento medidos. El refinamiento es un ensayo, no una mejora garantizada.</p>`;
+      <table><tr><td>Exactitud final · prueba completa</td><td>${percent(base.test_accuracy)}</td></tr><tr><td>Observaciones visualizadas</td><td>1 000 / 10 000</td></tr></table>
+      <p><b>Límites:</b> la alineación regulariza el movimiento y puede atenuarlo. Distancias, áreas y curvas no son explicaciones causales. Las transiciones animadas interpolan posiciones: sus puntos intermedios no son estados del entrenamiento medidos.</p>`;
   }
 
   boot();

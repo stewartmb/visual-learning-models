@@ -8,10 +8,11 @@
   <link rel="stylesheet" href="/static/style.css">
   <script defer src="/static/vendor/d3.v7.min.js"></script>
   <script defer src="/static/trails.js"></script>
+  <script defer src="/static/learning.js"></script>
   <script defer src="/static/explorer.js"></script>
 </head>
 <body>
-<div id="app" data-version="0.3.0">
+<div id="app" data-version="0.4.0">
   <header class="masthead">
     <div><p class="eyebrow"><span class="brand-mark"></span> VISUAL LEARNING MODELS / UTEC</p><h1>Cómo aprende una red<span class="title-dot">.</span></h1></div>
     <div class="masthead-meta"><button id="diagnostics-open" class="text-button">Diagnóstico</button><button id="help-open" class="text-button">Guía</button><button id="method-open" class="text-button">Método y fuentes</button></div>
@@ -27,7 +28,7 @@
         <button id="tab-t1" role="tab" aria-selected="true" aria-controls="chart-section" data-task="t1"><span>T1</span> Entre épocas</button>
         <button id="tab-t2" role="tab" aria-selected="false" aria-controls="chart-section" data-task="t2"><span>T2</span> Entre capas</button>
       </nav>
-      <label class="experiment-label"><span class="sr-only">Experimento</span><select id="experiment" aria-label="Experimento"><option value="base">Modelo base</option><option value="refined">Modelo con dilatación</option></select></label>
+      <span class="experiment-label">MLP · MNIST</span>
     </div>
     <div id="controls-scrim" hidden></div>
 
@@ -44,15 +45,22 @@
           <button id="clear-filters" class="reset-filters" disabled>Limpiar filtros</button>
           <p class="rail-note">El fondo conserva todas las clases.</p>
         </section>
-        <section class="rail-section"><h2>Trayectorias</h2>
+        <section id="comparison-controls" class="rail-section comparison-controls"><h2>¿Qué cambió?</h2>
+          <label class="check"><input id="compare-on" type="checkbox"><span>Comparar dos épocas</span></label>
+          <label class="field">Época de referencia A<select id="reference-epoch" aria-label="Época de referencia"></select></label>
+          <p id="comparison-direction" class="rail-note">B se elige en las miniaturas.</p>
+          <div id="transition-filters" class="transition-filters" role="group" aria-label="Cambios de clasificación"></div>
+          <p id="comparison-summary" class="rail-note"></p>
+        </section>
+        <section class="rail-section"><h2 id="trails-heading">Trayectorias</h2>
           <label class="field"><span class="sr-only">Estilo de trayectorias</span><select id="trail-style" aria-label="Estilo de trayectorias"><option value="bundled">Agrupadas</option><option value="straight">Rectas</option><option value="off">Ocultas</option></select></label>
           <label id="full-trails-control" class="field">Recorrido<select id="trail-scope"><option value="current">Hasta época activa</option><option value="full">Completo (0–20)</option></select></label>
           <label class="field range-label">Agrupamiento <output id="strength-value">45%</output><input id="strength" type="range" min="0" max="100" value="45"></label>
-          <label class="field range-label">Opacidad <output id="opacity-value">12%</output><input id="opacity" type="range" min="1" max="50" value="12"></label>
+          <label class="field range-label">Opacidad <output id="opacity-value">12%</output><input id="opacity" type="range" min="1" max="100" value="12"></label>
           <label id="dim-initial-control" class="check"><input id="dim-initial" type="checkbox"><span>Atenuar tramo 0→1</span></label>
           <label class="field speed-field">Velocidad<select id="speed"><option value="1800">Lenta</option><option value="1100" selected>Normal</option><option value="650">Rápida</option></select></label>
         </section>
-        <p id="quality-label" class="quality-note"></p>
+        <label class="check region-toggle"><input id="regions-on" type="checkbox" checked><span>Contexto de clases</span></label><p id="quality-label" class="quality-note"></p>
       </aside>
       <section id="chart-section" class="chart-section" role="tabpanel" aria-labelledby="tab-t1">
         <div class="map-toolbar"><h2 id="chart-title">Capa 4 · época 0</h2><div class="map-actions"><span id="visible-count" class="count-label" aria-live="polite"></span><div class="mode-switch" role="group" aria-label="Modo del ratón"><button id="mode-pan" aria-pressed="true">Mover</button><button id="mode-brush" aria-pressed="false">Seleccionar</button></div><button id="fit-focus" class="text-button" hidden>Acercar al filtro</button><button id="clear-selection" class="text-button" hidden>Quitar selección</button><button id="reset-view" class="text-button" hidden>Vista completa</button></div></div>
@@ -64,27 +72,32 @@
       </section>
 
       <aside id="inspector" class="inspector" aria-label="Detalles de la imagen">
-        <div class="inspector-heading"><h2>Inspección</h2><span id="preview-status">Vista previa</span></div>
-        <div id="inspector-empty"><p>Pasa sobre un punto para ver su imagen y predicción.</p><p>Haz clic para fijarlo y seguir su trayectoria.</p></div>
+        <div class="inspector-heading"><h2>Inspección</h2><span id="preview-status">Vista previa</span><button id="inspector-close" class="mobile-detail-close" aria-label="Cerrar detalle">×</button></div>
+        <div id="inspector-empty"><p>Pasa sobre un punto para ver su imagen y predicción. Haz clic para fijarlo.</p>
+          <div class="discovery-card"><span class="eyebrow">UNA PREGUNTA REAL</span><h3>¿Entrenar más siempre ayuda?</h3><p>De época 15 a 20 hay casos que mejoran y otros que empiezan a fallar.</p><button id="explore-learning">Investigar 15 → 20 <span>↗</span></button></div>
+        </div>
         <div id="inspector-detail" hidden>
           <div class="detail-top"><span id="sample-id" class="mono"></span><button id="unpin" class="text-button" hidden>Liberar</button></div>
           <div class="image-summary"><canvas id="digit-image" width="28" height="28" role="img" aria-label="Imagen del dígito seleccionado"></canvas><div class="prediction-line"><span>Real <b id="true-label"></b></span><span>Predicción <b id="pred-label"></b></span><span id="prediction-status"></span></div></div>
+          <div id="sample-comparison" class="sample-comparison" hidden></div>
           <h3 class="detail-label">Salida del modelo <span id="detail-epoch"></span></h3>
           <svg id="probability-bars" role="img" aria-label="Tres clases de mayor puntuación y clase verdadera"></svg>
           <p class="control-note">Top 3 + clase real · escala 0–100%.</p>
           <h3 class="detail-label">Predicción por época</h3><div id="prediction-history" class="prediction-history" aria-label="Historial de predicciones, solo lectura"></div>
-          <h3 class="detail-label">Vecinos originales <span id="neighbor-layer"></span></h3><div id="neighbors" class="neighbors"></div>
+          <h3 class="detail-label">Vecinos originales <span id="neighbor-layer"></span></h3><div id="neighbors" class="neighbors"></div><p id="neighbor-change" class="control-note"></p><button id="neighbor-links" class="text-button" aria-pressed="false" disabled>Conectar vecinos en el mapa</button>
         </div>
         <section id="gallery-section" class="gallery-section" hidden><div class="gallery-heading"><h3 id="gallery-title">Imágenes seleccionadas</h3><div><button id="gallery-prev" aria-label="Página anterior de imágenes">←</button><span id="gallery-page"></span><button id="gallery-next" aria-label="Página siguiente de imágenes">→</button></div></div><div id="gallery" class="gallery"></div></section>
-        <p class="inspector-note">Los números del mapa indican la posición central de cada clase, no regiones de decisión.</p>
+        <section class="evolution-section"><div class="evolution-heading"><h3 id="evolution-title">Evolución de la capa</h3><span>0–100%</span></div><svg id="evolution-chart" role="img" aria-label="Evolución de exactitud y vecindarios"></svg><p id="evolution-note" class="control-note"></p></section>
+        <button id="save-evidence" class="save-evidence">Guardar evidencia ↗</button><p id="evidence-status" class="control-note" role="status"></p>
+        <p class="inspector-note">Contornos: concentración de ejemplos de cada clase; no son fronteras de decisión. Vecinos calculados en activaciones, no en el mapa.</p>
       </aside>
     </main>
 
   </div>
 </div>
 
-<dialog id="diagnostics" class="diagnostic-dialog"><div class="dialog-heading"><p class="eyebrow">DIAGNÓSTICO</p><button class="dialog-close" aria-label="Cerrar diagnóstico">✕</button></div><h2>Confusiones y refinamiento</h2><p class="diagnostic-note">Filas: clase verdadera · columnas: predicción. Haz clic en una celda para recuperar sus imágenes.</p><div id="matrix-grid" class="matrix-grid"></div><p id="refinement-result" class="diagnostic-note"></p></dialog>
-<dialog id="help-dialog"><div class="dialog-heading"><p class="eyebrow">GUÍA DE EXPLORACIÓN</p><button class="dialog-close" aria-label="Cerrar guía">✕</button></div><h2>Sigue una imagen, encuentra un patrón.</h2><ol><li><b>Observa el conjunto.</b> En T1, las trayectorias se acumulan hasta la época activa: en época 0 solo hay puntos. En los controles de «Trayectorias», el recorrido completo permite comparar todas las épocas. En T2, las curvas conectan cuatro capas en una época.</li><li><b>Acerca y filtra.</b> Usa la rueda para zoom, arrastra para desplazar, o activa «Seleccionar región». Puedes combinar clases; el fondo tenue y los números conservan la ubicación del conjunto. «Acercar al filtro» ajusta la vista cuando lo necesites.</li><li><b>Comprueba los ejemplos.</b> Pasa sobre un punto para ver su imagen, etiqueta y predicción a la derecha. Haz clic para fijarlo y atenuar los demás. El inspector conserva su identidad al cambiar de estado.</li><li><b>Prueba el agrupamiento.</b> En los controles de «Trayectorias», compara trayectorias agrupadas y rectas para distinguir datos y dibujo.</li></ol><p>La forma indica acierto o error en la predicción final. El color siempre indica la clase verdadera.</p></dialog>
+<dialog id="diagnostics" class="diagnostic-dialog"><div class="dialog-heading"><p class="eyebrow">DIAGNÓSTICO</p><button class="dialog-close" aria-label="Cerrar diagnóstico">✕</button></div><h2>Confusiones del modelo</h2><p class="diagnostic-note">Filas: clase verdadera · columnas: predicción. Haz clic en una celda para recuperar sus imágenes.</p><div id="matrix-grid" class="matrix-grid single-model"></div></dialog>
+<dialog id="help-dialog"><div class="dialog-heading"><p class="eyebrow">GUÍA DE EXPLORACIÓN</p><button class="dialog-close" aria-label="Cerrar guía">✕</button></div><h2>Sigue una imagen, encuentra un patrón.</h2><ol><li><b>Observa el conjunto.</b> En T1, las trayectorias se acumulan hasta la época activa: en época 0 solo hay puntos. En los controles de «Trayectorias», el recorrido completo permite comparar todas las épocas. En T2, las curvas conectan cuatro capas en una época.</li><li><b>Acerca y filtra.</b> Usa la rueda para zoom, arrastra para desplazar, o activa «Seleccionar región». Puedes combinar clases; el fondo tenue y los números conservan la ubicación del conjunto. «Acercar al filtro» ajusta la vista cuando lo necesites.</li><li><b>Comprueba los ejemplos.</b> Pasa sobre un punto para ver su imagen, etiqueta y predicción a la derecha. Haz clic para fijarlo y atenuar los demás. El inspector conserva su identidad al cambiar de estado.</li><li><b>Prueba el agrupamiento.</b> En los controles de «Trayectorias», compara trayectorias agrupadas y rectas para distinguir datos y dibujo.</li></ol><p><b>Compara y comprueba:</b> activa «Comparar dos épocas», elige referencia A y usa las miniaturas para B. Filtra casos corregidos, nuevos errores o errores persistentes. Un círculo vacío marca A y el punto lleno marca B; las líneas unen posiciones medidas. Al fijar una imagen, revisa cuántos vecinos conserva y guarda la evidencia.</p><p>La forma indica acierto o error en la predicción final. El color siempre indica la clase verdadera.</p></dialog>
 <dialog id="method-dialog"><div class="dialog-heading"><p class="eyebrow">MÉTODO Y ALCANCE</p><button class="dialog-close" aria-label="Cerrar método">✕</button></div><h2>Los estados son reales. Las curvas los conectan.</h2><div id="method-content"></div><p><b>Referencias de diseño:</b> <a href="https://github.com/paolovasquezg/VisLearnModels" target="_blank" rel="noreferrer">Paolo Vásquez</a> · <a href="https://github.com/ricardoamiel/A-simple-Visual-Learning-Model-for-MNIST" target="_blank" rel="noreferrer">Ricardo Amiel</a> · <a href="https://webspace.science.uu.nl/~telea001/VisualAnalytics/NNHidden" target="_blank" rel="noreferrer">Rauber et al.</a></p></dialog>
 </body>
 </html>

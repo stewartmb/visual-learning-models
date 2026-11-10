@@ -48,11 +48,13 @@ def quality(original, projected, labels):
 def run(cache):
     out = ROOT / 'static/data'
     info = json.loads((cache / 'training.json').read_text())
+    info['experiments'] = {'base': info['experiments']['base']}
+    info.pop('intervention', None)
     samples = json.loads((out / 'samples.json').read_text())
     labels = np.array(samples['labels'])
     result = {'meta': info, 'samples': samples, 'experiments': {}}
     start = time.time()
-    for exp in ['base', 'refined']:
+    for exp in ['base']:
         acts = np.load(cache / f'{exp}-activations.npz')
         pred = [acts[f'prob_{e}'].argmax(1).tolist() for e in EPOCHS]
         probs = [np.round(acts[f'prob_{e}'].astype(np.float64), 5).tolist() for e in EPOCHS]

@@ -4,7 +4,7 @@ Fuente de las recomendaciones: el análisis exhaustivo HTML local `analisis_exha
 
 ## 0:00–1:00 · Preguntas, datos y unidad de análisis
 
-“Organizamos el trabajo en entendimiento, diagnóstico y refinamiento”, retomando la tríada señalada alrededor de 35:49. Explicar que cada punto es una imagen representada por sus activaciones; no una neurona. Mostrar que T1 fija capa y cambia época, mientras T2 fija época y compara capas.
+La entrega se centra en entendimiento y diagnóstico, relacionándolos con las finalidades de visualización explicadas alrededor de 35:49. Explicar que cada punto es una imagen representada por sus activaciones; no una neurona. Mostrar que T1 fija capa y cambia época, mientras T2 fija época y compara capas.
 
 Relacionar con What–Why–How (16:17–16:49; 29:24–30:08). MNIST, 1000 IDs fijos y diez clases. Entrenamiento y prueba separados.
 
@@ -24,9 +24,9 @@ El paper usa trayectorias agrupadas para evolución temporal y entre capas. Nues
 
 ## 3:10–4:20 · Diagnóstico con imágenes concretas
 
-Ir a época 20 y seleccionar clases 3 y 5; activar errores. Abrir la matriz base y pulsar real 5 → predicción 3: aparecen tres imágenes en la muestra.
+Ir a época 20 y seleccionar clases 3 y 5; activar errores. Abrir la matriz de confusión y pulsar real 5 → predicción 3: aparecen tres imágenes en la muestra.
 
-Hacer clic para inspeccionar MNIST #1393: etiqueta 5, predicción 3. La imagen tiene una forma ambigua; no se declara automáticamente que está mal etiquetada. Abrir «Historial y vecinos» para comparar los ejemplos originales. El profesor explicó la conexión entre confusión 3/5 e inspección de ejemplos en 41:04–41:25.
+Hacer clic para inspeccionar MNIST #1393: etiqueta 5, predicción 3. La imagen tiene una forma ambigua; no se declara automáticamente que está mal etiquetada. Revisar historial y vecinos originales en el panel derecho. El profesor explicó la conexión entre confusión 3/5 e inspección de ejemplos en 41:04–41:25.
 
 Recordar la recomendación alrededor de 49:40: investigar casos difíciles y robustez en lugar de eliminarlos para que el resultado se vea mejor.
 
@@ -34,13 +34,13 @@ Recordar la recomendación alrededor de 49:40: investigar casos difíciles y rob
 
 Conservar una imagen fijada y pasar a T2. Localizar sus cuatro posiciones y conexiones. Pasar sobre puntos de cada capa para actualizar los vecinos del inspector; hacer clic para fijar la imagen. La predicción sigue siendo la salida final, no una clasificación atribuida a cada capa.
 
-En época 20, NH de las capas base es aproximadamente 91.57%, 95.15%, 95.63% y 95.93%. Es una observación de este experimento/proyección, no una ley universal. Comparar diferencias de vecindad con ejemplos originales.
+En época 20, NH de las capas es aproximadamente 91.57%, 95.15%, 95.63% y 95.93%. Es una observación de este experimento/proyección, no una ley universal. Comparar diferencias de vecindad con ejemplos originales.
 
-## 5:20–6:30 · Evaluar el refinamiento
+## 5:20–6:30 · Comprobar la interpretación de las proyecciones
 
-La sugerencia del profesor en 42:51–43:19 incluye erosión/dilatación; no mostró un experimento ejecutado en esa grabación. Se ensayó dilatación 3×3 en 25% del entrenamiento, con prueba original y mismas condiciones iniciales.
+Contrastar un caso seleccionado con sus seis vecinos en activaciones originales. Explicar que NH mide mezcla de clases en 2D y trustworthiness preservación de vecindarios: ninguna es la exactitud del clasificador.
 
-Resultados finales en 10000 pruebas: base 97.80%, dilatación 97.30%, diferencia −0.50 puntos porcentuales. En la muestra visual: 12 errores corregidos y 18 nuevos errores, con 16 imágenes erróneas en ambos modelos. Mostrar matrices e imágenes afectadas. No concluir que la dilatación siempre es perjudicial a partir de una semilla.
+El modelo obtiene 97.80% en las 10000 imágenes de prueba y 97.20% en la muestra visual equilibrada de 1000 imágenes. Mostrar la matriz de confusión para identificar qué pares de clases fallan. Las distancias del gráfico y la longitud de una curva no prueban causalmente cómo aprendió la red.
 
 ## 6:30–7:20 · Demostrar el mantra
 
@@ -48,7 +48,7 @@ Overview: todas las imágenes/trayectorias. Zoom/filter: selección de clases, e
 
 ## 7:20–8:00 · Conclusión con límites
 
-Responder a la exigencia de sacar conclusiones de 55:06. La herramienta permite relacionar cambios de representación con imágenes y errores reales. La intervención ensayada no mejoró la exactitud final; se identifican ejemplos y clases para investigar. La proyección distorsiona, el agrupamiento guía la lectura y la animación interpola. Los gráficos ayudan a formular y comprobar hipótesis; no prueban causalidad por sí solos.
+Responder a la exigencia de sacar conclusiones de 55:06. La herramienta permite relacionar cambios de representación con imágenes y errores reales, identificar diferencias entre épocas y capas y examinar confusiones concretas. La proyección distorsiona, el agrupamiento guía la lectura y la animación interpola. Los gráficos ayudan a formular y comprobar hipótesis; no prueban causalidad por sí solos.
 
 ## Preguntas previsibles
 
@@ -58,3 +58,14 @@ Responder a la exigencia de sacar conclusiones de 55:06. La herramienta permite 
 - ¿Por qué no solo exactitud? Un valor global no muestra qué imágenes fallan ni cómo se representan.
 - ¿Se calculan vecinos en el gráfico? No: el inspector usa activaciones originales. NH y trustworthiness tienen funciones distintas.
 - ¿Se copió un trabajo previo? Se atribuyen decisiones de diseño publicadas; el código, entrenamiento, datos derivados y análisis de resultados son propios de esta implementación, con asistencia de IA.
+
+
+## Demostración nueva: una conclusión con evidencia
+
+Después del overview, pulsar **Investigar 15 → 20**. Explicar que los conteos se obtienen de predicciones medidas y etiquetas, no de la forma del mapa. Se corrigen 6 errores, aparecen 8 y persisten 20: 26→28 en la muestra. La exactitud de prueba completa sigue siendo otra evaluación.
+
+Elegir **Empiezan a fallar**, fijar MNIST #1182 (etiqueta 6): predicción 6→8. Conserva 1 de sus seis vecinos originales de capa 4; cinco cambian. La herramienta muestra la asociación con su representación, no demuestra que esos vecinos causaron la clasificación. Conectar vecinos para localizar sus posiciones y recuperar las imágenes. No borrar el caso difícil: enlazar con 49:40–49:56 del profesor.
+
+Abrir T2 conservando el ID para comprobar la representación por capa; el cambio de vecinos usa capa 1 como referencia. Distinguir activaciones, proyección y salida final. Guardar una evidencia que permita reconstruir lo mostrado. Es el recorrido de lo general al caso concreto explicado en 1:04:34–1:04:52 y responde a la exigencia de obtener conclusiones de 54:26–55:54.
+
+Las referencias de clase son paráfrasis del HTML de análisis; no se presentan como citas textuales inventadas.
