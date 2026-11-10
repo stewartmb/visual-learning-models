@@ -104,7 +104,16 @@
     });
     $('reference-layer').onchange=e=>{const layer=+e.target.value,old=state.referenceLayer;stop();state.referenceLayer=layer;state.detailLayer=state.detailLayer===old?layer:state.activeLayer;state.hover=null;lastInspectorKey='';renderAll();};
     $('save-evidence').onclick=saveEvidence;
-    $('inspector-close').onclick=()=>$('app').classList.add('detail-dismissed');
+    $('sample-find').onsubmit=e=>{
+      e.preventDefault();const query=$('sample-query').value.trim().replace(/^#/,''),i=/^\d+$/.test(query)?DATA.samples.ids.indexOf(+query):-1;
+      if(i<0){$('sample-find-status').textContent='Ese ID no pertenece a las 1 000 imágenes de esta muestra.';return;}
+      const reset=!included(i);
+      if(reset){state.classes.clear();state.errors=false;state.confusion=null;state.outcome=null;state.selected.clear();}
+      $('sample-find-status').textContent=reset?`Imagen #${query}. Se retiraron los filtros que la ocultaban.`:'';
+      pin(i,state.task==='t2'?state.activeLayer:state.layer);
+    };
+    $('inspector-close').onclick=()=>{$('app').classList.remove('search-open');$('app').classList.add('detail-dismissed');};
+    $('open-search').onclick=()=>{$('app').classList.remove('detail-dismissed');$('app').classList.add('search-open');$('sample-query').focus();};
     d3.select('#epoch-select').selectAll('option').data(EPOCHS).join('option').attr('value',e=>e).text(e=>e);
     $('epoch-select').onchange = e => {const index=EPOCHS.indexOf(+e.target.value);stop();setEpoch(index);};
     d3.select('#class-legend').selectAll('button').data(d3.range(10)).join('button')
@@ -311,7 +320,7 @@
     $('opacity-value').value = `${Math.round(shownOpacity*100)}%`;
     $('opacity').value=Math.round(shownOpacity*100);
     $('strength').disabled = !state.bundle || !state.trails||comparing();
-    $('opacity').disabled = !state.trails;
+    $('opacity').disabled = !state.trails&&!comparing();
     $('time-legend').hidden = comparing() || (temporal?(!state.fullTrails && epochIndex() === 0):layerComparing()||state.activeLayer===0);
     $('time-legend').firstElementChild.textContent=temporal?'Época 0':'Capa 1';
     $('time-legend-end').textContent = temporal?(state.fullTrails ? '20' : epoch()):state.activeLayer+1;
@@ -349,7 +358,7 @@
     $('clear-selection').hidden = state.selected.size === 0 && state.pinned===null;
     $('reset-view').hidden = state.transform.k === 1 && state.transform.x === 0 && state.transform.y === 0;
     $('fit-focus').hidden=false;
-    $('fit-focus').textContent=state.classes.size||state.errors||state.confusion||state.selected.size||state.outcome?'Encuadrar filtro':'Encuadrar estado';
+    $('fit-focus').textContent=focused()!==null?'Encuadrar imagen':state.classes.size||state.errors||state.confusion||state.selected.size||state.outcome?'Encuadrar filtro':'Encuadrar estado';
     $('fit-focus').title='Amplía y centra los casos mostrados.';
   }
 
@@ -361,9 +370,17 @@
       if(focused()!==null&&i!==focused())return;
       points.push([panel.xScale(p[0]),panel.yScale(p[1])]);
     }));
+    // Keep the selected image's true and predicted class anchors in view as spatial context.
+    const focus=focused();
+    if(focus!==null)entries.forEach(({frame,panel})=>{
+      for(const c of new Set([label(focus),prediction(focus)])){
+        const cohort=frame.filter((_,i)=>label(i)===c);
+        points.push([panel.xScale(d3.median(cohort,p=>p[0])),panel.yScale(d3.median(cohort,p=>p[1]))]);
+      }
+    });
     if(!points.length)return;
     const p=geometry.panels[0],xs=d3.extent(points,a=>a[0]),ys=d3.extent(points,a=>a[1]);
-    const k=Math.min(12,.9*Math.min(p.width/Math.max(12,xs[1]-xs[0]),p.height/Math.max(12,ys[1]-ys[0])));
+    const k=Math.min(12,(focus!==null?.8:.9)*Math.min(p.width/Math.max(12,xs[1]-xs[0]),p.height/Math.max(12,ys[1]-ys[0])));
     const transform=d3.zoomIdentity.translate(p.width/2,p.height/2).scale(Math.max(.7,k)).translate(-(xs[0]+xs[1])/2,-(ys[0]+ys[1])/2);
     svg.call(zoom.transform,transform);
   }
@@ -669,6 +686,7 @@
     makeTiles($('neighbors'),now);
     const baseLayer=layerComparing()?(l===state.referenceLayer?state.activeLayer:state.referenceLayer):0;
     const baseline=comparing()?record().neighbors[`${EPOCHS[state.reference]}_${l}`][i]:state.task==='t2'?record().neighbors[`${epoch()}_${baseLayer}`][i]:null;
+    renderNeighborComparison(baseline,now,l,baseLayer);
     $('sample-comparison').hidden=!comparing();
     $('sample-comparison').textContent=comparing()?`Predicción: ${record().predictions[state.reference][i]} → ${prediction(i)} · real ${label(i)}`:'';
     if(baseline){
@@ -679,6 +697,22 @@
     $('neighbor-links').disabled=state.pinned===null;
     $('neighbor-links').setAttribute('aria-pressed',String(state.neighborLinks));
     $('neighbor-links').textContent=state.neighborLinks?'Ocultar vínculos de vecinos':'Conectar vecinos en el mapa';
+  }
+
+  function renderNeighborComparison(before,now,layer,baseLayer){
+    const active=before!==null&&(comparing()?state.reference!==epochIndex():layer!==baseLayer);
+    $('neighbor-comparison').hidden=!active;if(!active)return;
+    $('neighbor-comparison-title').textContent=comparing()?'Vecinos por época':'Vecinos por capa';
+    const rows=[{name:comparing()?`Ép. ${EPOCHS[state.reference]}`:`Capa ${baseLayer+1}`,ids:before},{name:comparing()?`Ép. ${epoch()}`:`Capa ${layer+1}`,ids:now}];
+    const width=$('neighbor-comparison-chart').clientWidth||300,left=62,step=(width-left)/6;
+    const chart=d3.select('#neighbor-comparison-chart').attr('viewBox',`0 0 ${width} 72`).attr('aria-label',rows.map(r=>`${r.name}: vecinos de clases ${r.ids.map(label).join(', ')}`).join('. '));
+    const groups=chart.selectAll('g').data(rows).join('g').attr('transform',(_,j)=>`translate(0,${j*35})`);
+    groups.selectAll('text.row-name').data(r=>[r]).join('text').attr('class','row-name').attr('x',0).attr('y',20).text(r=>r.name);
+    groups.each(function(row){
+      const g=d3.select(this),cells=row.ids.map((i,k)=>({i,k}));
+      g.selectAll('rect').data(cells).join('rect').attr('x',d=>left+d.k*step).attr('y',3).attr('width',step-3).attr('height',26).attr('rx',2).attr('fill',d=>COLORS[label(d.i)]).attr('fill-opacity',.22);
+      g.selectAll('text.neighbor-class').data(cells).join('text').attr('class','neighbor-class').attr('x',d=>left+(d.k+.5)*step-1.5).attr('y',21).attr('text-anchor','middle').text(d=>label(d.i));
+    });
   }
 
   function renderGallery() {
@@ -753,7 +787,7 @@
       const cells=counts.flatMap((row,real)=>row.map((count,pred)=>({real,pred,count,value:count/100})));
       const m=DATA.meta.experiments[exp].history[epochIndex()];
       block.select('h3').text('Clasificación de dígitos MNIST');
-      block.select('p').text(`Época ${epoch()} · prueba completa: ${percent(m.test_accuracy)} (n=10 000)`);
+      block.select('p').text(`Matriz: 1 000 imágenes · exactitud ${percent(m.sample_accuracy)}. Prueba completa: ${percent(m.test_accuracy)} (n=10 000). Época ${epoch()}.`);
       const s=block.select('svg').attr('viewBox','0 0 290 285').attr('aria-label',`Matriz de confusión ${exp}, época ${epoch()}`);
       const color=d3.scaleSequential(d3.interpolatePurples).domain([0,1]);
       s.selectAll('rect.matrix-cell').data(cells).join('rect').attr('class','matrix-cell')
@@ -835,9 +869,9 @@
       else if(state.outcome&&state.outcome!=='steady')ids=d3.range(1000).filter(included);
     }
     const pairs=ids.map(i=>({i,a:screen(geometry.frames[state.reference][i],0),b:screen(geometry.frames[epochIndex()][i],0)}));
-    group.selectAll('line.comparison-link').data(state.trails?pairs:[],d=>d.i).join('line').attr('class','comparison-link')
+    group.selectAll('line.comparison-link').data(pairs,d=>d.i).join('line').attr('class','comparison-link')
       .attr('x1',d=>d.a[0]).attr('y1',d=>d.a[1]).attr('x2',d=>d.b[0]).attr('y2',d=>d.b[1])
-      .attr('stroke',d=>COLORS[label(d.i)]).attr('stroke-width',1.25).attr('stroke-opacity',state.compareOpacity)
+      .attr('stroke',d=>COLORS[label(d.i)]).attr('stroke-width',focused()!==null?2:1.25).attr('stroke-opacity',state.compareOpacity)
       .attr('stroke-dasharray','3 3');
     group.selectAll('circle.reference-point').data(pairs,d=>d.i).join('circle').attr('class','reference-point')
       .attr('data-sample',d=>d.i).attr('cx',d=>d.a[0]).attr('cy',d=>d.a[1]).attr('r',4.5)

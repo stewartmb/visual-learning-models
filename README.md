@@ -1,6 +1,6 @@
 # Cómo aprende una red
 
-Explorador de representaciones de una red neuronal para **Visual Learning Models · UTEC**. Versión **0.6.0**, preparada para revisar el diseño interactuando con datos reales.
+Explorador de representaciones de una red neuronal para **Visual Learning Models · UTEC**. Versión **0.7.0**, preparada para revisar el diseño interactuando con datos reales.
 
 **T1:** una capa fija, siete épocas y trayectorias agrupadas. **T2:** una época fija, un mapa grande con cuatro miniaturas de capa, comparación estática de dos capas y recorrido agrupado en un espacio compartido. Una imagen mantiene su identidad en todo el recorrido.
 
@@ -26,6 +26,8 @@ python scripts/export.py --output preview.html
 ```
 
 El HTML contiene los mismos datos, D3, imágenes y código que la aplicación Flask.
+
+La [guía de exposición](docs/presentation-guide.md) vincula cada hallazgo con acciones concretas y los cuatro criterios de la rúbrica. El buscador por ID del inspector permite reproducir los casos 1182 y 1393.
 
 ## Un recorrido para empezar
 
@@ -128,11 +130,9 @@ La validación incluye las 49 parejas de épocas, partición exhaustiva de trans
 ## Fuentes y atribución
 
 - Rauber, P. E.; Fadel, S. G.; Falcão, A. X.; Telea, A. C. (2017). [Visualizing the Hidden Activity of Artificial Neural Networks](https://webspace.science.uu.nl/~telea001/VisualAnalytics/NNHidden), especialmente sección 5.4.
-- Paolo Vásquez: [VisLearnModels](https://github.com/paolovasquezg/VisLearnModels). Precedente de paneles de capas conectados y curvas hacia centroides.
-- Ricardo Amiel: [A-simple-Visual-Learning-Model-for-MNIST](https://github.com/ricardoamiel/A-simple-Visual-Learning-Model-for-MNIST). Precedente de miniaturas, filtros e inspector.
 - [AlignedUMAP](https://umap-learn.readthedocs.io/en/latest/aligned_umap_basic_usage.html); [D3](https://d3js.org/); [MNIST mediante torchvision](https://docs.pytorch.org/vision/stable/generated/torchvision.datasets.MNIST.html).
 - Wattenberg, Viégas y Johnson: [How to Use t-SNE Effectively](https://distill.pub/2016/misread-tsne/).
 
-Se implementó código propio y se entrenaron modelos propios; no se adoptan como resultados propios las métricas de los precedentes. Los PDF proporcionados y la grabación de clase permanecen como referencias locales y no se redistribuyen en este repositorio.
+El código y el entrenamiento corresponden a esta implementación. Los PDF proporcionados y la grabación de clase permanecen como referencias locales y no se redistribuyen en este repositorio.
 
 Licencia MIT para el código propio. D3 conserva su licencia en `static/vendor/D3-LICENSE`. Los datos y las publicaciones conservan sus condiciones originales.

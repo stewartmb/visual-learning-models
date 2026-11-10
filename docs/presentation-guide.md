@@ -1,71 +1,276 @@
-# Guía inicial de exposición · ocho minutos
+# Guion de exposición · Visual Learning Models
 
-Fuente de las recomendaciones: el análisis exhaustivo HTML local `analisis_exhaustivo.html` de semana 12, clase 1. Los tiempos corresponden a la grabación; las referencias siguientes son paráfrasis salvo la expresión entre comillas.
+Doce diapositivas principales y dos anexos de respaldo. Duración orientativa: 10–12 minutos, incluyendo las acciones en vivo. Cada afirmación se vincula con una vista y un resultado del experimento.
 
-## 0:00–1:00 · Preguntas, datos y unidad de análisis
+## Preparación
 
-La entrega se centra en entendimiento y diagnóstico, relacionándolos con las finalidades de visualización explicadas alrededor de 35:49. Explicar que cada punto es una imagen representada por sus activaciones; no una neurona. Mostrar que T1 fija capa y cambia época, mientras T2 fija época y compara capas.
+1. Abrir la aplicación Flask en http://127.0.0.1:5123/ o el HTML interactivo sin conexión.
+2. Usar una ventana de escritorio amplia. Recargar para comenzar sin filtros, con T1, capa 4 y época 0.
+3. Abrir la presentación. El guion indica qué decir y qué mostrar. Las diapositivas conservan las capturas como respaldo de la demostración.
+4. Los IDs 1182 y 1393 se encuentran con el buscador del inspector. En ventana estrecha, abrir Controles para los selectores laterales.
 
-Relacionar con What–Why–How (16:17–16:49; 29:24–30:08). MNIST, 1000 IDs fijos y diez clases. Entrenamiento y prueba separados.
+## Recorrido resumido
 
-## 1:00–2:20 · Evolución entre épocas
+| Diapositiva | Qué se demuestra | Control o vista |
+|---|---|---|
+| 1 | Cómo aprende una red | Portada con un recorrido real entre capas. |
+| 2 | Una imagen, distintas representaciones | Punto, color de clase verdadera, forma de acierto/error, imagen original e inspector. |
+| 3 | Las clases se separan durante el entrenamiento | Los mismos 1000 IDs en la misma secuencia y los valores de NH en la curva derecha. |
+| 4 | La mayor mejora observada aparece al inicio | Exactitud de la muestra: 10,1%, 92,6% y 97,2%. NH en la misma cohorte. |
+| 5 | Las capas refinan una separación que ya existe | Dos mapas sin conexiones entre paneles, con escala común. NH por capa en la curva. |
+| 6 | Los vecinos del seis #1182 pasan a ser ochos | Dígito real 6, trayecto entre capas y filas de clases de sus seis vecinos originales. |
+| 7 | Ocho imágenes empiezan a fallar al seguir entrenando | Conteos 6 corregidas, 8 nuevos errores, 20 errores persistentes y 966 aciertos persistentes. |
+| 8 | El mismo seis cambia de acierto a error | Predicción 6 en época 15 y 8 en época 20, etiqueta real 6. Un vecino conservado de seis. |
+| 9 | El cinco #1393 mantiene un error difícil | Tres imágenes en la confusión 5/3, el dígito 1393, historial de predicción y vecinos originales. |
+| 10 | El mantra organiza la investigación | Overview, filtro/zoom y detalle, con mapa estable y galería de selección. |
+| 11 | Qué permiten afirmar las visualizaciones | Diferencia entre posiciones medidas y dibujo de las conexiones, datos del experimento y definiciones de métricas. |
+| 12 | La mejora global convive con errores individuales | Separación temporal, refinamiento por capas y cambio de errores, resumidos con cifras de la misma cohorte. |
 
-Abrir T1 en capa 4, época 0: solo aparecen puntos iniciales. Reproducir o elegir las miniaturas y mostrar cómo se acumulan segmentos hasta la época activa. En «Trayectorias → Recorrido», elegir recorrido completo para consultar el resumen de las siete instantáneas. La captura de una capa en distintos momentos sigue la indicación de 44:07.
+## 01. Cómo aprende una red
 
-En esta secuencia, NH pasa de 43.25% a 96.40%, y trustworthiness de 88.736% a 99.229%. Aclarar que NH describe vecindarios de clases en 2D y no es la exactitud de clasificación. No afirmar que toda representación no entrenada de MNIST debe verse mezclada.
+**Acción en pantalla.** Abrir la presentación. Tener la aplicación en T1, capa 4, época 0.
 
-Explicar la advertencia de 45:24–46:12: proyecciones independientes podían saltar. Se emplea AlignedUMAP con IDs compartidos; fijar una semilla por sí solo no alinearía los estados. La regularización también puede atenuar movimientos.
+**Evidencia que debe verse.** Portada con un recorrido real entre capas.
 
-## 2:20–3:10 · Por qué agrupamos las trayectorias
+**Qué decir.**
 
-En el panel izquierdo, alternar trayectorias rectas y agrupadas. Ajustar fuerza sin desplazar el mapa. Las líneas conectan la misma imagen, no imágenes vecinas. La fuerza solo cambia controles de dibujo. Las etiquetas ayudan a agrupar visualmente: la existencia de un haz no prueba separación aprendida.
+> Queremos entender qué cambia dentro de una red cuando aprende y qué pasa con los ejemplos que sigue confundiendo. Seguimos las mismas mil imágenes de MNIST durante siete instantáneas del entrenamiento y en cuatro capas. La exposición conecta cada hallazgo con una vista que podemos reproducir en la herramienta.
 
-El paper usa trayectorias agrupadas para evolución temporal y entre capas. Nuestra aproximación Bézier y el resumen en espacio compartido se atribuyen como adaptaciones; no se presenta CUBu como implementado.
+**Límite que hay que respetar.** Los resultados corresponden a este modelo y a esta cohorte.
 
-## 3:10–4:20 · Diagnóstico con imágenes concretas
+**Rúbrica.** Justificación del diseño y objetivo
 
-Ir a época 20 y seleccionar clases 3 y 5; activar errores. Abrir la matriz de confusión y pulsar real 5 → predicción 3: aparecen tres imágenes en la muestra.
+## 02. Una imagen, distintas representaciones
 
-Hacer clic para inspeccionar MNIST #1393: etiqueta 5, predicción 3. La imagen tiene una forma ambigua; no se declara automáticamente que está mal etiquetada. Revisar historial y vecinos originales en el panel derecho. El profesor explicó la conexión entre confusión 3/5 e inspección de ejemplos en 41:04–41:25.
+**Acción en pantalla.** T2, Explorar, época 20. Pasar el cursor por un punto y después hacer clic. Liberar la selección.
 
-Recordar la recomendación alrededor de 49:40: investigar casos difíciles y robustez en lugar de eliminarlos para que el resultado se vea mejor.
+**Evidencia que debe verse.** Punto, color de clase verdadera, forma de acierto/error, imagen original e inspector.
 
-## 4:20–5:20 · Evolución entre capas
+**Qué decir.**
 
-Conservar una imagen fijada y pasar a T2. Cambiar de capa con las miniaturas y seguir la trayectoria numerada de la imagen fijada. Usar Comparar para ver dos capas con selección enlazada y contrastar sus vecinos originales. Recorrido permite resumir las trayectorias en un mismo mapa. La predicción sigue siendo la salida final, no una clasificación atribuida a cada capa.
+> Cada punto representa una imagen según las activaciones que produce en una capa. El color mantiene su clase verdadera en todas las vistas. Un triángulo señala que la salida final del modelo se equivoca. Los ejes son dimensiones de la proyección. Al pasar el cursor recuperamos la imagen y al hacer clic fijamos su identidad. Así conectamos el resumen visual con el dato original.
 
-En época 20, NH de las capas es aproximadamente 91.57%, 95.15%, 95.63% y 95.93%. Es una observación de este experimento/proyección, no una ley universal. Comparar diferencias de vecindad con ejemplos originales.
+**Límite que hay que respetar.** El punto no es una neurona. Los contornos son concentración estimada de clases, no fronteras de decisión.
 
-## 5:20–6:30 · Comprobar la interpretación de las proyecciones
+**Rúbrica.** Claridad de marcas, canales e interacción
 
-Contrastar un caso seleccionado con sus seis vecinos en activaciones originales. Explicar que NH mide mezcla de clases en 2D y trustworthiness preservación de vecindarios: ninguna es la exactitud del clasificador.
+**Conexión con la clase.** What–Why–How, 16:17–16:49. Inspección de imágenes y confusión 3/5, 41:04–41:25. Paráfrasis del análisis HTML de la clase.
 
-El modelo obtiene 97.80% en las 10000 imágenes de prueba y 97.20% en la muestra visual equilibrada de 1000 imágenes. Mostrar la matriz de confusión para identificar qué pares de clases fallan. Las distancias del gráfico y la longitud de una curva no prueban causalmente cómo aprendió la red.
+## 03. Las clases se separan durante el entrenamiento
 
-## 6:30–7:20 · Demostrar el mantra
+**Acción en pantalla.** T1, capa fija 4. Elegir trayectorias Ocultas. Alternar miniaturas de época 0 y 20. Mantener Vista completa para conservar escala.
 
-Overview: todas las imágenes/trayectorias. Zoom/filter: selección de clases, errores y una región. Details: galería, ID fijo, probabilidades e historial. Conectar con el recorrido global → individual de 1:04:34–1:04:52.
+**Evidencia que debe verse.** Los mismos 1000 IDs en la misma secuencia y los valores de NH en la curva derecha.
 
-## 7:20–8:00 · Conclusión con límites
+**Qué decir.**
 
-Responder a la exigencia de sacar conclusiones de 55:06. La herramienta permite relacionar cambios de representación con imágenes y errores reales, identificar diferencias entre épocas y capas y examinar confusiones concretas. La proyección distorsiona, el agrupamiento guía la lectura y la animación interpola. Los gráficos ayudan a formular y comprobar hipótesis; no prueban causalidad por sí solos.
+> Primero fijamos la capa 4 y comparamos la red inicial con la época 20. La nube inicial mezcla más las clases. Después aparecen regiones mucho más definidas. Lo contrastamos con NH, la proporción de vecinos de igual clase en el mapa: pasa de 43,3 a 96,4 por ciento. Cambian las representaciones de las mismas imágenes. Los filtros no recalculan el mapa y ambos estados comparten escala.
 
-## Preguntas previsibles
+**Límite que hay que respetar.** NH mide vecindarios en 2D. No equivale a exactitud y puede verse afectado por la proyección.
 
-- ¿Por qué el color verdadero? Permite evaluar mezcla entre clases conocidas sin cambiar su significado entre vistas.
-- ¿Por qué no usar tamaño para confianza? Se reserva el punto como unidad uniforme; las probabilidades se comparan con barras de escala común.
-- ¿Por qué curvas y miniaturas? Las curvas resumen correspondencias; las miniaturas permiten comparar estados sin depender de recordar una animación.
-- ¿Por qué no solo exactitud? Un valor global no muestra qué imágenes fallan ni cómo se representan.
-- ¿Se calculan vecinos en el gráfico? No: el inspector usa activaciones originales. NH y trustworthiness tienen funciones distintas.
-- ¿Se copió un trabajo previo? Se atribuyen decisiones de diseño publicadas; el código, entrenamiento, datos derivados y análisis de resultados son propios de esta implementación, con asistencia de IA.
+**Rúbrica.** Hallazgo de formación y separación de grupos, T1
 
+**Conexión con la clase.** Capturar una capa en distintos momentos, 43:51–44:31. Paráfrasis del análisis HTML.
 
-## Demostración nueva: una conclusión con evidencia
+## 04. La mayor mejora observada aparece al inicio
 
-Después del overview, pulsar **Investigar 15 → 20**. Explicar que los conteos se obtienen de predicciones medidas y etiquetas, no de la forma del mapa. Se corrigen 6 errores, aparecen 8 y persisten 20: 26→28 en la muestra. La exactitud de prueba completa sigue siendo otra evaluación.
+**Acción en pantalla.** T1, capa 4. Consultar épocas 0, 1 y 20 en las miniaturas y pasar por la curva de Separación y aciertos.
 
-Elegir **Empiezan a fallar**, fijar MNIST #1182 (etiqueta 6): predicción 6→8. Conserva 1 de sus seis vecinos originales de capa 4; cinco cambian. La herramienta muestra la asociación con su representación, no demuestra que esos vecinos causaron la clasificación. Conectar vecinos para localizar sus posiciones y recuperar las imágenes. No borrar el caso difícil: enlazar con 49:40–49:56 del profesor.
+**Evidencia que debe verse.** Exactitud de la muestra: 10,1%, 92,6% y 97,2%. NH en la misma cohorte.
 
-Abrir T2 conservando el ID para comprobar la representación por capa; el cambio de vecinos usa capa 1 en Explorar o la otra capa visible en Comparar. Distinguir activaciones, proyección y salida final. Guardar una evidencia que permita reconstruir lo mostrado. Es el recorrido de lo general al caso concreto explicado en 1:04:34–1:04:52 y responde a la exigencia de obtener conclusiones de 54:26–55:54.
+**Qué decir.**
 
-Las referencias de clase son paráfrasis del HTML de análisis; no se presentan como citas textuales inventadas.
+> La primera época contiene el mayor salto entre las instantáneas guardadas. La exactitud de estas mil imágenes pasa de 10,1 a 92,6 por ciento y llega a 97,2 al final. El avance posterior es más pequeño. Mostramos exactitud junto a NH para separar el comportamiento del clasificador de la organización de su representación proyectada.
+
+**Límite que hay que respetar.** Las instantáneas están espaciadas de forma desigual. No interpretamos la pendiente como una velocidad continua del aprendizaje.
+
+**Rúbrica.** Hallazgo sobre comportamiento del aprendizaje, interacción de consulta
+
+## 05. Las capas refinan una separación que ya existe
+
+**Acción en pantalla.** T2, época fija 20. Comparar. Referencia A: capa 1. Elegir capa 4 en las miniaturas. Quitar selección si la hay.
+
+**Evidencia que debe verse.** Dos mapas sin conexiones entre paneles, con escala común. NH por capa en la curva.
+
+**Qué decir.**
+
+> Ahora mantenemos fija la época y cambiamos la capa. La primera capa ya organiza bastante bien las clases. En la cuarta vemos cambios de forma y vecindad, acompañados por un NH que pasa de 91,6 a 95,9 por ciento. La vista permite comparar ambas sin recordar una animación. No afirmamos que cada capa mejore siempre cualquier red. Describimos el patrón medido en este experimento.
+
+**Límite que hay que respetar.** Estos mapas pertenecen a la misma secuencia T2. No comparamos sus coordenadas absolutas con las de T1.
+
+**Rúbrica.** Cumplimiento de T2 y hallazgo de refinamiento
+
+## 06. Los vecinos del seis #1182 pasan a ser ochos
+
+**Acción en pantalla.** En T2, Comparar capas 1 y 4. Buscar ID 1182. Activar Conectar vecinos en el mapa y revisar Vecinos por capa. Elegir capa 2 para comprobar que allí ya aparecen seis ochos. Volver a capa 4, pulsar Explorar, elegir Agrupadas y Encuadrar imagen para mostrar el recorrido numerado.
+
+**Evidencia que debe verse.** Dígito real 6, trayecto entre capas y filas de clases de sus seis vecinos originales.
+
+**Qué decir.**
+
+> Bajamos al caso concreto. Esta imagen está etiquetada como seis y la salida final predice ocho. En la capa 1, tres de sus seis vecinos originales son seises, dos son ochos y uno es nueve. Desde la capa 2, los seis vecinos son ochos. Estos vecinos se calculan en las activaciones originales de la muestra, no por cercanía en el dibujo. El caso muestra por qué una mejora global de separación puede coexistir con una representación problemática de una imagen.
+
+**Límite que hay que respetar.** La asociación entre vecindario y error es exploratoria. No prueba que los vecinos hayan causado la predicción.
+
+**Rúbrica.** Insight entre capas y detalle verificable
+
+**Conexión con la clase.** Relacionar visualización con ejemplos originales, 41:04–41:25. No eliminar casos difíciles, 49:40–49:56. Paráfrasis del HTML.
+
+## 07. Ocho imágenes empiezan a fallar al seguir entrenando
+
+**Acción en pantalla.** T1. Pulsar Investigar 15 a 20, visible al liberar la imagen. También se puede activar Comparar dos épocas, referencia A época 15 y miniatura B época 20.
+
+**Evidencia que debe verse.** Conteos 6 corregidas, 8 nuevos errores, 20 errores persistentes y 966 aciertos persistentes.
+
+**Qué decir.**
+
+> Comparamos las predicciones de época 15 y 20 contra la etiqueta verdadera. Se corrigen seis imágenes, ocho empiezan a fallar y veinte siguen erradas. Por eso los errores de la muestra pasan de veintiséis a veintiocho. Las otras novecientas sesenta y seis permanecen correctas. Los cuatro grupos cubren exactamente las mil imágenes. La media final por sí sola oculta estos cambios de identidad.
+
+**Límite que hay que respetar.** El resultado se refiere a la cohorte visual. En las diez mil imágenes de prueba la exactitud pasa de 97,62% a 97,80%. No concluimos que entrenar más empeore siempre el modelo.
+
+**Rúbrica.** Insight temporal con conteos exhaustivos, T1
+
+## 08. El mismo seis cambia de acierto a error
+
+**Acción en pantalla.** En el comparador 15/20 elegir Empiezan a fallar. Buscar 1182 y pulsar Encuadrar imagen. Consultar historial, Vecinos por época y vecinos originales. Guardar evidencia si se desea.
+
+**Evidencia que debe verse.** Predicción 6 en época 15 y 8 en época 20, etiqueta real 6. Un vecino conservado de seis.
+
+**Qué decir.**
+
+> El seis que vimos entre capas también explica uno de los nuevos errores. En época 15 el modelo acierta y en época 20 predice ocho. Conserva solo uno de sus seis vecinos originales de la capa 4. Antes cinco vecinos eran seises y uno era ocho. Al final los seis son ochos. La herramienta conecta la transición de clasificación con el historial y con las imágenes reales de sus vecinos.
+
+**Límite que hay que respetar.** Un cambio de vecindario acompaña el cambio de predicción, pero no establece causalidad.
+
+**Rúbrica.** Vinculación de T1 con T2 y evidencia por identidad
+
+## 09. El cinco #1393 mantiene un error difícil
+
+**Acción en pantalla.** T1, época 20, desactivar Comparar dos épocas. Abrir Diagnóstico. Pulsar la celda real 5 y predicción 3. Buscar ID 1393.
+
+**Evidencia que debe verse.** Tres imágenes en la confusión 5/3, el dígito 1393, historial de predicción y vecinos originales.
+
+**Qué decir.**
+
+> También encontramos errores que no desaparecen con el progreso global. La celda de cinco predicho como tres contiene tres imágenes de la muestra. En la imagen 1393, la predicción es tres desde la época 1 hasta la 20. Al inspeccionar sus seis vecinos finales, todos pertenecen a la clase tres. Revisamos su forma y su contexto, conservando el caso en el análisis.
+
+**Límite que hay que respetar.** Una forma ambigua no demuestra que la etiqueta sea incorrecta.
+
+**Rúbrica.** Diagnóstico, patrones persistentes y detalles a demanda
+
+**Conexión con la clase.** Confusión 3/5 con recuperación de la imagen, 41:04–41:25. Investigar los casos difíciles antes de eliminarlos, 49:40–49:56. Paráfrasis del HTML.
+
+## 10. El mantra organiza la investigación
+
+**Acción en pantalla.** Limpiar filtros y selección. Mostrar el conjunto. Filtrar clases 6 y 8 y pulsar Encuadrar filtro. Activar Seleccionar y arrastrar una región. Revisar galería e inspeccionar una imagen.
+
+**Evidencia que debe verse.** Overview, filtro/zoom y detalle, con mapa estable y galería de selección.
+
+**Qué decir.**
+
+> El recorrido empieza con toda la cohorte. Después reducimos la pregunta con clases, errores, zoom o selección de una región. Finalmente recuperamos imágenes, predicciones, historial y vecinos originales. Hover permite explorar sin atenuar el conjunto. Clic fija el caso. En T2 podemos recorrer capas mediante animación o compararlas estáticamente.
+
+**Límite que hay que respetar.** Filtrar conserva las coordenadas y una referencia tenue del conjunto.
+
+**Rúbrica.** Mantra, interacción, animación y claridad
+
+**Conexión con la clase.** Recorrido global hacia ejemplos individuales, 1:04:34–1:04:52. Paráfrasis de la guía HTML.
+
+## 11. Qué permiten afirmar las visualizaciones
+
+**Acción en pantalla.** Abrir Método y fuentes para revisar modelo, muestra, proyección y límites. Alternar trayectorias Agrupadas y Rectas en una selección.
+
+**Evidencia que debe verse.** Diferencia entre posiciones medidas y dibujo de las conexiones, datos del experimento y definiciones de métricas.
+
+**Qué decir.**
+
+> Usamos posición para similitud proyectada y color para clase verdadera. Las miniaturas y la comparación estática complementan la animación. AlignedUMAP enlaza los mismos IDs y reduce saltos entre estados. La alineación también puede atenuar cambios. El agrupamiento modifica la forma de las curvas y usa etiquetas para ordenar el dibujo. Por eso defendemos hallazgos con predicciones, imágenes y vecinos originales, además de la proyección. T1 y T2 usan secuencias de proyección diferentes. El NH de la misma capa y época puede variar entre ambas porque depende de la proyección.
+
+**Límite que hay que respetar.** NH es mezcla por clase, trustworthiness es preservación de vecindarios y exactitud evalúa la salida final. Ninguna curva demuestra causalidad.
+
+**Rúbrica.** Justificación de colores, método, transiciones, layout y límites
+
+**Conexión con la clase.** Estabilidad de las proyecciones, 45:24–46:12. Obtener conclusiones de la visualización, 54:26–55:54. Paráfrasis del HTML.
+
+## 12. La mejora global convive con errores individuales
+
+**Acción en pantalla.** Volver al caso 1182 o mantener la diapositiva de síntesis. Cerrar con la evidencia, no con una promesa de calificación.
+
+**Evidencia que debe verse.** Separación temporal, refinamiento por capas y cambio de errores, resumidos con cifras de la misma cohorte.
+
+**Qué decir.**
+
+> La clase se separa mejor durante el entrenamiento y las capas refinan su organización. Aun así, algunas imágenes empiezan a fallar y otras conservan errores difíciles. El aporte de la visualización consiste en poder recorrer estas diferencias y comprobar cada caso. Cada conclusión de esta presentación se puede reconstruir con una época, una capa, un filtro o un ID en la herramienta.
+
+**Límite que hay que respetar.** Un modelo, un dataset y una cohorte equilibrada. No generalizamos los hallazgos a todas las redes.
+
+**Rúbrica.** Cierre con insights y evidencia reproducible
+
+## 13. Rúbrica y evidencia observable
+
+**Acción en pantalla.** Reserva para preguntas. Recorrer la matriz y abrir la evidencia correspondiente si el profesor la solicita.
+
+**Evidencia que debe verse.** Los cuatro criterios recibidos: 4, 4, 4 y 8 puntos.
+
+**Qué decir.**
+
+> La validación organiza la evidencia disponible por criterio. No asignamos una nota: la decisión corresponde al profesor.
+
+**Límite que hay que respetar.** El cumplimiento técnico y la evidencia no garantizan una calificación.
+
+**Rúbrica.** Trazabilidad completa de la rúbrica
+
+## 14. Datos, método y reproducción
+
+**Acción en pantalla.** Reserva técnica. Abrir Método y fuentes o los archivos de datos y el código de entrenamiento.
+
+**Evidencia que debe verse.** MNIST, particiones 50000/10000/10000, MLP, siete checkpoints, 1000 IDs y fuentes científicas.
+
+**Qué decir.**
+
+> El experimento entrena un MLP de cuatro capas ocultas de 128 unidades con ReLU y Adam. La semilla es 42. Conservamos entrenamiento, validación y prueba separados. Flask sirve datos precalculados y D3 construye la visualización. El proyecto incluye nodos, aristas de identidad, configuración y pruebas. La tarea permite asistencia de IA.
+
+**Límite que hay que respetar.** Solo se implementa MNIST. No se reclama el beneficio opcional de varios datasets.
+
+**Rúbrica.** Requerimientos técnicos y fuentes
+
+## Validación de la rúbrica recibida
+
+| Criterio | Máximo | Evidencia que se muestra | Demostración |
+|---|---:|---|---|
+| Claridad, interacción y animación | 4 | Clases consistentes, formas, leyendas, escala común, hover, clic, filtros y reproducción | Diapositivas 2, 3, 5 y 10; reproducir épocas/capas en la aplicación |
+| Hallazgos analíticos | 4 | Formación de grupos, refinamiento por capas, cambios de errores y dos imágenes concretas | Diapositivas 3–9; buscar 1182 y 1393 |
+| Justificación del diseño | 4 | Posición/color/forma, AlignedUMAP, comparación estática, detalle a demanda y límites | Diapositivas 2, 10 y 11; Método y fuentes |
+| Cumplimiento de T1 y T2 | 8 | Capa fija al recorrer épocas y época fija al recorrer capas, correspondencias por ID | Diapositivas 3–8; miniaturas, Comparar y Recorrido |
+
+Los máximos suman 20 puntos. Esta tabla documenta evidencia disponible; la calificación corresponde al profesor.
+
+## Respuestas para preguntas frecuentes
+
+**¿Qué son los ejes?** Dos dimensiones de una proyección de activaciones. No son píxeles ni neuronas concretas. La cercanía es una aproximación a relaciones multidimensionales.
+
+**¿Por qué AlignedUMAP?** Relaciona los mismos IDs entre estados para regularizar su movimiento. La alineación facilita comparar, pero puede atenuar cambios y no elimina la distorsión. Es una decisión de implementación; el profesor no exigió específicamente AlignedUMAP.
+
+**¿Los contornos delimitan la clase predicha?** No. Describen concentración estimada por clase verdadera en 2D. Los puntos aislados y las confusiones permanecen visibles.
+
+**¿Cada capa predice un dígito distinto?** La predicción del inspector corresponde siempre a la salida final del modelo en la época activa. Las capas ocultas muestran representaciones y vecindarios, no clasificadores entrenados por capa.
+
+**¿Por qué el seis tiene una puntuación cercana a 100% para ocho?** Es la salida softmax del modelo. Una puntuación alta puede acompañar un error y no demuestra calibración. La interfaz redondea los porcentajes.
+
+**¿De dónde salen los vecinos?** De las activaciones originales, dentro de la cohorte visual fija de 1 000 imágenes. La proyección solo sitúa sus marcas en el mapa.
+
+**¿Qué son las aristas?** Correspondencias entre estados consecutivos de la misma imagen. No son pesos entre neuronas ni una red social.
+
+**¿Por qué suben los errores de la muestra y mejora la prueba completa?** Evalúan cohortes distintas. Entre épocas 15 y 20, la muestra pasa de 26 a 28 errores, mientras la prueba completa pasa de 97,62% a 97,80% de exactitud. No se intercambian denominadores.
+
+**¿Se implementaron varios datasets?** Solo MNIST. No se reclama el beneficio opcional de más datasets.
+
+## Fuentes
+
+- Datos medidos: `static/data/dataset.json`, configuración en `static/data/manifest.json` y código de entrenamiento del proyecto.
+- Recomendaciones del profesor: análisis exhaustivo HTML local `analisis_exhaustivo.html` de semana 12, clase 1. Los tiempos son referencias a la grabación y las formulaciones son paráfrasis.
+- Rauber, Fadel, Falcão y Telea (2017), [Visualizing the Hidden Activity of Artificial Neural Networks](https://webspace.science.uu.nl/~telea001/VisualAnalytics/NNHidden), sección 5.4.
+- [Documentación de AlignedUMAP](https://umap-learn.readthedocs.io/en/latest/aligned_umap_basic_usage.html).
+- Rúbrica proporcionada en la conversación por el estudiante: 4 + 4 + 4 + 8.
+
+Las transiciones animadas interpolan estados medidos. La forma de una curva, la separación visual o un cambio de vecindario no prueban causalidad.

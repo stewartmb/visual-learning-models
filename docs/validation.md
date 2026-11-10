@@ -68,3 +68,14 @@ Resultado: 4 pruebas Python de integridad y 8 pruebas Node de transiciones y cur
 La comprobación de T2 cubre overview limpio sin conexiones globales, 1000 IDs por capa, posiciones estables al filtrar, hover sin atenuación ni conexiones añadidas, trayectoria fijada hasta la capa activa, ausencia de segmentos antes de capa 1, persistencia de identidad al cambiar de capa y reproducción hasta la capa 4. La comparación A/B conserva los mismos 1000 IDs en cada mapa, unidades X/Y iguales y escala común entre paneles. Se comprueba énfasis enlazado, contraste de seis vecinos originales con la referencia elegida y metadatos de capas y vecinos en la evidencia descargada. El resumen agrupado usa un espacio compartido. A 390 píxeles los dos mapas se apilan sin desplazamiento horizontal.
 
 Se revisaron capturas de Explorar, Comparar, Recorrido y el caso MNIST #1182, además del resultado en el navegador integrado a 772 píxeles. Estas comprobaciones verifican integridad y comportamiento, no constituyen un estudio de usabilidad.
+
+
+## Hallazgos, rúbrica y exposición 0.7.0
+
+La rúbrica recibida concentra 4 puntos en claridad/interacción/animación, 4 en insight, 4 en justificación y 8 en T1/T2. La guía de exposición describe una acción observable por afirmación. No se asigna una nota.
+
+Se revisaron capturas de las vistas y catorce diapositivas. La revisión retiró conexiones globales del overview entre capas, conservó una comparación A/B sin cables, añadió búsqueda de IDs y dos filas de vecinos originales, e hizo que el encuadre de una imagen conserve referencias de su clase real y predicha. La matriz distingue las evaluaciones sobre 1000 y 10000 imágenes. La comparación directa mantiene conexiones A/B aunque se ocultaran anteriormente las trayectorias acumuladas.
+
+El caso 1182 tiene vecinos de clases 6,8,6,8,6,9 en capa 1 y seis ochos desde capa 2, en época 20. La prueba de navegador verifica esas clases contra los datos originales. En épocas 15/20 de capa 4 pasa de predicción 6 a 8 y conserva un vecino de seis. El caso 1393 conserva predicción 3 desde época 1, con clase verdadera 5. Los cuatro grupos de transición suman 1000 y los conteos 6/8/20/966 corresponden a la muestra, independientemente de la mejora de prueba completa.
+
+Las pruebas de integridad y los recorridos de navegador pasan en aplicación y HTML sin conexión. También se revisa la presentación sin conexión: 14 imágenes completas, navegación por teclado, notas y ausencia de solicitudes externas. Las cifras se contrastaron con el JSON del experimento. Las conclusiones siguen siendo descriptivas y no causales.

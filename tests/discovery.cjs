@@ -15,7 +15,7 @@ const output=path.resolve(process.env.QA_OUTPUT||'test-results/discovery');fs.mk
  await page.uncheck('#compare-on');assert.equal(await page.evaluate(()=>VLM.getState().compare),false);
  await epoch(15);
  const oldPositions=await page.locator('.point').evaluateAll(es=>Object.fromEntries(es.map(e=>[e.dataset.sample,[e.transform.baseVal.consolidate().matrix.e,e.transform.baseVal.consolidate().matrix.f]])));
- await page.click('#explore-learning');await sameBox();
+ await page.selectOption('#trail-style','off');await page.click('#explore-learning');await sameBox();
  assert.equal(await page.evaluate(()=>VLM.getState().compare),true);
  assert.equal(await page.evaluate(()=>VLM.getState().reference),5);
  assert.match(await page.locator('#comparison-summary').innerText(),/26 → 28 errores/);

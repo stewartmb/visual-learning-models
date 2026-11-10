@@ -20,9 +20,16 @@ const output=path.resolve(process.env.QA_OUTPUT||'test-results');fs.mkdirSync(ou
  await page.locator('#class-legend button').nth(5).click();assert.equal(await page.locator('.point[pointer-events="auto"]').count(),100);
  assert.deepEqual(await positions(),before,'Filtering must not move remaining examples');await page.click('#clear-filters');
  await page.locator(`.point[data-sample="${index}"]`).dispatchEvent('mouseenter');assert.equal(await pixels(),0,'Hover must not add visual clutter');
- await page.locator(`.point[data-sample="${index}"]`).dispatchEvent('click');
+ await page.fill('#sample-query','1182');await page.click('#sample-find button');
+ assert.equal(await page.evaluate(()=>VLM.getState().pinned),index,'Visible ID search must locate the reproducible case');
+ const firstNeighbors=data.experiments.base.neighbors['20_0'][index].map(i=>String(data.samples.labels[i]));
+ const finalNeighbors=data.experiments.base.neighbors['20_3'][index].map(i=>String(data.samples.labels[i]));
+ assert.deepEqual(await page.locator('#neighbor-comparison-chart text.neighbor-class').allTextContents(),[...firstNeighbors,...finalNeighbors]);
  assert.ok(await pixels()>0);assert.equal(await page.locator('.layer-waypoint').count(),3);
  assert.deepEqual(await page.locator('.layer-waypoint text').allTextContents(),['1','2','3']);
+ await page.click('#fit-focus');
+ const anchors=await page.locator('.class-reference text').allTextContents();
+ assert.ok(anchors.includes('6')&&anchors.includes('8'),'Framing a selected case must retain its true and predicted class context');
  await layer(2);assert.equal(await page.evaluate(()=>VLM.getState().pinned),index);
  assert.equal(await page.locator('.layer-waypoint').count(),1,'No future layer waypoints');
  assert.match(await page.locator('#neighbor-layer').innerText(),/capa 2/);
@@ -51,6 +58,7 @@ const output=path.resolve(process.env.QA_OUTPUT||'test-results');fs.mkdirSync(ou
  const left=data.experiments.base.neighbors['20_1'][index],right=data.experiments.base.neighbors['20_3'][index];
  const retained=right.filter(i=>left.includes(i)).length;
  assert.match(await page.locator('#neighbor-change').innerText(),new RegExp(`Conserva ${retained}/6 vecinos respecto a capa 2`));
+ assert.deepEqual(await page.locator('#neighbor-comparison-chart text.row-name').allTextContents(),['Capa 2','Capa 4']);
  await page.click('#neighbor-links');assert.equal(await page.locator('.neighbor-ring').count(),12);
  const pending=page.waitForEvent('download');await page.click('#save-evidence');const download=await pending;
  const file=output+'/layers-evidence.html';await download.saveAs(file);
@@ -71,6 +79,7 @@ const output=path.resolve(process.env.QA_OUTPUT||'test-results');fs.mkdirSync(ou
  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(200);
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth)<=390);
  assert.ok((await page.locator('#plot-wrap').boundingBox()).height>450);
+ await page.click('#open-search');await page.fill('#sample-query','1182');await page.click('#sample-find button');assert.match(await page.locator('#sample-id').innerText(),/1182/);await page.click('#inspector-close');
  await page.click('[data-layer-view="compare"]');await page.waitForTimeout(150);
  const clips=await page.locator('clipPath rect').evaluateAll(es=>es.map(e=>({x:+e.getAttribute('x'),y:+e.getAttribute('y')})));
  assert.ok(clips[1].y>clips[0].y,'Narrow comparison stacks two maps without horizontal scrolling');

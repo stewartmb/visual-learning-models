@@ -1,6 +1,6 @@
-# Diseño visual · versión 0.5.0
+# Diseño visual · versión 0.6.1
 
-La referencia principal es el enunciado entregado. La grabación se consulta mediante el análisis exhaustivo HTML local, no mediante el SRT. El paper guía la metodología y los trabajos publicados orientan los idioms.
+La referencia principal es el enunciado entregado. La grabación se consulta mediante el análisis exhaustivo HTML local, no mediante el SRT. El paper guía la metodología y el enunciado determina las tareas.
 
 ## Jerarquía y reducción de controles
 
@@ -12,7 +12,7 @@ T1 conserva siete miniaturas como único selector de época; T2 tiene un selecto
 
 El hover actualiza la imagen, etiqueta, predicción, tres mayores puntuaciones más clase real, historial breve y seis vecinos originales en el panel derecho. Solo añade un contorno al punto; no atenúa los demás ni modifica las curvas. El clic fija la imagen y atenúa las demás. Al salir de otro punto se recupera el detalle fijado. La galería de selección regional ocupa ese mismo panel.
 
-T2 distribuye las cuatro capas en 2 × 2 cuando la altura disponible lo favorece, con orden explícito L1 → L2 ↓ L3 ← L4. En superficies anchas y bajas conserva cuatro columnas. Todos los paneles usan la misma escala isotrópica. Esta disposición aumenta el espacio útil de las proyecciones; las conexiones siguen uniendo estados medidos de la misma imagen.
+T2 dedica el mapa a una capa, permite comparar dos capas con escala isotrópica común y ofrece un resumen agrupado en espacio compartido. La selección enlaza IDs sin conectar paneles mediante cables.
 
 ## Comparar, encontrar un caso y comprobarlo
 
@@ -67,9 +67,10 @@ En la muestra hay 100 imágenes por clase, por lo que el conteo y el porcentaje 
 
 ## Agrupamiento en ambas tareas
 
+Las curvas Bézier conservan extremos medidos y usan controles atraídos hacia centroides de clase. Fuerza inicial 0.45; opacidad global inicial 12%. Se puede comparar agrupamiento, conexiones rectas y conexiones ocultas.
+
 T1 conecta 1000 imágenes a través de siete épocas: 6000 segmentos. El modo Recorrido de T2 puede conectar 1000 imágenes entre cuatro capas: 3000 segmentos en un mismo mapa. Explorar muestra solo las trayectorias de la selección; Comparar comparte IDs sin conexiones entre paneles. Son relaciones de identidad, no aristas de vecindad ni conexiones neuronales.
 
-Las curvas Bézier usan controles atraídos hacia centroides de clase, adaptación del precedente de Paolo. Fuerza inicial 0.45, visibilidad inicial 12% tras revisión visual. Se conservan todos los puntos de paso correspondientes a estados medidos. El usuario puede retirar el agrupamiento y mostrar conexiones rectas; también puede ocultar conexiones.
 
 Desde v0.1.2, la atracción se aplica únicamente en dirección perpendicular a la conexión entre extremos. Los controles mantienen posiciones longitudinales de 1/3 y 2/3 y una desviación transversal máxima del 25% de su distancia. Una saturación suave evita saltos al variar la fuerza. La curva avanza siempre entre sus extremos sin retroceder en esa dirección; extremos coincidentes no producen un bucle. La regla se aplica tanto en T1 como T2 y no cambia las proyecciones.
 
@@ -100,9 +101,6 @@ Los segmentos animados interpolan estados medidos. Una mayor separación o traye
 ## Procedencia del diseño
 
 - Paper, sección 5.4: trayectorias de observaciones entre capas y épocas; problema de comparabilidad de proyecciones.
-- Paolo Vásquez: capas yuxtapuestas, color de clase y agrupamiento mediante centroides.
-- Ricardo Amiel: miniaturas temporales, filtros e inspector de imágenes.
-- Implementación compartida por un compañero, revisada localmente: motivación de la curva coordinada y de vincular representación con comportamiento; datos, comparador y código nuevos se implementan sobre nuestro modelo.
 - Clase: What–Why–How; entendimiento y diagnóstico mediante ejemplos; estabilidad de la evolución; conclusiones y mantra.
 
 El código es original. Los datos y resultados se generaron para esta versión.
@@ -119,7 +117,7 @@ La curva se fija arriba del panel derecho, mide 174 píxeles de alto y sus valor
 Entre 761 y 1100 píxeles se usa todo el ancho para el mapa, los controles se abren superpuestos y la curva queda en una franja inferior fija. El detalle se consulta en un panel superpuesto independiente que puede cerrarse sin ocultar la curva. Se evita dejar tres columnas estrechas en tablet.
 
 
-## Reorganización de capas en 0.6.0
+## Reorganización de capas en 0.7.0
 
 El overview de T2 es una capa ampliada con cuatro miniaturas que comparten un encuadre. Al cambiar de capa se mantiene el zoom y se animan IDs persistentes dentro de la misma secuencia AlignedUMAP. Hover consulta sin atenuar ni dibujar conexiones adicionales. Clic fija la imagen y muestra solo su recorrido previo, con marcadores numerados de las capas anteriores. El primer estado no tiene trayectorias. Una selección por región permite seguir una cohorte.
 
@@ -128,3 +126,10 @@ Comparar presenta dos capas A/B con escala isotrópica común y selección enlaz
 Recorrido conserva el resumen agrupado entre capas, inspirado en la figura 10 de Rauber et al.: trayectorias en un espacio compartido, matiz por clase y luminancia por profundidad. Los puntos muestran la capa activa y las curvas se detienen en ella. No reproduce t-SNE ni CUBu del artículo. El dibujo de las curvas sigue usando centroides de clase, con sus límites declarados. No se incorporan resultados nuevos de entrenamiento ni se cambian proyecciones.
 
 Las predicciones y símbolos de error son siempre la salida final del modelo en la época fija. No existen clasificadores o exactitudes medidos para cada capa oculta. El panel de calidad muestra NH y trustworthiness por capa, sin confundirlos con exactitud. La evidencia exportada registra modo, capas A/B, IDs y vecinos originales de la referencia efectiva.
+
+
+## Hallazgos reproducibles en 0.7.0
+
+El inspector incorpora búsqueda por ID de la cohorte. Un ID inexistente produce un mensaje claro; si un filtro oculta la imagen buscada, se retiran únicamente al ejecutar esa búsqueda y se informa al usuario. La comparación de vecinos muestra las seis clases originales de cada estado en dos filas enlazadas a la misma imagen. Los vecinos siguen calculados sobre las 1000 imágenes, independientemente de los filtros.
+
+«Encuadrar imagen» conserva el recorrido fijado y las referencias de su clase verdadera y de su predicción final. Así mantiene contexto para localizar la imagen dentro de los grupos, sin mover ni recalcular sus coordenadas. En comparación temporal, las conexiones A/B permanecen visibles aunque antes se hayan ocultado las trayectorias acumuladas. La matriz diferencia la exactitud de la muestra de la prueba completa.
