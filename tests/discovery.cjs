@@ -63,8 +63,8 @@ const output=path.resolve(process.env.QA_OUTPUT||'test-results/discovery');fs.mk
  await page.selectOption('#epoch-select','20');await page.check('#errors-only');
  await page.locator(`.point[data-sample="${index}"]`).last().click();
  assert.equal(await page.locator('#sample-comparison').isVisible(),false);assert.match(await page.locator('#neighbor-change').innerText(),/capa 1/);
- assert.equal(await page.locator('.neighbor-ring').count(),24);
- assert.ok(await page.locator('.class-region[d]').count()>=40);assert.equal(await page.locator('#evolution-chart path').count(),2);
+ assert.equal(await page.locator('.neighbor-ring').count(),6);
+ assert.ok(await page.locator('.class-region[d]').count()>=10);assert.equal(await page.locator('#evolution-chart path').count(),2);
  await page.screenshot({path:output+'/layers-detail.png',fullPage:true});
  await page.uncheck('#regions-on');assert.equal(await page.locator('.reference-panel .class-reference:visible').count(),0);
  await page.check('#regions-on');

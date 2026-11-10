@@ -20,7 +20,7 @@ Explicar la advertencia de 45:24–46:12: proyecciones independientes podían sa
 
 En el panel izquierdo, alternar trayectorias rectas y agrupadas. Ajustar fuerza sin desplazar el mapa. Las líneas conectan la misma imagen, no imágenes vecinas. La fuerza solo cambia controles de dibujo. Las etiquetas ayudan a agrupar visualmente: la existencia de un haz no prueba separación aprendida.
 
-El paper usa trayectorias agrupadas para evolución temporal y entre capas. Nuestra aproximación Bézier y paneles yuxtapuestos se atribuyen como adaptaciones; no se presenta CUBu como implementado.
+El paper usa trayectorias agrupadas para evolución temporal y entre capas. Nuestra aproximación Bézier y el resumen en espacio compartido se atribuyen como adaptaciones; no se presenta CUBu como implementado.
 
 ## 3:10–4:20 · Diagnóstico con imágenes concretas
 
@@ -32,7 +32,7 @@ Recordar la recomendación alrededor de 49:40: investigar casos difíciles y rob
 
 ## 4:20–5:20 · Evolución entre capas
 
-Conservar una imagen fijada y pasar a T2. Localizar sus cuatro posiciones y conexiones. Pasar sobre puntos de cada capa para actualizar los vecinos del inspector; hacer clic para fijar la imagen. La predicción sigue siendo la salida final, no una clasificación atribuida a cada capa.
+Conservar una imagen fijada y pasar a T2. Cambiar de capa con las miniaturas y seguir la trayectoria numerada de la imagen fijada. Usar Comparar para ver dos capas con selección enlazada y contrastar sus vecinos originales. Recorrido permite resumir las trayectorias en un mismo mapa. La predicción sigue siendo la salida final, no una clasificación atribuida a cada capa.
 
 En época 20, NH de las capas es aproximadamente 91.57%, 95.15%, 95.63% y 95.93%. Es una observación de este experimento/proyección, no una ley universal. Comparar diferencias de vecindad con ejemplos originales.
 
@@ -66,6 +66,6 @@ Después del overview, pulsar **Investigar 15 → 20**. Explicar que los conteos
 
 Elegir **Empiezan a fallar**, fijar MNIST #1182 (etiqueta 6): predicción 6→8. Conserva 1 de sus seis vecinos originales de capa 4; cinco cambian. La herramienta muestra la asociación con su representación, no demuestra que esos vecinos causaron la clasificación. Conectar vecinos para localizar sus posiciones y recuperar las imágenes. No borrar el caso difícil: enlazar con 49:40–49:56 del profesor.
 
-Abrir T2 conservando el ID para comprobar la representación por capa; el cambio de vecinos usa capa 1 como referencia. Distinguir activaciones, proyección y salida final. Guardar una evidencia que permita reconstruir lo mostrado. Es el recorrido de lo general al caso concreto explicado en 1:04:34–1:04:52 y responde a la exigencia de obtener conclusiones de 54:26–55:54.
+Abrir T2 conservando el ID para comprobar la representación por capa; el cambio de vecinos usa capa 1 en Explorar o la otra capa visible en Comparar. Distinguir activaciones, proyección y salida final. Guardar una evidencia que permita reconstruir lo mostrado. Es el recorrido de lo general al caso concreto explicado en 1:04:34–1:04:52 y responde a la exigencia de obtener conclusiones de 54:26–55:54.
 
 Las referencias de clase son paráfrasis del HTML de análisis; no se presentan como citas textuales inventadas.

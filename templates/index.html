@@ -12,7 +12,7 @@
   <script defer src="/static/explorer.js"></script>
 </head>
 <body>
-<div id="app" data-version="0.5.0">
+<div id="app" data-version="0.6.0">
   <header class="masthead">
     <div><p class="eyebrow"><span class="brand-mark"></span> VISUAL LEARNING MODELS / UTEC</p><h1>Cómo aprende una red<span class="title-dot">.</span></h1></div>
     <div class="masthead-meta"><button id="diagnostics-open" class="text-button">Diagnóstico</button><button id="help-open" class="text-button">Guía</button><button id="method-open" class="text-button">Método y fuentes</button></div>
@@ -37,6 +37,7 @@
         <section class="rail-section"><h2>Explorar</h2>
           <label id="layer-control" class="field">Capa fija<select id="layer"><option value="0">Capa 1</option><option value="1">Capa 2</option><option value="2">Capa 3</option><option value="3" selected>Capa 4</option></select></label>
           <label id="epoch-control" class="field" hidden>Época fija<select id="epoch-select" aria-label="Época fija"></select></label>
+          <label id="reference-layer-control" class="field" hidden>Capa de referencia A<select id="reference-layer" aria-label="Capa de referencia A"><option value="0">Capa 1</option><option value="1">Capa 2</option><option value="2">Capa 3</option><option value="3">Capa 4</option></select></label>
           <button id="play" class="play-button">▶ Reproducir</button>
         </section>
         <section class="rail-section"><h2>Clase verdadera</h2>
@@ -64,9 +65,11 @@
       </aside>
       <section id="chart-section" class="chart-section" role="tabpanel" aria-labelledby="tab-t1">
         <div class="map-toolbar"><h2 id="chart-title">Capa 4 · época 0</h2><div class="map-actions"><span id="visible-count" class="count-label" aria-live="polite"></span><div class="mode-switch" role="group" aria-label="Modo del ratón"><button id="mode-pan" aria-pressed="true">Mover</button><button id="mode-brush" aria-pressed="false">Seleccionar</button></div><button id="fit-focus" class="text-button" hidden>Acercar al filtro</button><button id="clear-selection" class="text-button" hidden>Quitar selección</button><button id="reset-view" class="text-button" hidden>Vista completa</button></div></div>
+        <div id="layer-view-bar" class="layer-view-bar" hidden><div class="mode-switch" role="group" aria-label="Vista entre capas"><button data-layer-view="explore" aria-pressed="true">Explorar</button><button data-layer-view="compare" aria-pressed="false">Comparar</button><button data-layer-view="flow" aria-pressed="false">Recorrido</button></div><p id="layer-view-hint">Elige una capa abajo. Fija una imagen para seguirla.</p></div>
         <div class="plot-scroll"><div id="plot-wrap"><canvas id="trails-canvas" aria-hidden="true"></canvas><svg id="plot" role="img" aria-label="Proyecciones de activaciones de imágenes MNIST"></svg></div></div>
         <div class="plot-caption"><span><i class="circle-key"></i> Acierto <i class="triangle-key"></i> Error <span class="inspection-hint">· Pasa para explorar; clic para fijar</span></span><div id="time-legend" class="time-legend"><span>Época 0</span><span id="time-ramp" class="time-ramp"></span><span id="time-legend-end">20</span></div></div>
         <div id="epoch-strip" class="epoch-strip" aria-label="Comparación de épocas"></div>
+        <div id="layer-strip" class="layer-strip" role="group" aria-label="Elegir capa activa" hidden></div>
         <p id="chart-footnote" class="chart-footnote">Cada punto es una imagen. El color indica su clase verdadera; la curva une sus estados medidos.</p>
 
       </section>
@@ -81,7 +84,7 @@
           <div class="detail-top"><span id="sample-id" class="mono"></span><button id="unpin" class="text-button" hidden>Liberar</button></div>
           <div class="image-summary"><canvas id="digit-image" width="28" height="28" role="img" aria-label="Imagen del dígito seleccionado"></canvas><div class="prediction-line"><span>Real <b id="true-label"></b></span><span>Predicción <b id="pred-label"></b></span><span id="prediction-status"></span></div></div>
           <div id="sample-comparison" class="sample-comparison" hidden></div>
-          <h3 class="detail-label">Salida del modelo <span id="detail-epoch"></span></h3>
+          <h3 class="detail-label">Salida final del modelo <span id="detail-epoch"></span></h3>
           <svg id="probability-bars" role="img" aria-label="Tres clases de mayor puntuación y clase verdadera"></svg>
           <p class="control-note">Top 3 + clase real · escala 0–100%.</p>
           <h3 class="detail-label">Predicción por época</h3><div id="prediction-history" class="prediction-history" aria-label="Historial de predicciones, solo lectura"></div>
@@ -101,7 +104,7 @@
 </div>
 
 <dialog id="diagnostics" class="diagnostic-dialog"><div class="dialog-heading"><p class="eyebrow">DIAGNÓSTICO</p><button class="dialog-close" aria-label="Cerrar diagnóstico">✕</button></div><h2>Confusiones del modelo</h2><p class="diagnostic-note">Filas: clase verdadera · columnas: predicción. Haz clic en una celda para recuperar sus imágenes.</p><div id="matrix-grid" class="matrix-grid single-model"></div></dialog>
-<dialog id="help-dialog"><div class="dialog-heading"><p class="eyebrow">GUÍA DE EXPLORACIÓN</p><button class="dialog-close" aria-label="Cerrar guía">✕</button></div><h2>Sigue una imagen, encuentra un patrón.</h2><ol><li><b>Observa el conjunto.</b> En T1, las trayectorias se acumulan hasta la época activa: en época 0 solo hay puntos. En los controles de «Trayectorias», el recorrido completo permite comparar todas las épocas. En T2, las curvas conectan cuatro capas en una época.</li><li><b>Acerca y filtra.</b> Usa la rueda para zoom, arrastra para desplazar, o activa «Seleccionar región». Puedes combinar clases; el fondo tenue y los números conservan la ubicación del conjunto. «Acercar al filtro» ajusta la vista cuando lo necesites.</li><li><b>Comprueba los ejemplos.</b> Pasa sobre un punto para ver su imagen, etiqueta y predicción a la derecha. Haz clic para fijarlo y atenuar los demás. El inspector conserva su identidad al cambiar de estado.</li><li><b>Prueba el agrupamiento.</b> En los controles de «Trayectorias», compara trayectorias agrupadas y rectas para distinguir datos y dibujo.</li></ol><p><b>Compara y comprueba:</b> activa «Comparar dos épocas», elige referencia A y usa las miniaturas para B. Filtra casos corregidos, nuevos errores o errores persistentes. Un círculo vacío marca A y el punto lleno marca B; las líneas unen posiciones medidas. Al fijar una imagen, revisa cuántos vecinos conserva y guarda la evidencia.</p><p>La forma indica acierto o error en la predicción final. El color siempre indica la clase verdadera.</p></dialog>
+<dialog id="help-dialog"><div class="dialog-heading"><p class="eyebrow">GUÍA DE EXPLORACIÓN</p><button class="dialog-close" aria-label="Cerrar guía">✕</button></div><h2>Sigue una imagen, encuentra un patrón.</h2><ol><li><b>Observa el conjunto.</b> En T1, las trayectorias se acumulan hasta la época activa: en época 0 solo hay puntos. En los controles de «Trayectorias», el recorrido completo permite comparar todas las épocas. En T2, elige una capa con las miniaturas. Explorar amplía esa capa; Comparar muestra dos capas con selección compartida; Recorrido resume sus trayectorias en un mapa común.</li><li><b>Acerca y filtra.</b> Usa la rueda para zoom, arrastra para desplazar, o activa «Seleccionar región». Puedes combinar clases; el fondo tenue y los números conservan la ubicación del conjunto. «Acercar al filtro» ajusta la vista cuando lo necesites.</li><li><b>Comprueba los ejemplos.</b> Pasa sobre un punto para ver su imagen, etiqueta y predicción a la derecha. Haz clic para fijarlo y atenuar los demás. El inspector conserva su identidad al cambiar de estado.</li><li><b>Prueba el agrupamiento.</b> En los controles de «Trayectorias», compara trayectorias agrupadas y rectas para distinguir datos y dibujo.</li></ol><p><b>Compara y comprueba:</b> activa «Comparar dos épocas», elige referencia A y usa las miniaturas para B. Filtra casos corregidos, nuevos errores o errores persistentes. Un círculo vacío marca A y el punto lleno marca B; las líneas unen posiciones medidas. Al fijar una imagen, revisa cuántos vecinos conserva y guarda la evidencia.</p><p>En T2, fija una imagen para ver su recorrido hasta la capa activa. Los números identifican las capas anteriores. La forma indica acierto o error en la predicción final. El color siempre indica la clase verdadera.</p></dialog>
 <dialog id="method-dialog"><div class="dialog-heading"><p class="eyebrow">MÉTODO Y ALCANCE</p><button class="dialog-close" aria-label="Cerrar método">✕</button></div><h2>Los estados son reales. Las curvas los conectan.</h2><div id="method-content"></div><p><b>Referencias de diseño:</b> <a href="https://github.com/paolovasquezg/VisLearnModels" target="_blank" rel="noreferrer">Paolo Vásquez</a> · <a href="https://github.com/ricardoamiel/A-simple-Visual-Learning-Model-for-MNIST" target="_blank" rel="noreferrer">Ricardo Amiel</a> · <a href="https://webspace.science.uu.nl/~telea001/VisualAnalytics/NNHidden" target="_blank" rel="noreferrer">Rauber et al.</a></p></dialog>
 </body>
 </html>

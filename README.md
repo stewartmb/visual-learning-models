@@ -1,10 +1,10 @@
 # Cómo aprende una red
 
-Explorador de representaciones de una red neuronal para **Visual Learning Models · UTEC**. Versión **0.5.0**, preparada para revisar el diseño interactuando con datos reales.
+Explorador de representaciones de una red neuronal para **Visual Learning Models · UTEC**. Versión **0.6.0**, preparada para revisar el diseño interactuando con datos reales.
 
-**T1:** una capa fija, siete épocas y trayectorias agrupadas. **T2:** una época fija, cuatro capas enlazadas con trayectorias agrupadas. Una imagen mantiene su identidad en todo el recorrido.
+**T1:** una capa fija, siete épocas y trayectorias agrupadas. **T2:** una época fija, un mapa grande con cuatro miniaturas de capa, comparación estática de dos capas y recorrido agrupado en un espacio compartido. Una imagen mantiene su identidad en todo el recorrido.
 
-![Encuadre de secuencia, controles legibles y curva fija de evolución](docs/space-layout.png)
+![Exploración de una capa con mapa amplio y selección de capas](docs/layers-explore.png)
 
 ## Abrir la aplicación
 
@@ -34,7 +34,7 @@ El HTML contiene los mismos datos, D3, imágenes y código que la aplicación Fl
 3. Elige **Empiezan a fallar (8)**. Revisa sus imágenes y fija un ejemplo: el círculo vacío es A y el símbolo lleno B. Ambos extremos son posiciones medidas de la misma secuencia; en este modo se reemplaza el recorrido acumulado por la comparación directa.
 4. Comprueba su predicción y cuántos de los seis vecinos originales conserva. Los vecinos nuevos tienen una marca inferior; **Conectar vecinos en el mapa** permite localizar las relaciones calculadas en activaciones.
 5. Pulsa **Guardar evidencia** para descargar un HTML autónomo con mapa, imagen fijada, predicciones, selección, IDs y límites de interpretación.
-6. Desactiva el comparador y pasa a **T2**. Las cuatro capas permanecen visibles y el inspector compara vecinos con la primera capa. La curva muestra NH y fidelidad de vecindarios por capa.
+6. Desactiva el comparador y pasa a **T2**. Elige una capa con las cuatro miniaturas. **Explorar** muestra un mapa amplio y el recorrido de las imágenes seleccionadas; **Comparar** muestra A y B sin cables entre paneles y comparte la selección; **Recorrido** reúne las trayectorias hasta la capa activa. El inspector compara los vecinos originales de las capas elegidas. La curva muestra NH y fidelidad por capa.
 7. Usa **Diagnóstico** para recuperar imágenes de una confusión concreta, o selecciona una región para abrir su galería.
 
 El mantra se mantiene: **overview → zoom/filter → details on demand**. Hover actualiza detalles sin atenuar el mapa; clic fija una imagen. Controles e inspector ocupan columnas más anchas, con áreas de pulsación y textos legibles. La curva queda fijada arriba del panel derecho, con valores activos y consulta por hover; los detalles se desplazan por separado. Las herramientas no desplazan la proyección y los filtros conservan contexto tenue. El encuadre usa los límites de toda la secuencia con escala isotrópica y constante entre épocas. «Encuadrar estado» permite acercar explícitamente lo mostrado.
@@ -68,7 +68,7 @@ Las proyecciones se calculan con **AlignedUMAP**, enlazando los mismos identific
 - Matiz = clase verdadera, asignación fija Tableau10.
 - Círculo/triángulo = acierto/error de la salida final en la época activa.
 - Conexión = identidad entre estados; nunca una conexión neuronal.
-- Luminancia en T1 = avance de época; posición de panel en T2 = orden de capa.
+- Luminancia = avance de época en T1 y profundidad de capa en T2; miniaturas y números identifican las capas.
 - Tamaño de marca para legibilidad: contexto reducido, errores ampliados ligeramente y selección fijada con énfasis; hover añade contorno.
 
 El agrupamiento usa etiquetas para ordenar líneas. **La existencia de haces no demuestra aprendizaje.** La proyección y el dibujo tienen limitaciones diferentes. Una curva larga no significa que el modelo aprendió más, y los estados intermedios de la animación no son checkpoints medidos.

@@ -1,8 +1,8 @@
 {
   "name": "visual-learning-models",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "description": "Browser QA only; the application uses local D3 and Flask.",
-  "scripts": {"test": "node --test tests/trails.test.cjs tests/learning.test.cjs && node tests/browser.cjs && node tests/discovery.cjs && node tests/layout.cjs"},
+  "scripts": {"test": "node --test tests/trails.test.cjs tests/learning.test.cjs && node tests/browser.cjs && node tests/discovery.cjs && node tests/layout.cjs && node tests/layers.cjs"},
   "devDependencies": {"playwright": "1.62.1"}
 }

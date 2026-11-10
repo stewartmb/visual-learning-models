@@ -40,6 +40,19 @@ html,body{height:100%;overflow:hidden}#app{height:100dvh;max-width:none;width:10
 @media(max-width:760px){.control-rail{width:220px}.inspector-scroll{overflow:visible;padding:0}.evolution-section{margin-top:15px}.map-toolbar h2{font-size:16px}.map-actions .text-button,.map-actions .mode-switch button{font-size:9px}.map-actions .count-label{display:none}}
 
 .evolution-current{min-height:36px;line-height:18px}#evolution-chart{cursor:crosshair}
+/* Layer exploration: one readable map, linked pair comparison, shared-space trails. */
+.layer-view-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:0 0 39px;min-height:39px;padding-bottom:6px}
+.layer-view-bar .mode-switch{flex-shrink:0}.layer-view-bar button{font-size:12px;padding:6px 12px}
+.layer-view-bar p{font-size:11px;color:var(--muted);line-height:1.4;text-align:right}
+.layer-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;flex:0 0 68px;height:68px}
+.layer-miniature{display:flex;align-items:center;justify-content:center;gap:10px;min-width:0;background:var(--surface);padding:5px 8px;border-radius:4px;position:relative}
+.layer-miniature canvas{display:block;width:64px;height:48px;flex:0 0 64px}.layer-miniature>span{text-align:left;min-width:0}
+.layer-miniature strong{display:block;font-size:13px;font-weight:600}.layer-miniature small{display:block;font:10px var(--mono);color:var(--muted);margin-top:6px;white-space:nowrap}
+.layer-miniature[aria-pressed=true]{border-color:var(--accent);box-shadow:inset 0 -2px var(--accent)}.layer-miniature[aria-pressed=true] strong{color:var(--accent)}
+.layer-miniature.is-reference::before{content:'A';position:absolute;top:3px;left:5px;font:9px var(--mono);color:var(--focus)}
+.layer-waypoint text{font:9px var(--mono);fill:var(--ink)}.plot-labels .layer-label{font-size:12px}
+@media(max-width:1400px){.layer-miniature{gap:5px;padding:4px}.layer-miniature canvas{width:44px;flex-basis:44px}.layer-miniature strong{font-size:12px}.layer-miniature small{font-size:9px}.layer-view-bar p{font-size:10px}}
+@media(max-width:760px){.layer-view-bar{flex-basis:37px;min-height:37px;gap:3px}.layer-view-bar p{display:none}.layer-view-bar button{padding:6px 13px}.layer-strip{height:62px;flex-basis:62px;gap:4px}.layer-miniature{flex-direction:column;gap:1px;padding:3px}.layer-miniature canvas{height:27px;width:40px;flex-basis:auto}.layer-miniature>span{text-align:center}.layer-miniature strong{font-size:10px}.layer-miniature small{font-size:8px;margin-top:2px}.layer-miniature.is-reference::before{top:2px;left:3px}.plot-labels .layer-label{font-size:11px}}
 /* On tablet widths, give the map the full width and dock the support chart below. */
 @media(min-width:761px) and (max-width:1100px){
  .explorer-layout,.explorer-layout.has-inspector{grid-template-columns:minmax(0,1fr)}
@@ -54,3 +67,5 @@ html,body{height:100%;overflow:hidden}#app{height:100dvh;max-width:none;width:10
  .evolution-heading{grid-column:1/-1}.evolution-section #evolution-chart{grid-column:1;grid-row:2/span 2;height:174px;margin:0}
  .evolution-current{grid-column:2;grid-row:2;margin:9px 0 0;font-size:12px;min-height:0}#evolution-note{grid-column:2;grid-row:3;font-size:11px;margin:0}
 }
+
+.plot-scroll.is-layers .class-reference text{font-size:12px}

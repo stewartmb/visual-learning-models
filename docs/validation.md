@@ -59,3 +59,12 @@ La densidad tiene un único nivel con parámetros fijos; no se interpreta como f
 Verificación a 1512×1050, 1800×1050 y 1280×800: columnas de control legibles, curva de al menos 300×170 en escritorio y siempre arriba. Su posición no cambia al inspeccionar ni al desplazar el panel de detalles. Se comprueba igualdad de unidades X/Y y constancia de escala entre épocas 2 y 20, ocupación mayoritaria del ancho en época 2 y ausencia de cambios de época al consultar la curva. El encuadre explícito sigue incluyendo A y B.
 
 También se verifica 772×1050: mapa de más de 700 píxeles de ancho, curva inferior visible y estable, controles superpuestos y cierre de detalle sin perder métricas ni desplazar el mapa.
+
+
+## Reorganización entre capas 0.6.0
+
+Resultado: 4 pruebas Python de integridad y 8 pruebas Node de transiciones y curvas aprobadas. Los recorridos de navegador de interfaz, descubrimiento, escritorio/tablet y capas pasan sin errores JavaScript. El nuevo recorrido también pasa abriendo directamente el HTML sin conexión.
+
+La comprobación de T2 cubre overview limpio sin conexiones globales, 1000 IDs por capa, posiciones estables al filtrar, hover sin atenuación ni conexiones añadidas, trayectoria fijada hasta la capa activa, ausencia de segmentos antes de capa 1, persistencia de identidad al cambiar de capa y reproducción hasta la capa 4. La comparación A/B conserva los mismos 1000 IDs en cada mapa, unidades X/Y iguales y escala común entre paneles. Se comprueba énfasis enlazado, contraste de seis vecinos originales con la referencia elegida y metadatos de capas y vecinos en la evidencia descargada. El resumen agrupado usa un espacio compartido. A 390 píxeles los dos mapas se apilan sin desplazamiento horizontal.
+
+Se revisaron capturas de Explorar, Comparar, Recorrido y el caso MNIST #1182, además del resultado en el navegador integrado a 772 píxeles. Estas comprobaciones verifican integridad y comportamiento, no constituyen un estudio de usabilidad.

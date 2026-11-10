@@ -43,7 +43,7 @@ Si NH<.6 se muestran únicamente clases elegidas, para reducir saturación en es
 | Vista | Idiom | Se fija | Se compara |
 |---|---|---|---|
 | T1 | Proyección con trayectorias agrupadas, puntos del estado activo, small multiples y animación | Capa | Épocas |
-| T2 | Scatterplots yuxtapuestos con trayectorias agrupadas entre paneles | Época | Capas |
+| T2 | Mapa ampliado por capa, dos mapas con selección enlazada y resumen de trayectorias en espacio compartido | Época | Capas |
 | Inspector | Imagen, barras horizontales y secuencia de predicciones | ID de imagen | Clases y estados |
 | Galería | Small multiples de imágenes | Selección de IDs | Ejemplos originales |
 | Diagnóstico | Matriz de confusión | Época y cohorte | Predicción vs. clase verdadera |
@@ -57,7 +57,7 @@ Si NH<.6 se muestran únicamente clases elegidas, para reducir saturación en es
 | Acierto/error final del modelo | Círculo/triángulo; errores ligeramente ampliados para localizarlos |
 | Identidad entre estados | Trayectoria individual con extremos medidos |
 | Avance temporal T1 | Luminancia ordenada dentro del matiz de clase |
-| Orden de capas T2 | Posición y flechas de orden de panel |
+| Orden de capas T2 | Miniaturas numeradas, marcadores de capas en la trayectoria seleccionada y luminancia |
 | Selección | Borde oscuro y mayor énfasis; resto atenuado |
 | Probabilidad estimada | Longitud de barra en escala común 0–1 |
 | Imagen original | Posición espacial de píxeles y escala de grises |
@@ -67,7 +67,7 @@ En la muestra hay 100 imágenes por clase, por lo que el conteo y el porcentaje 
 
 ## Agrupamiento en ambas tareas
 
-T1 conecta 1000 imágenes a través de siete épocas: 6000 segmentos. T2 conecta 1000 imágenes entre cuatro capas: 3000 segmentos. Son relaciones de identidad, no aristas de vecindad ni conexiones neuronales.
+T1 conecta 1000 imágenes a través de siete épocas: 6000 segmentos. El modo Recorrido de T2 puede conectar 1000 imágenes entre cuatro capas: 3000 segmentos en un mismo mapa. Explorar muestra solo las trayectorias de la selección; Comparar comparte IDs sin conexiones entre paneles. Son relaciones de identidad, no aristas de vecindad ni conexiones neuronales.
 
 Las curvas Bézier usan controles atraídos hacia centroides de clase, adaptación del precedente de Paolo. Fuerza inicial 0.45, visibilidad inicial 12% tras revisión visual. Se conservan todos los puntos de paso correspondientes a estados medidos. El usuario puede retirar el agrupamiento y mostrar conexiones rectas; también puede ocultar conexiones.
 
@@ -75,7 +75,7 @@ Desde v0.1.2, la atracción se aplica únicamente en dirección perpendicular a 
 
 La geometría interior es esquemática. El método usa etiquetas en el dibujo: un haz de líneas de igual clase no es evidencia independiente de que la red separó clases. La proyección no recibe etiquetas. Esta implementación no reproduce el algoritmo CUBu del paper.
 
-T1 muestra de forma predeterminada solo los segmentos hasta la época activa: época 0 sin líneas, época 1 con 0→1, época 2 con 0→1→2, etc. **Trayectorias → Recorrido → Completo (0–20)** conserva el overview de todas las trayectorias. La escala de luminancia mantiene el significado temporal entre estados. La selección y la reproducción respetan el mismo límite temporal. T2 sigue conectando capas en una época fija.
+T1 muestra de forma predeterminada solo los segmentos hasta la época activa: época 0 sin líneas, época 1 con 0→1, época 2 con 0→1→2, etc. **Trayectorias → Recorrido → Completo (0–20)** conserva el overview de todas las trayectorias. La escala de luminancia mantiene el significado temporal entre estados. La selección y la reproducción respetan el mismo límite temporal. T2 conserva la época y limita el recorrido a la capa activa.
 
 La referencia de época 0 se conserva por su valor para comparar antes/durante/después del entrenamiento. **Atenuar primer tramo (0→1)** reduce únicamente su opacidad de contexto al 12% del valor habitual; no cambia los datos, los demás segmentos ni los puntos. La trayectoria seleccionada conserva su énfasis para inspeccionar esa transición. El control se ofrece solo en T1.
 
@@ -87,7 +87,7 @@ La referencia de época 0 se conserva por su valor para comparar antes/durante/d
 
 Los filtros nunca recalculan las proyecciones. La selección sigue IDs. La galería es paginada. El mouse tiene modos separados para desplazamiento y selección de región. Se permite limpiar selección, filtros y zoom por separado.
 
-La reproducción temporal termina en la última instantánea y puede pausarse. En T2 se revelan sucesivamente las cuatro capas, conservando la época. Las miniaturas temporales tienen espaciamiento uniforme como instantáneas, con números de época explícitos que muestran intervalos desiguales.
+La reproducción temporal termina en la última instantánea y puede pausarse. En T2 la reproducción interpola las posiciones de las mismas imágenes entre capas y termina en la capa 4, conservando la época. Las miniaturas temporales tienen espaciamiento uniforme como instantáneas, con números de época explícitos que muestran intervalos desiguales.
 
 ## Integridad de comparación
 
@@ -117,3 +117,14 @@ La curva se fija arriba del panel derecho, mide 174 píxeles de alto y sus valor
 «Encuadrar estado» está siempre disponible; con filtros cambia a «Encuadrar filtro». Ajusta explícitamente los estados de las conexiones visibles, conserva escala uniforme y deja un margen de 10%. «Vista completa» recupera la escala común de secuencia. Filtrar, pasar el cursor y cambiar de época no aplican este zoom por sí solos.
 
 Entre 761 y 1100 píxeles se usa todo el ancho para el mapa, los controles se abren superpuestos y la curva queda en una franja inferior fija. El detalle se consulta en un panel superpuesto independiente que puede cerrarse sin ocultar la curva. Se evita dejar tres columnas estrechas en tablet.
+
+
+## Reorganización de capas en 0.6.0
+
+El overview de T2 es una capa ampliada con cuatro miniaturas que comparten un encuadre. Al cambiar de capa se mantiene el zoom y se animan IDs persistentes dentro de la misma secuencia AlignedUMAP. Hover consulta sin atenuar ni dibujar conexiones adicionales. Clic fija la imagen y muestra solo su recorrido previo, con marcadores numerados de las capas anteriores. El primer estado no tiene trayectorias. Una selección por región permite seguir una cohorte.
+
+Comparar presenta dos capas A/B con escala isotrópica común y selección enlazada. No dibuja conexiones entre paneles. Los vecinos del detalle se contrastan con la otra capa visible; no con una referencia fija escondida. En anchos menores de 650 píxeles de mapa los dos paneles se apilan. La referencia A permanece en el lateral, sin desplegables que desplacen el mapa. Las miniaturas son el único selector B.
+
+Recorrido conserva el resumen agrupado entre capas, inspirado en la figura 10 de Rauber et al.: trayectorias en un espacio compartido, matiz por clase y luminancia por profundidad. Los puntos muestran la capa activa y las curvas se detienen en ella. No reproduce t-SNE ni CUBu del artículo. El dibujo de las curvas sigue usando centroides de clase, con sus límites declarados. No se incorporan resultados nuevos de entrenamiento ni se cambian proyecciones.
+
+Las predicciones y símbolos de error son siempre la salida final del modelo en la época fija. No existen clasificadores o exactitudes medidos para cada capa oculta. El panel de calidad muestra NH y trustworthiness por capa, sin confundirlos con exactitud. La evidencia exportada registra modo, capas A/B, IDs y vecinos originales de la referencia efectiva.

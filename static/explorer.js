@@ -11,8 +11,9 @@
     classes: new Set(), errors: false, trails: true, bundle: true, fullTrails: false, dimInitial: false,
     strength: .45, opacity: .12, mode: 'pan', pinned: null, hover: null, hoverLayer: 3,
     detailLayer: 3, selected: new Set(), galleryPage: 0, confusion: null,
-    transform: d3.zoomIdentity, playing: false, reveal: 3,
-    compare: false, reference: 5, outcome: null, regions: true, neighborLinks: false, compareOpacity: .6
+    transform: d3.zoomIdentity, playing: false, reveal: 3, selectionOpacity: .85,
+    compare: false, reference: 5, outcome: null, regions: true, neighborLinks: false, compareOpacity: .6,
+    layerView: 'explore', activeLayer: 3, referenceLayer: 0
   };
   let DATA, atlas, geometry, svg, ctx, zoom, brush;
   let timer = null, animation = null, animatePositions = null, brushBusy = false;
@@ -24,6 +25,8 @@
   const epochIndex = () => state.epochs[state.task];
   const epoch = () => EPOCHS[epochIndex()];
   const seq = () => record().sequences[state.task === 't1' ? `t1-l${state.layer}` : `t2-e${epoch()}`];
+  const layerComparing = () => state.task==='t2' && state.layerView==='compare';
+  const panelFrame = p => geometry.temporal ? epochIndex() : p.frameIndex;
   const focused = () => {
     if(state.pinned!==null && included(state.pinned))return state.pinned;
     return null;
@@ -94,8 +97,12 @@
     $('reference-epoch').onchange=e=>{const reference=+e.target.value;stop();state.reference=reference;state.selected.clear();state.hover=null;renderAll();};
     $('compare-on').onchange=e=>{const checked=e.target.checked;stop();state.compare=checked;state.outcome=null;state.selected.clear();state.hover=null;renderAll();};
     $('regions-on').onchange=e=>{state.regions=e.target.checked;renderPlot();};
-    $('explore-learning').onclick=()=>{stop();state.task='t1';state.layer=3;state.reference=5;state.compare=true;state.outcome=null;state.classes.clear();state.errors=false;state.confusion=null;state.pinned=null;state.hover=null;state.selected.clear();state.epochs.t1=6;miniatureKey='';renderAll(true);};
+    $('explore-learning').onclick=()=>{stop();if(state.task==='t2'){state.layerView='compare';state.referenceLayer=0;state.activeLayer=3;state.detailLayer=3;renderAll(true);return;}state.task='t1';state.layer=3;state.reference=5;state.compare=true;state.outcome=null;state.classes.clear();state.errors=false;state.confusion=null;state.pinned=null;state.hover=null;state.selected.clear();state.epochs.t1=6;miniatureKey='';renderAll(true);};
     $('neighbor-links').onclick=()=>{state.neighborLinks=!state.neighborLinks;updateInspector();renderPlot();};
+    document.querySelectorAll('[data-layer-view]').forEach(b=>b.onclick=()=>{
+      stop();state.layerView=b.dataset.layerView;state.detailLayer=state.activeLayer;state.hover=null;miniatureKey='';renderAll(true);
+    });
+    $('reference-layer').onchange=e=>{const layer=+e.target.value,old=state.referenceLayer;stop();state.referenceLayer=layer;state.detailLayer=state.detailLayer===old?layer:state.activeLayer;state.hover=null;lastInspectorKey='';renderAll();};
     $('save-evidence').onclick=saveEvidence;
     $('inspector-close').onclick=()=>$('app').classList.add('detail-dismissed');
     d3.select('#epoch-select').selectAll('option').data(EPOCHS).join('option').attr('value',e=>e).text(e=>e);
@@ -115,7 +122,7 @@
     $('trail-style').onchange = e => {state.trails=e.target.value!=='off';state.bundle=e.target.value==='bundled';renderAll();};
     $('trail-scope').onchange = e => {state.fullTrails=e.target.value==='full';renderAll();};
     $('strength').addEventListener('input', e => {state.strength = +e.target.value / 100; updateControls(); drawTrails();});
-    $('opacity').addEventListener('input', e => {if(comparing())state.compareOpacity=+e.target.value/100;else state.opacity = +e.target.value / 100; updateControls(); drawTrails();drawComparison();});
+    $('opacity').addEventListener('input', e => {if(comparing())state.compareOpacity=+e.target.value/100;else if(state.task==='t2'&&state.layerView==='explore')state.selectionOpacity=+e.target.value/100;else state.opacity = +e.target.value / 100; updateControls(); drawTrails();drawComparison();});
     $('layer').addEventListener('change', e => {const layer = +e.target.value; stop(); state.layer = layer; state.detailLayer = state.layer; miniatureKey = ''; renderAll(true);});
     $('play').onclick = () => state.playing ? stop() : play();
     $('mode-pan').onclick = () => setMode('pan');
@@ -171,6 +178,7 @@
     svg.append('g').attr('class','axes');
     svg.append('g').attr('class','class-regions').attr('pointer-events','none');
     svg.append('g').attr('class','comparison-marks').attr('pointer-events','none');
+    svg.append('g').attr('class','layer-waypoints').attr('pointer-events','none');
     svg.append('g').attr('class','neighbor-marks').attr('pointer-events','none');
     svg.append('g').attr('class','points');
     svg.append('g').attr('class','class-references').attr('pointer-events','none');
@@ -182,7 +190,7 @@
   function setTask(task) {
     if (!['t1','t2'].includes(task)) return;
     stop(); state.task = task; state.hover = null; state.reveal = 3;
-    state.detailLayer = task === 't1' ? state.layer : 3;
+    state.detailLayer = task === 't1' ? state.layer : state.activeLayer;
     state.confusion = null;state.outcome=null;
     miniatureKey = '';
     renderAll(true);
@@ -212,10 +220,29 @@
     }
   }
 
+  function setLayer(layer, animate=true) {
+    const old=seq().frames[state.activeLayer];
+    if(animation){animation.stop();animation=null;}animatePositions=null;
+    state.activeLayer=layer;state.detailLayer=layer;state.hover=null;state.reveal=layer;
+    renderAll();
+    if(animate&&!reducedMotion&&state.layerView!=='compare'){
+      const next=seq().frames[layer],duration=Math.min(700,+$('speed').value*.66);
+      animation=d3.timer(elapsed=>{
+        const t=d3.easeCubicInOut(Math.min(1,elapsed/duration));
+        animatePositions=old.map((p,i)=>[p[0]+(next[i][0]-p[0])*t,p[1]+(next[i][1]-p[1])*t]);
+        drawPoints();drawClassReferences();
+        if(t===1){animation.stop();animation=null;animatePositions=null;renderPlot();}
+      });
+    }
+  }
+
   function play() {
     if (state.playing) return;
     if (state.task === 't1' && epochIndex() === 6) setEpoch(0, false);
-    if (state.task === 't2' && state.reveal >= 3) {state.reveal = 0; renderPlot();}
+    if (state.task === 't2') {
+      if(layerComparing()){state.layerView='explore';state.detailLayer=state.activeLayer;renderAll(true);}
+      if(state.activeLayer>=3)setLayer(0,false);
+    }
     state.playing = true;
     updateControls();
     const advance = () => {
@@ -224,9 +251,8 @@
         if (epochIndex() >= 6) {stop(); return;}
         setEpoch(epochIndex()+1);
       } else {
-        state.reveal++;
-        renderPlot();
-        if (state.reveal >= 3) {stop(); return;}
+        setLayer(state.activeLayer+1);
+        if (state.activeLayer >= 3) {state.playing=false;updateControls();return;}
       }
       timer = setTimeout(advance, +$('speed').value);
     };
@@ -256,36 +282,50 @@
     $('layer-control').hidden = !temporal;
     $('epoch-control').hidden = temporal;
     $('epoch-select').value = epoch();
+    $('layer-view-bar').hidden=temporal;
+    $('layer-strip').hidden=temporal;
+    $('reference-layer-control').hidden=!layerComparing();
+    $('reference-layer').value=state.referenceLayer;
+    document.querySelectorAll('[data-layer-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.layerView===state.layerView)));
+    $('layer-view-hint').textContent=layerComparing()?'A: referencia · B: capa elegida abajo. La selección se comparte.':state.layerView==='flow'?'Las curvas reúnen el recorrido 1 → capa activa en un mismo mapa.':'Elige una capa abajo. Fija una imagen para seguir su recorrido.';
+    const discovery=document.querySelector('.discovery-card');
+    discovery.querySelector('h3').textContent=temporal?'¿Entrenar más siempre ayuda?':'¿Qué cambia entre capas?';
+    discovery.querySelector('p').textContent=temporal?'De época 15 a 20 hay casos que mejoran y otros que empiezan a fallar.':'Compara la primera y la última capa. Fija un ejemplo para comprobar cómo cambian sus vecinos.';
+    $('explore-learning').innerHTML=temporal?'Investigar 15 → 20 <span>↗</span>':'Comparar capas 1 y 4 <span>↗</span>';
     $('play').disabled=comparing();
     $('play').textContent = comparing()?'Comparación A → B':state.playing ? 'Ⅱ Pausar' : temporal ? '▶ Reproducir' : '▶ Recorrer capas';
     for (const [id, prop] of [['dim-initial','dimInitial'],['errors-only','errors']]) $(id).checked = state[prop];
     $('trail-style').value = comparing()?'straight':!state.trails?'off':state.bundle?'bundled':'straight';
-    $('trail-style').disabled=comparing();$('trail-style').closest('label').hidden=comparing();
-    $('strength').closest('label').hidden=comparing();
-    $('trails-heading').textContent=comparing()?'Conexiones A → B':'Trayectorias';
+    const noLayerTrails=layerComparing();
+    $('trail-style').disabled=comparing();$('trail-style').closest('label').hidden=comparing()||noLayerTrails;
+    $('strength').closest('label').hidden=comparing()||noLayerTrails;
+    $('trails-heading').closest('section').hidden=noLayerTrails;
+    $('trails-heading').textContent=comparing()?'Conexiones A → B':!temporal&&state.layerView==='explore'?'Recorrido de la selección':'Trayectorias';
     $('trail-scope').value = state.fullTrails?'full':'current';
     $('full-trails-control').hidden = !temporal||comparing();
     $('trail-scope').disabled = !state.trails||comparing();
     $('dim-initial-control').hidden = !temporal||comparing();
     $('dim-initial').disabled = !state.trails||comparing();
     $('strength-value').value = `${Math.round(state.strength*100)}%`;
-    $('opacity-value').value = `${Math.round((comparing()?state.compareOpacity:state.opacity)*100)}%`;
-    $('opacity').value=Math.round((comparing()?state.compareOpacity:state.opacity)*100);
+    const shownOpacity=comparing()?state.compareOpacity:!temporal&&state.layerView==='explore'?state.selectionOpacity:state.opacity;
+    $('opacity-value').value = `${Math.round(shownOpacity*100)}%`;
+    $('opacity').value=Math.round(shownOpacity*100);
     $('strength').disabled = !state.bundle || !state.trails||comparing();
     $('opacity').disabled = !state.trails;
-    $('time-legend').hidden = comparing() || !temporal || (!state.fullTrails && epochIndex() === 0);
-    $('time-legend-end').textContent = state.fullTrails ? '20' : epoch();
+    $('time-legend').hidden = comparing() || (temporal?(!state.fullTrails && epochIndex() === 0):layerComparing()||state.activeLayer===0);
+    $('time-legend').firstElementChild.textContent=temporal?'Época 0':'Capa 1';
+    $('time-legend-end').textContent = temporal?(state.fullTrails ? '20' : epoch()):state.activeLayer+1;
     const finalColor = d3.hsl(COLORS[0]);
     const rampStart = finalColor.copy({l:Math.max(.18,finalColor.l*.42)}).formatRgb();
     const rampEnd = finalColor.copy({l:Math.min(.67,finalColor.l)}).formatRgb();
-    const shownEnd = d3.interpolateHsl(rampStart,rampEnd)(state.fullTrails ? 1 : epochIndex()/6);
+    const shownEnd = d3.interpolateHsl(rampStart,rampEnd)(temporal?(state.fullTrails ? 1 : epochIndex()/6):state.activeLayer/3);
     $('time-ramp').style.background = `linear-gradient(90deg,${rampStart},${shownEnd})`;
     $('epoch-strip').hidden = !temporal;
     d3.select('#class-legend').selectAll('button').attr('aria-pressed', c => state.classes.has(c))
       .classed('is-muted', c => state.classes.size && !state.classes.has(c));
     document.querySelectorAll('[data-task]').forEach(b => b.setAttribute('aria-selected', b.dataset.task === state.task));
     $('chart-section').setAttribute('aria-labelledby', `tab-${state.task}`);
-    $('chart-title').textContent = temporal ? `Capa ${state.layer+1} · época ${epoch()}` : `Época ${epoch()} · cuatro capas`;
+    $('chart-title').textContent = temporal ? `Capa ${state.layer+1} · época ${epoch()}` : layerComparing()?`Capas ${state.referenceLayer+1} y ${state.activeLayer+1} · época ${epoch()}`:`Capa ${state.activeLayer+1} · época ${epoch()}`;
     const n = d3.range(1000).filter(included).length;
     $('inspector-empty').querySelector('p').textContent=n===0?'Ninguna imagen cumple esta combinación. Limpia los filtros o elige otro tipo de cambio.':'Pasa sobre un punto para ver su imagen y predicción. Haz clic para fijarlo.';
     const suffix = state.confusion ? ` · ${state.confusion[0]} → ${state.confusion[1]}` : '';
@@ -301,12 +341,12 @@
         : epochIndex() === 0
           ? 'Época 0 · Red sin entrenamiento. Elige una miniatura para avanzar.'
           : `Recorrido acumulado 0–${epoch()} · Cada curva sigue la misma imagen.`
-      : 'Las conexiones siguen la misma imagen entre las cuatro capas.';
+      : layerComparing()?'Mismas imágenes y escala en ambos mapas · Fija una imagen o selecciona una región para compararlas.':state.layerView==='flow'?`Recorrido 1 → ${state.activeLayer+1} · Las curvas siguen imágenes, no conexiones entre neuronas. El brillo indica profundidad.`:'Cada punto es una imagen · Fija una para ver cómo cambia su representación entre capas. La forma indica la predicción final del modelo.';
   }
 
   function updateActionVisibility() {
     $('clear-filters').disabled = !(state.classes.size || state.errors || state.confusion || state.outcome);
-    $('clear-selection').hidden = state.selected.size === 0;
+    $('clear-selection').hidden = state.selected.size === 0 && state.pinned===null;
     $('reset-view').hidden = state.transform.k === 1 && state.transform.x === 0 && state.transform.y === 0;
     $('fit-focus').hidden=false;
     $('fit-focus').textContent=state.classes.size||state.errors||state.confusion||state.selected.size||state.outcome?'Encuadrar filtro':'Encuadrar estado';
@@ -315,10 +355,10 @@
 
   function fitFocus() {
     const points=[];
-    const frames=state.task==='t1'?(comparing()?[geometry.frames[state.reference],geometry.frames[epochIndex()]]:state.trails?geometry.frames.slice(0,state.fullTrails?7:epochIndex()+1):[geometry.frames[epochIndex()]]):geometry.frames;
-    frames.forEach((frame,l)=>frame.forEach((p,i)=>{
+    const entries=state.task==='t1'?(comparing()?[state.reference,epochIndex()]:state.trails?d3.range(state.fullTrails?7:epochIndex()+1):[epochIndex()]).map(l=>({frame:geometry.frames[l],panel:geometry.panels[0]})):layerComparing()?geometry.panels.map(p=>({frame:geometry.frames[p.frameIndex],panel:p})):d3.range(state.activeLayer+1).filter(l=>state.trails&&(focused()!==null||state.selected.size||state.layerView==='flow')||l===state.activeLayer).map(l=>({frame:geometry.frames[l],panel:geometry.panels[0]}));
+    entries.forEach(({frame,panel})=>frame.forEach((p,i)=>{
       if(!included(i)||(state.selected.size&&!state.selected.has(i)))return;
-      const panel=geometry.panels[state.task==='t1'?0:l];
+      if(focused()!==null&&i!==focused())return;
       points.push([panel.xScale(p[0]),panel.yScale(p[1])]);
     }));
     if(!points.length)return;
@@ -332,9 +372,10 @@
     const temporal = state.task === 't1';
     $('plot-wrap').parentElement.classList.toggle('is-layers', !temporal);
     const width = $('plot-wrap').clientWidth, height = $('plot-wrap').clientHeight;
-    const margin = temporal ? {l:25,r:12,t:18,b:26} : {l:8,r:8,t:30,b:15};
-    const gap = 22;
-    const rows=!temporal&&height>width*.5?2:1,columns=temporal?1:4/rows;
+    const margin = temporal ? {l:25,r:12,t:18,b:26} : {l:20,r:14,t:layerComparing()?35:20,b:26};
+    const gap = 24;
+    const count=layerComparing()?2:1;
+    const rows=layerComparing()&&width<650?2:1,columns=count/rows;
     const panelWidth = (width-margin.l-margin.r-gap*(columns-1))/columns;
     const panelHeight = (height-margin.t-margin.b-gap*(rows-1))/rows;
     // Fit the complete sequence once: preserve isotropic distance and a stable frame across epochs.
@@ -343,12 +384,12 @@
     const domainX=[extentX[0]-pad,extentX[1]+pad],domainY=[extentY[0]-pad,extentY[1]+pad];
     const unit=Math.min(panelWidth/(domainX[1]-domainX[0]),panelHeight/(domainY[1]-domainY[0]));
     const centerX=(domainX[0]+domainX[1])/2,centerY=(domainY[0]+domainY[1])/2;
-    const panels = d3.range(temporal ? 1 : 4).map(i => {
-      const row=rows===2&&i>=2?1:0,column=rows===2?(i<2?i:3-i):i;
+    const panels = d3.range(count).map(i => {
+      const row=rows===2?i:0,column=rows===2?0:i;
       const x = margin.l + column*(panelWidth+gap), y = margin.t+row*(panelHeight+gap);
       const xScale = d3.scaleLinear().domain(domainX).range(domainX.map(v=>panelWidth/2+(v-centerX)*unit));
       const yScale = d3.scaleLinear().domain(domainY).range(domainY.map(v=>panelHeight/2-(v-centerY)*unit));
-      return {x,y,width:panelWidth,height:panelHeight,xScale,yScale,unit};
+      return {x,y,width:panelWidth,height:panelHeight,xScale,yScale,unit,frameIndex:temporal?epochIndex():layerComparing()?(i===0?state.referenceLayer:state.activeLayer):state.activeLayer};
     });
     geometry = {width,height,panels,temporal,rows,frames:seq().frames};
     geometry.centroids = geometry.frames.map(frame => d3.range(10).map(c => {
@@ -384,9 +425,9 @@
         const [x,y] = screen(p,0); points.push({i,x,y,panel:0,layer:state.layer});
       });
     } else {
-      geometry.frames.forEach((frame,l) => {
-        if (l > state.reveal) return;
-        frame.forEach((p,i) => {const [x,y] = screen(p,l); points.push({i,x,y,panel:l,layer:l});});
+      geometry.panels.forEach((panel,j) => {
+        const frame=!layerComparing()&&animatePositions?animatePositions:geometry.frames[panel.frameIndex];
+        frame.forEach((p,i) => {const [x,y] = screen(p,j); points.push({i,x,y,panel:j,layer:panel.frameIndex});});
       });
     }
     return points;
@@ -405,16 +446,15 @@
     requestAnimationFrame(() => {renderQueued = false; renderPlot();});
   }
 
-  function renderPlot() {if (geometry) {drawStructure(); drawTrails();drawRegions();drawComparison();drawNeighborLinks();drawPoints();drawClassReferences();}}
+  function renderPlot() {if (geometry) {drawStructure(); drawTrails();drawRegions();drawComparison();drawLayerWaypoints();drawNeighborLinks();drawPoints();drawClassReferences();}}
 
   function drawClassReferences() {
     if(animatePositions)svg.select('.class-regions').attr('visibility','hidden');
     const groups=svg.select('.class-references').selectAll('g.reference-panel').data(geometry.panels).join('g')
-      .attr('class','reference-panel').attr('clip-path',(_,l)=>`url(#panel-clip-${l})`)
-      .attr('display',(_,l)=>!geometry.temporal&&l>state.reveal?'none':null);
+      .attr('class','reference-panel').attr('clip-path',(_,l)=>`url(#panel-clip-${l})`);
     groups.each(function(panel,l){
-      const frame=geometry.temporal?(animatePositions||geometry.frames[epochIndex()]):geometry.frames[l];
-      const q=seq().quality[geometry.temporal?epochIndex():l].neighborhood_hit;
+      const frame=(geometry.temporal||!layerComparing())&&animatePositions?animatePositions:geometry.frames[panelFrame(panel)];
+      const q=seq().quality[panelFrame(panel)].neighborhood_hit;
       const classes=q<.6?[...state.classes]:d3.range(10);
       const nodes=classes.map(c=>{
         const points=frame.filter((_,i)=>label(i)===c);
@@ -441,9 +481,9 @@
     const bg = svg.select('.backgrounds');
     bg.selectAll('rect').data(temporal ? [] : panels).join('rect')
       .attr('x',p=>p.x).attr('y',p=>p.y).attr('width',p=>p.width).attr('height',p=>p.height)
-      .attr('fill','none').attr('rx',3);
+      .attr('fill',layerComparing()?'#f9f9f4':'none').attr('rx',3);
     const axes = svg.select('.axes'); axes.selectAll('*').remove();
-    if (temporal) {
+    if (!layerComparing()) {
       const p = panels[0], x = state.transform.rescaleX(p.xScale), y = state.transform.rescaleY(p.yScale);
       axes.append('g').attr('class','axis').attr('transform',`translate(${p.x},${p.y+p.height})`)
         .call(d3.axisBottom(x).ticks(4).tickSize(-p.height).tickFormat(()=>''));
@@ -451,15 +491,11 @@
         .call(d3.axisLeft(y).ticks(4).tickSize(-p.width).tickFormat(()=>''));
     }
     const labels = svg.select('.plot-labels'); labels.selectAll('*').remove();
-    if (!temporal) {
+    if (layerComparing()) {
       panels.forEach((p,i) => {
-        labels.append('text').attr('class','layer-label').attr('x',p.x+p.width/2).attr('y',p.y-9).attr('text-anchor','middle').text(`CAPA ${i+1}`);
-        if (i<3){
-          const next=panels[i+1],vertical=next.y!==p.y;
-          const x=vertical?p.x+p.width/2:next.x>p.x?(p.x+p.width+next.x)/2:(next.x+next.width+p.x)/2;
-          const y=vertical?(p.y+p.height+next.y)/2+3:p.y-9;
-          labels.append('text').attr('class','projection-label').attr('x',x).attr('y',y).attr('text-anchor','middle').text(vertical?'↓':next.x>p.x?'→':'←');
-        }
+        const quality=seq().quality[p.frameIndex];
+        labels.append('text').attr('class','layer-label').attr('x',p.x+5).attr('y',p.y-12).text(`${i===0?'A':'B'} · CAPA ${p.frameIndex+1}`);
+        labels.append('text').attr('class','projection-label').attr('x',p.x+p.width-5).attr('y',p.y-12).attr('text-anchor','end').text(`NH ${percent(quality.neighborhood_hit)}`);
       });
     } else {
       labels.append('text').attr('class','projection-label').attr('x',geometry.width-17).attr('y',geometry.height-7).attr('text-anchor','end').text('Dimensión 1 · AlignedUMAP');
@@ -471,29 +507,21 @@
     if (!geometry) return;
     const {width,height,frames,centroids,temporal,panels} = geometry;
     ctx.clearRect(0,0,width,height);
-    if (!temporal) {
-      ctx.globalAlpha = 1;
-      panels.forEach((p,i) => {ctx.fillStyle = i%2 ? '#f5f5ef' : '#f9f9f4';ctx.fillRect(p.x,p.y,p.width,p.height);});
-    }
-    if (!state.trails || comparing()) return;
+    if (!state.trails || comparing() || layerComparing()) return;
     const f = focused(), selected = state.selected;
     const stages = frames.length-1;
-    const visibleStages = temporal ? (state.fullTrails ? stages : epochIndex()) : Math.min(stages,state.reveal);
+    const visibleStages = temporal ? (state.fullTrails ? stages : epochIndex()) : state.activeLayer;
     const alpha = state.bundle ? state.strength : 0;
     const drawOne = (i, stage, strong=false) => {
       if(!included(i))return;
-      const p0 = screen(frames[stage][i], temporal?0:stage);
-      const p1 = screen(frames[stage+1][i], temporal?0:stage+1);
-      const c0 = screen(centroids[stage][label(i)], temporal?0:stage);
-      const c1 = screen(centroids[stage+1][label(i)], temporal?0:stage+1);
-      if (!temporal) {
-        const a = panels[stage], b = panels[stage+1];
-        if (p0[0]<a.x || p0[0]>a.x+a.width || p0[1]<a.y || p0[1]>a.y+a.height || p1[0]<b.x || p1[0]>b.x+b.width || p1[1]<b.y || p1[1]>b.y+b.height) return;
-      }
+      const p0 = screen(frames[stage][i], 0);
+      const p1 = screen(frames[stage+1][i], 0);
+      const c0 = screen(centroids[stage][label(i)], 0);
+      const c1 = screen(centroids[stage+1][label(i)], 0);
       const curve = VLMTrails.controls(p0,p1,c0,c1,alpha);
       if (curve.distance === 0) return;
       let opacity;
-      if (strong) opacity = f !== null ? .96 : .68;
+      if (strong) opacity = !temporal&&state.layerView==='explore'?state.selectionOpacity:f !== null ? .96 : .68;
       else {
         const base=state.classes.size||state.errors||state.confusion?Math.max(.3,state.opacity):state.opacity;
         opacity=(f!==null||selected.size)?base*.18:base;
@@ -504,7 +532,7 @@
       ctx.lineWidth = strong ? 2 : 1;
       ctx.beginPath(); ctx.moveTo(...p0);
       if (state.bundle) ctx.bezierCurveTo(...curve.first,...curve.second,...p1); else ctx.lineTo(...p1);
-      if (temporal) {
+      {
         const color = d3.hsl(COLORS[label(i)]);
         const dark = color.copy({l:Math.max(.18,color.l*.42)}).formatRgb();
         const light = color.copy({l:Math.min(.67,color.l)}).formatRgb();
@@ -512,18 +540,18 @@
         const gradient = ctx.createLinearGradient(p0[0],p0[1],p1[0]+.001,p1[1]+.001);
         gradient.addColorStop(0,ramp(stage/stages)); gradient.addColorStop(1,ramp((stage+1)/stages));
         ctx.strokeStyle = gradient;
-      } else ctx.strokeStyle = COLORS[label(i)];
+      }
       ctx.stroke();
     };
-    if (temporal) {const p=panels[0];ctx.save();ctx.beginPath();ctx.rect(p.x,p.y,p.width,p.height);ctx.clip();}
+    const p=panels[0];ctx.save();ctx.beginPath();ctx.rect(p.x,p.y,p.width,p.height);ctx.clip();
     for (let s=0;s<visibleStages;s++) {
-      for (let i=0;i<1000;i++) if (!emphasized(i)) drawOne(i,s);
+      if(temporal||state.layerView==='flow')for (let i=0;i<1000;i++) if (!emphasized(i)) drawOne(i,s);
     }
     for (let s=0;s<visibleStages;s++) {
       if (f !== null) drawOne(f,s,true);
       else for (const i of selected) if (included(i)) drawOne(i,s,true);
     }
-    if (temporal) ctx.restore();
+    ctx.restore();
     ctx.globalAlpha = 1;
   }
 
@@ -538,7 +566,7 @@
         .attr('class',p=>`point${emphasized(p.i)?' is-focus':''}${state.hover===p.i?' is-hover':''}`)
         .attr('data-sample',p=>p.i).attr('data-id',p=>DATA.samples.ids[p.i]).attr('data-layer',p=>p.layer)
         .attr('transform',p=>`translate(${p.x},${p.y})`)
-        .attr('d',p=>d3.symbol().type(isError(p.i)?d3.symbolTriangle:d3.symbolCircle).size(emphasized(p.i)?90:!included(p.i)?12:isError(p.i)?34:geometry.temporal?22:18)())
+        .attr('d',p=>d3.symbol().type(isError(p.i)?d3.symbolTriangle:d3.symbolCircle).size(emphasized(p.i)?90:!included(p.i)?12:isError(p.i)?38:geometry.temporal?22:geometry.panels.length===1?26:22)())
         .attr('fill',p=>included(p.i)?COLORS[label(p.i)]:'#aab5b0').attr('opacity',p=>pointOpacity(p.i))
         .attr('pointer-events',p=>included(p.i)?'auto':'none')
         .on('mouseenter',function(e,p) {
@@ -555,6 +583,18 @@
   }
 
   function markHover(){svg.select('.points').selectAll('.point').classed('is-hover',p=>p.i===state.hover);}
+
+  function drawLayerWaypoints(){
+    const i=focused(),marks=[];
+    if(state.task==='t2'&&!layerComparing()&&i!==null&&state.trails){
+      for(let l=0;l<state.activeLayer;l++)marks.push({l,p:screen(geometry.frames[l][i],0)});
+    }
+    const group=svg.select('.layer-waypoints').attr('clip-path','url(#panel-clip-0)');
+    const nodes=group.selectAll('g.layer-waypoint').data(marks,d=>d.l).join(enter=>{const g=enter.append('g').attr('class','layer-waypoint');g.append('circle');g.append('text');return g;})
+      .attr('transform',d=>`translate(${d.p})`).attr('data-layer',d=>d.l).attr('data-sample',i);
+    nodes.select('circle').attr('r',7).attr('fill','#fffefa').attr('stroke',i===null?'none':COLORS[label(i)]).attr('stroke-width',1.8);
+    nodes.select('text').attr('text-anchor','middle').attr('dy','.35em').text(d=>d.l+1);
+  }
 
   function pin(i,layer=state.detailLayer) {
     if (!Number.isInteger(i) || i<0 || i>=1000) return;
@@ -593,7 +633,7 @@
     if (i===null) {lastInspectorKey='';$('preview-status').textContent='Vista previa';$('unpin').hidden=true;$('neighbor-links').disabled=true;return;}
     const l=state.task==='t1'?state.layer:state.hover!==null?state.hoverLayer:state.detailLayer;
     const preview=state.hover!==null&&state.hover!==state.pinned;
-    const key=`${state.experiment}:${i}:${epoch()}:${l}:${included(i)}:${preview}:${state.pinned}:${comparing()}:${state.reference}:${state.neighborLinks}`;
+    const key=`${state.experiment}:${i}:${epoch()}:${l}:${included(i)}:${preview}:${state.pinned}:${comparing()}:${state.reference}:${state.neighborLinks}:${state.layerView}:${state.referenceLayer}`;
     if (key===lastInspectorKey) return;
     lastInspectorKey=key;
     $('sample-id').textContent=`MNIST #${DATA.samples.ids[i]}${included(i)?'':' · fuera del filtro'}`;
@@ -627,11 +667,12 @@
     $('neighbor-layer').textContent=`· capa ${l+1}`;
     const now=record().neighbors[`${epoch()}_${l}`][i];
     makeTiles($('neighbors'),now);
-    const baseline=comparing()?record().neighbors[`${EPOCHS[state.reference]}_${l}`][i]:state.task==='t2'?record().neighbors[`${epoch()}_0`][i]:null;
+    const baseLayer=layerComparing()?(l===state.referenceLayer?state.activeLayer:state.referenceLayer):0;
+    const baseline=comparing()?record().neighbors[`${EPOCHS[state.reference]}_${l}`][i]:state.task==='t2'?record().neighbors[`${epoch()}_${baseLayer}`][i]:null;
     $('sample-comparison').hidden=!comparing();
     $('sample-comparison').textContent=comparing()?`Predicción: ${record().predictions[state.reference][i]} → ${prediction(i)} · real ${label(i)}`:'';
     if(baseline){
-      const changed=VLMAnalysis.neighbors(baseline,now),baseName=comparing()?`época ${EPOCHS[state.reference]}`:'capa 1';
+      const changed=VLMAnalysis.neighbors(baseline,now),baseName=comparing()?`época ${EPOCHS[state.reference]}`:`capa ${baseLayer+1}`;
       $('neighbor-change').textContent=`Conserva ${changed.retained.length}/6 vecinos respecto a ${baseName}. ${changed.arrived.length} nuevos.`;
       d3.select('#neighbors').selectAll('button').classed('neighbor-arrived',j=>changed.arrived.includes(j)).attr('title',j=>`#${DATA.samples.ids[j]} · ${changed.arrived.includes(j)?'nuevo vecino':'vecino conservado'} · clase ${label(j)}`);
     }else{$('neighbor-change').textContent='Seis vecinos en las activaciones originales.';d3.select('#neighbors').selectAll('button').classed('neighbor-arrived',false);}
@@ -655,7 +696,7 @@
   }
 
   function renderMiniatures() {
-    if (state.task!=='t1') return;
+    if (state.task!=='t1') {renderLayerMiniatures();return;}
     const key=`${state.experiment}:${state.layer}:${$('epoch-strip').clientWidth}`;
     const buttons=d3.select('#epoch-strip').selectAll('button').data(EPOCHS).join(enter=> {
       const b=enter.append('button').attr('class','miniature').attr('type','button');
@@ -676,6 +717,25 @@
       const y=d3.scaleLinear().domain([-1.08,1.08]).range([(height+side)/2,(height-side)/2]);
       c.globalAlpha=.72;
       frames[j].forEach((p,i)=>{c.fillStyle=COLORS[label(i)];c.beginPath();c.arc(x(p[0]),y(p[1]),.8,0,Math.PI*2);c.fill();});
+    });
+  }
+
+  function renderLayerMiniatures(){
+    const frames=seq().frames,quality=seq().quality;
+    const buttons=d3.select('#layer-strip').selectAll('button').data(d3.range(4)).join(enter=>{
+      const b=enter.append('button').attr('type','button').attr('class','layer-miniature');
+      b.append('canvas').attr('aria-hidden','true');const t=b.append('span');t.append('strong');t.append('small');return b;
+    }).attr('aria-label',l=>`Ver capa ${l+1}`).attr('aria-pressed',l=>l===state.activeLayer)
+      .classed('is-reference',l=>layerComparing()&&l===state.referenceLayer)
+      .on('click',(_,l)=>{stop();setLayer(l);});
+    buttons.select('strong').text(l=>`Capa ${l+1}`);buttons.select('small').text(l=>`NH ${percent(quality[l].neighborhood_hit)}`);
+    const key=`layers:${epoch()}:${$('layer-strip').clientWidth}`;if(key===miniatureKey)return;miniatureKey=key;
+    const all=frames.flat(),xs=d3.extent(all,p=>p[0]),ys=d3.extent(all,p=>p[1]);
+    buttons.select('canvas').each(function(l){
+      const width=this.clientWidth,height=this.clientHeight,dpr=window.devicePixelRatio||1;this.width=width*dpr;this.height=height*dpr;
+      const c=this.getContext('2d');c.scale(dpr,dpr);
+      const unit=.88*Math.min(width/(xs[1]-xs[0]),height/(ys[1]-ys[0]));
+      c.globalAlpha=.65;frames[l].forEach((p,i)=>{c.fillStyle=COLORS[label(i)];c.beginPath();c.arc(width/2+(p[0]-(xs[0]+xs[1])/2)*unit,height/2-(p[1]-(ys[0]+ys[1])/2)*unit,.8,0,Math.PI*2);c.fill();});
     });
   }
 
@@ -743,9 +803,9 @@
     svg.select('.class-regions').attr('visibility',animatePositions?'hidden':null);
     const groups=svg.select('.class-regions').selectAll('g.region-panel').data(geometry.panels).join('g')
       .attr('class','region-panel').attr('clip-path',(_,l)=>`url(#panel-clip-${l})`)
-      .attr('display',(_,l)=>!state.regions||(!geometry.temporal&&l>state.reveal)?'none':null);
-    groups.each(function(_,l){
-      const fi=geometry.temporal?epochIndex():l,frame=geometry.frames[fi];
+      .attr('display',()=>!state.regions?'none':null);
+    groups.each(function(panel,l){
+      const fi=panelFrame(panel),frame=geometry.frames[fi];
       const classes=seq().quality[fi].neighborhood_hit<.6?[...state.classes]:d3.range(10);
       const shapes=classes.map(c=>{
         const key=`${state.experiment}:${state.task}:${state.task==='t1'?state.layer:epoch()}:${fi}:${c}`;
@@ -787,9 +847,8 @@
   function drawNeighborLinks(){
     const pinned=focused(),links=[];
     if(state.neighborLinks&&pinned!==null){
-      geometry.panels.forEach((_,l)=>{
-        if(!geometry.temporal&&l>state.reveal)return;
-        const layer=geometry.temporal?state.layer:l,frame=geometry.frames[geometry.temporal?epochIndex():l];
+      geometry.panels.forEach((panel,l)=>{
+        const layer=geometry.temporal?state.layer:panel.frameIndex,frame=geometry.frames[panelFrame(panel)];
         const a=screen(frame[pinned],l);
         for(const i of record().neighbors[`${epoch()}_${layer}`][pinned])links.push({i,l,a,b:screen(frame[i],l)});
       });
@@ -837,7 +896,8 @@
     stop();$('save-evidence').disabled=true;$('evidence-status').textContent='Preparando evidencia…';
     try{
       // Keep the capture and the reported state together throughout asynchronous image decoding.
-      const snapshot={task:state.task,layer:state.layer+1,epoch:epoch(),reference:comparing()?EPOCHS[state.reference]:null,
+      const snapshot={task:state.task,layer:(state.task==='t1'?state.layer:state.activeLayer)+1,epoch:epoch(),reference:comparing()?EPOCHS[state.reference]:null,
+        layerView:state.task==='t2'?state.layerView:null,comparedLayers:layerComparing()?[state.referenceLayer+1,state.activeLayer+1]:null,
         outcome:state.outcome,classes:[...state.classes],errorsOnly:state.errors,confusion:state.confusion,
         visible:d3.range(1000).filter(included).map(i=>DATA.samples.ids[i]),selection:[...state.selected].filter(included).map(i=>DATA.samples.ids[i]),comparison:comparing()?comparisonStats():null,
         seed:DATA.meta.seed,projection:DATA.meta.projection.name,quality:seq().quality,
@@ -846,7 +906,8 @@
           neighbors:record().neighbors[`${epoch()}_${state.task==='t1'?state.layer:state.detailLayer}`][state.pinned].map(i=>DATA.samples.ids[i])}};
       if(snapshot.sample){
         const selected=state.pinned,layer=state.task==='t1'?state.layer:state.detailLayer;
-        const reference=comparing()?record().neighbors[`${EPOCHS[state.reference]}_${layer}`][selected]:state.task==='t2'?record().neighbors[`${epoch()}_0`][selected]:null;
+        const baseLayer=layerComparing()?(layer===state.referenceLayer?state.activeLayer:state.referenceLayer):0;
+        const reference=comparing()?record().neighbors[`${EPOCHS[state.reference]}_${layer}`][selected]:state.task==='t2'?record().neighbors[`${epoch()}_${baseLayer}`][selected]:null;
         snapshot.sample.referenceNeighbors=reference?reference.map(i=>DATA.samples.ids[i]):null;
         snapshot.sample.retainedNeighbors=reference?reference.filter(i=>record().neighbors[`${epoch()}_${layer}`][selected].includes(i)).map(i=>DATA.samples.ids[i]):null;
         const digit=document.createElement('canvas');digit.width=digit.height=28;drawDigit(digit,selected);snapshot.sample.image=digit.toDataURL('image/png');
@@ -858,7 +919,7 @@
       style.textContent='.axis line{stroke:#e8e9e2}.axis path{stroke:none}.point{stroke:#ffffff80;stroke-width:.4}.point.is-focus{stroke:#202d32;stroke-width:1.8}.class-reference line{stroke-width:.7;opacity:.55}.class-reference text{font:12px monospace;fill:#202d32;text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:#fffefa;stroke-width:3px}.layer-label,.projection-label{font:10px monospace;fill:#687573}';clone.prepend(style);
       const url=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml;charset=utf-8'}));
       const overlay=new Image();try{overlay.src=url;await overlay.decode();c.drawImage(overlay,0,0,width,height);}finally{URL.revokeObjectURL(url);}
-      const title=snapshot.reference===null?`${snapshot.task.toUpperCase()} · época ${snapshot.epoch}`:`Época ${snapshot.reference} → ${snapshot.epoch} · capa ${snapshot.layer}`;
+      const title=snapshot.task==='t2'?`${snapshot.comparedLayers?'Capas '+snapshot.comparedLayers.join(' y '):'Capa '+snapshot.layer} · época ${snapshot.epoch}`:snapshot.reference===null?`${snapshot.task.toUpperCase()} · época ${snapshot.epoch}`:`Época ${snapshot.reference} → ${snapshot.epoch} · capa ${snapshot.layer}`;
       const stats=snapshot.comparison;
       const content=`<!doctype html><html lang="es"><meta charset="utf-8"><title>Evidencia · ${title}</title><style>body{max-width:1100px;margin:35px auto;padding:0 24px;font:16px/1.7 system-ui;color:#202d32}h1{font:36px Georgia}img{max-width:100%;border:1px solid #ddd}small{color:#687573}pre{white-space:pre-wrap;font-size:12px;background:#f7f5f0;padding:18px}strong{color:#245d70}</style><h1>${title}</h1><p>MNIST · ${snapshot.visible.length} imágenes cumplen los filtros de una cohorte fija de 1 000. ${snapshot.selection.length} seleccionadas por región.</p>${stats?`<p><strong>${stats.fixed}</strong> pasan de error a acierto; <strong>${stats.new}</strong> de acierto a error; <strong>${stats.persistent}</strong> siguen erradas y ${stats.steady} siguen correctas. Errores: ${stats.beforeErrors} → ${stats.afterErrors}. Cálculo sobre ${stats.n} imágenes de las clases elegidas, independiente de otros filtros.</p>`:''}${snapshot.sample?`<img alt="Imagen original seleccionada" src="${snapshot.sample.image}" style="width:96px;image-rendering:pixelated"><p>Ejemplo fijado: <b>MNIST #${snapshot.sample.id}</b>, etiqueta ${snapshot.sample.truth}, predicción ${snapshot.sample.referencePrediction===null?'':snapshot.sample.referencePrediction+' → '}${snapshot.sample.prediction}. ${snapshot.sample.retainedNeighbors===null?'':`Conserva ${snapshot.sample.retainedNeighbors.length}/6 vecinos originales respecto a la referencia.`}</p>`:''}<figure><img alt="Mapa y selección capturados" src="${canvas.toDataURL('image/png')}"><figcaption>Posiciones de AlignedUMAP. El color indica clase verdadera; ○ referencia y símbolo lleno estado activo al comparar.</figcaption></figure><p>Los vecinos se calculan en activaciones originales. Los contornos muestran concentración estimada en 2D, no regiones de decisión. Distancias y trayectorias no demuestran causalmente aprendizaje; la alineación puede atenuar cambios. Las transiciones de clasificación sí se obtienen de predicciones medidas.</p><small>Visual Learning Models · evidencia exportada localmente. Semilla ${snapshot.seed}. No se modificaron ni eliminaron ejemplos difíciles.</small><details><summary>Datos para verificar y reproducir la selección</summary><pre>${JSON.stringify(snapshot,null,2)}</pre></details><script id="evidence-data" type="application/json">${JSON.stringify(snapshot)}</script></html>`;
       const blobURL=URL.createObjectURL(new Blob([content],{type:'text/html;charset=utf-8'})),a=document.createElement('a');a.href=blobURL;a.download=`evidencia-${snapshot.task}-${snapshot.reference===null?'':snapshot.reference+'-'}${snapshot.epoch}.html`;a.click();setTimeout(()=>URL.revokeObjectURL(blobURL),1000);
@@ -873,7 +934,7 @@
       <p><b>Datos:</b> 50 000 imágenes de entrenamiento, 10 000 de validación y 10 000 de prueba. Se visualiza una muestra fija de 1 000 imágenes de prueba, 100 por dígito.</p>
       <p><b>Proyección:</b> AlignedUMAP no supervisado, 15 vecinos, min_dist 0.1 y regularización de alineación 0.01. Las etiquetas no intervienen en la proyección. Cada secuencia tiene un sistema de coordenadas propio; no se comparan posiciones absolutas entre secuencias distintas.</p>
       <p><b>Agrupamiento:</b> curvas Bézier atraídas hacia centroides de clase, conservando las posiciones medidas. La desviación está limitada respecto de la distancia entre extremos y no retrocede a lo largo de su conexión. Así se evitan arcos grandes en imágenes casi inmóviles. Esta adaptación usa etiquetas verdaderas para organizar el dibujo. La existencia de haces no demuestra por sí misma que el modelo haya separado clases. No reproduce el algoritmo GPU CUBu del paper.</p>
-      <p><b>Comparación:</b> A y B usan posiciones medidas de la misma secuencia. Los grupos de cambio se calculan con predicciones y etiquetas reales, no con distancias 2D. Un error persistente puede cambiar de clase predicha sin llegar a acertar. Los contornos son densidades por clase con ancho y umbral fijos; no fronteras de decisión. La exactitud de la curva usa las mismas 1 000 imágenes que NH.</p>
+      <p><b>Comparación:</b> A y B usan posiciones medidas de la misma secuencia. En T2, Explorar amplía una capa, Comparar enlaza selecciones entre dos mapas sin conexiones que los atraviesen y Recorrido resume capas en un espacio compartido. Las curvas se detienen en la capa activa. Los números sobre una trayectoria fijada identifican sus capas anteriores. La predicción y la forma del punto siempre corresponden a la salida final del modelo: no se han entrenado clasificadores por capa. Los grupos de cambio de T1 se calculan con predicciones y etiquetas reales, no con distancias 2D. Los contornos son densidades por clase con ancho y umbral fijos; no fronteras de decisión.</p>
       <p><b>Época 0:</b> corresponde a la red inicial sin entrenamiento, no a una proyección de píxeles originales. El tramo 0→1 permite comparar esa referencia con el primer estado entrenado. Se puede atenuar su dibujo de contexto para examinar cambios posteriores; seleccionar una imagen recupera todo su recorrido visible.</p>
       <p><b>Calidad:</b> NH₆ mide la fracción de vecinos de igual clase en 2D. Trust₁₀ mide preservación de vecindarios respecto de activaciones originales. La selección de vecinos del inspector se calcula en las activaciones originales.</p>
       <table><tr><td>Exactitud final · prueba completa</td><td>${percent(base.test_accuracy)}</td></tr><tr><td>Observaciones visualizadas</td><td>1 000 / 10 000</td></tr></table>

@@ -12,7 +12,7 @@ La autoridad es `Tarea_Visual_Learning_Models.pdf`, proporcionado por el estudia
 | Reducción de dimensionalidad | AlignedUMAP; contraste t-SNE conjunto de la última capa |
 | Scatterplots con color de clase verdadera | Puntos y dominio cromático fijo 0–9 |
 | Evolución entre capas y épocas | Trayectorias agrupadas en ambas vistas, extremos medidos |
-| Interacción y animación | Hover, click, brush, filtros, zoom, reproducción de épocas/revelado de capas |
+| Interacción y animación | Hover, click, brush, filtros, zoom, reproducción de épocas y transición animada entre capas |
 | Mantra de visualización | Overview completo; zoom/filter; inspector y galería |
 | D3; otras bibliotecas de visualización no permitidas | D3 7.9.0 local; marcas SVG y curvas Canvas organizadas con D3. Sin Plotly, Chart.js, matplotlib ni librerías de gráficos adicionales |
 | Aplicación Flask | `app.py`, plantillas, API de datos y `/health` |
