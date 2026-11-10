@@ -1,4 +1,4 @@
-# Validación de la versión 0.4.1
+# Validación de la versión 0.5.0
 
 Fecha: 10 de noviembre de 2026. Entorno de cálculo: macOS, Apple M2 Pro, Python 3.12, CPU, semilla 42. Las versiones están en el manifiesto.
 
@@ -52,3 +52,10 @@ Cuatro pruebas Node adicionales verifican las categorías contra la verdad (incl
 El recorrido de descubrimiento comprueba activación manual y guiada, filtros combinados por clase, cero coincidencias, referencia A igual a B, conservación de posición/tamaño del mapa, extremos A/B medidos (tolerancia 0.001 píxeles por precisión de matrices SVG), vecinos conservados/nuevos y sus vínculos en las cuatro capas. La exportación se descarga y se comprueba que contiene PNG, muestra fijada, referencia y conteos verificables. El recorrido funciona también desde HTML offline sin solicitudes externas.
 
 La densidad tiene un único nivel con parámetros fijos; no se interpreta como frontera, cobertura probabilística ni densidad en activaciones originales. Los límites de estas verificaciones siguen siendo consistencia de datos e implementación; no son un estudio de usabilidad ni una validación causal.
+
+
+## Espacio y legibilidad
+
+Verificación a 1512×1050, 1800×1050 y 1280×800: columnas de control legibles, curva de al menos 300×170 en escritorio y siempre arriba. Su posición no cambia al inspeccionar ni al desplazar el panel de detalles. Se comprueba igualdad de unidades X/Y y constancia de escala entre épocas 2 y 20, ocupación mayoritaria del ancho en época 2 y ausencia de cambios de época al consultar la curva. El encuadre explícito sigue incluyendo A y B.
+
+También se verifica 772×1050: mapa de más de 700 píxeles de ancho, curva inferior visible y estable, controles superpuestos y cierre de detalle sin perder métricas ni desplazar el mapa.

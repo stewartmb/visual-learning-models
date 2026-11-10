@@ -1,4 +1,4 @@
-# Diseño visual · versión 0.4.1
+# Diseño visual · versión 0.5.0
 
 La referencia principal es el enunciado entregado. La grabación se consulta mediante el análisis exhaustivo HTML local, no mediante el SRT. El paper guía la metodología y los trabajos publicados orientan los idioms.
 
@@ -91,7 +91,7 @@ La reproducción temporal termina en la última instantánea y puede pausarse. E
 
 ## Integridad de comparación
 
-AlignedUMAP relaciona estados mediante IDs. La alineación regulariza movimientos y puede suprimir parte de los cambios; no garantiza fidelidad. Se conserva escala isotrópica por secuencia completa. Las secuencias distintas tienen sistemas de coordenadas propios; no se anima una transición entre sistemas independientes como si midiera desplazamiento comparable.
+AlignedUMAP relaciona estados mediante IDs. La alineación regulariza movimientos y puede suprimir parte de los cambios; no garantiza fidelidad. Se conserva escala isotrópica por secuencia completa. El encuadre usa los límites X/Y de todos los estados, con un margen de 4% del mayor rango por lado, y escala uniforme limitada por el ancho o alto disponible. Sustituye el dominio cuadrado vacío, sin cambiar coordenadas ni reajustar la escala al cambiar de época. Las secuencias distintas tienen sistemas de coordenadas propios; no se anima una transición entre sistemas independientes como si midiera desplazamiento comparable.
 
 Los vecinos del inspector se calculan en activaciones, no en 2D. NH con k=6 evalúa mezcla de clases en la proyección; trustworthiness con k=10 evalúa preservación de vecindarios originales. Se informa la capa a la que corresponden las métricas de T2.
 
@@ -106,3 +106,14 @@ Los segmentos animados interpolan estados medidos. Una mayor separación o traye
 - Clase: What–Why–How; entendimiento y diagnóstico mediante ejemplos; estabilidad de la evolución; conclusiones y mantra.
 
 El código es original. Los datos y resultados se generaron para esta versión.
+
+
+## Legibilidad y espacio en 0.5.0
+
+Las columnas laterales se amplían de manera responsive (224/340 píxeles en escritorio medio, 240/370 a partir de 1700), con controles de al menos 33–35 píxeles y textos de 12–14. La proyección conserva toda la altura central. No se estira la geometría para llenar huecos: el espacio necesario se calcula con el rango real de toda la secuencia.
+
+La curva se fija arriba del panel derecho, mide 174 píxeles de alto y sus valores activos se muestran en texto. Hover consulta una época/capa sin cambiar el estado ni añadir un selector duplicado. Perfil, galería y acciones se desplazan en su propia área; la curva y el mapa conservan sus posiciones. En móvil, los detalles mantienen el panel superpuesto desplazable.
+
+«Encuadrar estado» está siempre disponible; con filtros cambia a «Encuadrar filtro». Ajusta explícitamente los estados de las conexiones visibles, conserva escala uniforme y deja un margen de 10%. «Vista completa» recupera la escala común de secuencia. Filtrar, pasar el cursor y cambiar de época no aplican este zoom por sí solos.
+
+Entre 761 y 1100 píxeles se usa todo el ancho para el mapa, los controles se abren superpuestos y la curva queda en una franja inferior fija. El detalle se consulta en un panel superpuesto independiente que puede cerrarse sin ocultar la curva. Se evita dejar tres columnas estrechas en tablet.

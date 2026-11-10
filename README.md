@@ -1,10 +1,10 @@
 # Cómo aprende una red
 
-Explorador de representaciones de una red neuronal para **Visual Learning Models · UTEC**. Versión **0.4.1**, preparada para revisar el diseño interactuando con datos reales.
+Explorador de representaciones de una red neuronal para **Visual Learning Models · UTEC**. Versión **0.5.0**, preparada para revisar el diseño interactuando con datos reales.
 
 **T1:** una capa fija, siete épocas y trayectorias agrupadas. **T2:** una época fija, cuatro capas enlazadas con trayectorias agrupadas. Una imagen mantiene su identidad en todo el recorrido.
 
-![Errores sobre el contexto de clases, con controles e inspección estables](docs/discovery-comparison.png)
+![Encuadre de secuencia, controles legibles y curva fija de evolución](docs/space-layout.png)
 
 ## Abrir la aplicación
 
@@ -37,7 +37,7 @@ El HTML contiene los mismos datos, D3, imágenes y código que la aplicación Fl
 6. Desactiva el comparador y pasa a **T2**. Las cuatro capas permanecen visibles y el inspector compara vecinos con la primera capa. La curva muestra NH y fidelidad de vecindarios por capa.
 7. Usa **Diagnóstico** para recuperar imágenes de una confusión concreta, o selecciona una región para abrir su galería.
 
-El mantra se mantiene: **overview → zoom/filter → details on demand**. Hover actualiza detalles sin atenuar el mapa; clic fija una imagen. Controles e inspector ocupan columnas estables. Las herramientas no desplazan la proyección y los filtros conservan contexto tenue.
+El mantra se mantiene: **overview → zoom/filter → details on demand**. Hover actualiza detalles sin atenuar el mapa; clic fija una imagen. Controles e inspector ocupan columnas más anchas, con áreas de pulsación y textos legibles. La curva queda fijada arriba del panel derecho, con valores activos y consulta por hover; los detalles se desplazan por separado. Las herramientas no desplazan la proyección y los filtros conservan contexto tenue. El encuadre usa los límites de toda la secuencia con escala isotrópica y constante entre épocas. «Encuadrar estado» permite acercar explícitamente lo mostrado.
 
 Los contornos de clases usan densidad estimada, con parámetros fijos entre estados. No son fronteras del clasificador ni prueban la existencia de grupos separados. Pueden tener varias islas; los ejemplos aislados siguen presentes. Al comparar, «Acercar al filtro» incluye posiciones A y B. La curva temporal usa exactitud y NH sobre las mismas 1 000 imágenes, con épocas espaciadas uniformemente como checkpoints, aunque sus intervalos de entrenamiento son desiguales.
 

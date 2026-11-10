@@ -12,7 +12,7 @@
   <script defer src="/static/explorer.js"></script>
 </head>
 <body>
-<div id="app" data-version="0.4.1">
+<div id="app" data-version="0.5.0">
   <header class="masthead">
     <div><p class="eyebrow"><span class="brand-mark"></span> VISUAL LEARNING MODELS / UTEC</p><h1>Cómo aprende una red<span class="title-dot">.</span></h1></div>
     <div class="masthead-meta"><button id="diagnostics-open" class="text-button">Diagnóstico</button><button id="help-open" class="text-button">Guía</button><button id="method-open" class="text-button">Método y fuentes</button></div>
@@ -72,6 +72,7 @@
       </section>
 
       <aside id="inspector" class="inspector" aria-label="Detalles de la imagen">
+        <div id="inspector-scroll" class="inspector-scroll">
         <div class="inspector-heading"><h2>Inspección</h2><span id="preview-status">Vista previa</span><button id="inspector-close" class="mobile-detail-close" aria-label="Cerrar detalle">×</button></div>
         <div id="inspector-empty"><p>Pasa sobre un punto para ver su imagen y predicción. Haz clic para fijarlo.</p>
           <div class="discovery-card"><span class="eyebrow">UNA PREGUNTA REAL</span><h3>¿Entrenar más siempre ayuda?</h3><p>De época 15 a 20 hay casos que mejoran y otros que empiezan a fallar.</p><button id="explore-learning">Investigar 15 → 20 <span>↗</span></button></div>
@@ -87,9 +88,12 @@
           <h3 class="detail-label">Vecinos originales <span id="neighbor-layer"></span></h3><div id="neighbors" class="neighbors"></div><p id="neighbor-change" class="control-note"></p><button id="neighbor-links" class="text-button" aria-pressed="false" disabled>Conectar vecinos en el mapa</button>
         </div>
         <section id="gallery-section" class="gallery-section" hidden><div class="gallery-heading"><h3 id="gallery-title">Imágenes seleccionadas</h3><div><button id="gallery-prev" aria-label="Página anterior de imágenes">←</button><span id="gallery-page"></span><button id="gallery-next" aria-label="Página siguiente de imágenes">→</button></div></div><div id="gallery" class="gallery"></div></section>
-        <section class="evolution-section"><div class="evolution-heading"><h3 id="evolution-title">Evolución de la capa</h3><span>0–100%</span></div><svg id="evolution-chart" role="img" aria-label="Evolución de exactitud y vecindarios"></svg><p id="evolution-note" class="control-note"></p></section>
+
         <button id="save-evidence" class="save-evidence">Guardar evidencia ↗</button><p id="evidence-status" class="control-note" role="status"></p>
         <p class="inspector-note">Contornos: concentración de ejemplos de cada clase; no son fronteras de decisión. Vecinos calculados en activaciones, no en el mapa.</p>
+
+        </div>
+        <section class="evolution-section"><div class="evolution-heading"><h3 id="evolution-title">Evolución de la capa</h3><span>0–100%</span></div><svg id="evolution-chart" role="img" aria-label="Evolución de exactitud y vecindarios"></svg><p id="evolution-current" class="evolution-current"></p><p id="evolution-note" class="control-note"></p></section>
       </aside>
     </main>
 

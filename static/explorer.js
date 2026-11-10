@@ -308,12 +308,14 @@
     $('clear-filters').disabled = !(state.classes.size || state.errors || state.confusion || state.outcome);
     $('clear-selection').hidden = state.selected.size === 0;
     $('reset-view').hidden = state.transform.k === 1 && state.transform.x === 0 && state.transform.y === 0;
-    $('fit-focus').hidden = !(state.classes.size || state.errors || state.confusion || state.selected.size || state.outcome);
+    $('fit-focus').hidden=false;
+    $('fit-focus').textContent=state.classes.size||state.errors||state.confusion||state.selected.size||state.outcome?'Encuadrar filtro':'Encuadrar estado';
+    $('fit-focus').title='Amplía y centra los casos mostrados.';
   }
 
   function fitFocus() {
     const points=[];
-    const frames=state.task==='t1'?(comparing()?[geometry.frames[state.reference],geometry.frames[epochIndex()]]:[geometry.frames[epochIndex()]]):geometry.frames;
+    const frames=state.task==='t1'?(comparing()?[geometry.frames[state.reference],geometry.frames[epochIndex()]]:state.trails?geometry.frames.slice(0,state.fullTrails?7:epochIndex()+1):[geometry.frames[epochIndex()]]):geometry.frames;
     frames.forEach((frame,l)=>frame.forEach((p,i)=>{
       if(!included(i)||(state.selected.size&&!state.selected.has(i)))return;
       const panel=geometry.panels[state.task==='t1'?0:l];
@@ -321,7 +323,7 @@
     }));
     if(!points.length)return;
     const p=geometry.panels[0],xs=d3.extent(points,a=>a[0]),ys=d3.extent(points,a=>a[1]);
-    const k=Math.min(12,.8*Math.min(p.width/Math.max(12,xs[1]-xs[0]),p.height/Math.max(12,ys[1]-ys[0])));
+    const k=Math.min(12,.9*Math.min(p.width/Math.max(12,xs[1]-xs[0]),p.height/Math.max(12,ys[1]-ys[0])));
     const transform=d3.zoomIdentity.translate(p.width/2,p.height/2).scale(Math.max(.7,k)).translate(-(xs[0]+xs[1])/2,-(ys[0]+ys[1])/2);
     svg.call(zoom.transform,transform);
   }
@@ -335,13 +337,17 @@
     const rows=!temporal&&height>width*.5?2:1,columns=temporal?1:4/rows;
     const panelWidth = (width-margin.l-margin.r-gap*(columns-1))/columns;
     const panelHeight = (height-margin.t-margin.b-gap*(rows-1))/rows;
-    const side = Math.min(panelWidth, panelHeight);
-    const unit = side/2.08;
+    // Fit the complete sequence once: preserve isotropic distance and a stable frame across epochs.
+    const frames=seq().frames,all=frames.flat(),extentX=d3.extent(all,p=>p[0]),extentY=d3.extent(all,p=>p[1]);
+    const pad=Math.max(extentX[1]-extentX[0],extentY[1]-extentY[0])*.04;
+    const domainX=[extentX[0]-pad,extentX[1]+pad],domainY=[extentY[0]-pad,extentY[1]+pad];
+    const unit=Math.min(panelWidth/(domainX[1]-domainX[0]),panelHeight/(domainY[1]-domainY[0]));
+    const centerX=(domainX[0]+domainX[1])/2,centerY=(domainY[0]+domainY[1])/2;
     const panels = d3.range(temporal ? 1 : 4).map(i => {
       const row=rows===2&&i>=2?1:0,column=rows===2?(i<2?i:3-i):i;
       const x = margin.l + column*(panelWidth+gap), y = margin.t+row*(panelHeight+gap);
-      const xScale = d3.scaleLinear().domain([-1.04,1.04]).range([panelWidth/2-side/2,panelWidth/2+side/2]);
-      const yScale = d3.scaleLinear().domain([-1.04,1.04]).range([panelHeight/2+side/2,panelHeight/2-side/2]);
+      const xScale = d3.scaleLinear().domain(domainX).range(domainX.map(v=>panelWidth/2+(v-centerX)*unit));
+      const yScale = d3.scaleLinear().domain(domainY).range(domainY.map(v=>panelHeight/2-(v-centerY)*unit));
       return {x,y,width:panelWidth,height:panelHeight,xScale,yScale,unit};
     });
     geometry = {width,height,panels,temporal,rows,frames:seq().frames};
@@ -797,8 +803,8 @@
   }
 
   function renderEvolution(){
-    const temporal=state.task==='t1',width=$('evolution-chart').clientWidth||225,height=128;
-    const x=d3.scalePoint().domain(d3.range(temporal?7:4)).range([25,width-9]),y=d3.scaleLinear().domain([0,1]).range([99,23]);
+    const temporal=state.task==='t1',width=$('evolution-chart').clientWidth||300,height=174;
+    const x=d3.scalePoint().domain(d3.range(temporal?7:4)).range([38,width-13]),y=d3.scaleLinear().domain([0,1]).range([143,30]);
     const values=temporal?[
       {name:'Exactitud',color:'#202d32',v:DATA.meta.experiments.base.history.map(h=>h.sample_accuracy)},
       {name:'NH',color:'#287f8e',v:seq().quality.map(q=>q.neighborhood_hit)}
@@ -806,16 +812,25 @@
        {name:'Fidelidad',color:'#202d32',v:seq().quality.map(q=>q.trustworthiness)}];
     const chart=d3.select('#evolution-chart').attr('viewBox',`0 0 ${width} ${height}`);chart.selectAll('*').remove();
     $('evolution-title').textContent=temporal?'Separación y aciertos':'Representación por capa';
-    values.forEach((d,j)=>{chart.append('line').attr('x1',25+j*98).attr('x2',37+j*98).attr('y1',8).attr('y2',8).attr('stroke',d.color).attr('stroke-width',2);chart.append('text').attr('x',41+j*98).attr('y',11).text(d.name);});
-    chart.append('g').attr('class','evolution-axis').attr('transform','translate(25,0)').call(d3.axisLeft(y).tickValues([0,.5,1]).tickFormat(d3.format('.0%')).tickSize(-(width-34))).call(g=>g.select('.domain').remove());
-    chart.append('g').attr('class','evolution-axis').attr('transform','translate(0,99)').call(d3.axisBottom(x).tickFormat(i=>temporal?EPOCHS[i]:`C${i+1}`).tickSize(0)).call(g=>g.select('.domain').remove());
-    if(comparing())chart.append('line').attr('class','reference-cursor').attr('x1',x(state.reference)).attr('x2',x(state.reference)).attr('y1',22).attr('y2',99).attr('stroke','#8a9891').attr('stroke-dasharray','3 3');
-    if(temporal)chart.append('line').attr('x1',x(epochIndex())).attr('x2',x(epochIndex())).attr('y1',22).attr('y2',99).attr('stroke','#aab5b0');
+    values.forEach((d,j)=>{const left=38+j*(width-38)/2;chart.append('line').attr('x1',left).attr('x2',left+14).attr('y1',10).attr('y2',10).attr('stroke',d.color).attr('stroke-width',2.3);chart.append('text').attr('x',left+20).attr('y',14).text(d.name);});
+    chart.append('g').attr('class','evolution-axis').attr('transform','translate(38,0)').call(d3.axisLeft(y).tickValues([0,.5,1]).tickFormat(d3.format('.0%')).tickSize(-(width-51))).call(g=>g.select('.domain').remove());
+    chart.append('g').attr('class','evolution-axis').attr('transform','translate(0,143)').call(d3.axisBottom(x).tickFormat(i=>temporal?EPOCHS[i]:`C${i+1}`).tickSize(0)).call(g=>g.select('.domain').remove());
+    if(comparing())chart.append('line').attr('class','reference-cursor').attr('x1',x(state.reference)).attr('x2',x(state.reference)).attr('y1',29).attr('y2',143).attr('stroke','#8a9891').attr('stroke-dasharray','3 3');
+    if(temporal)chart.append('line').attr('x1',x(epochIndex())).attr('x2',x(epochIndex())).attr('y1',29).attr('y2',143).attr('stroke','#aab5b0');
     values.forEach(d=>{
-      chart.append('path').attr('d',d3.line().x((_,i)=>x(i)).y(y)(d.v)).attr('fill','none').attr('stroke',d.color).attr('stroke-width',1.6);
+      chart.append('path').attr('d',d3.line().x((_,i)=>x(i)).y(y)(d.v)).attr('fill','none').attr('stroke',d.color).attr('stroke-width',2);
       chart.append('g').selectAll('circle').data(d.v).join('circle').attr('cx',(_,i)=>x(i)).attr('cy',y).attr('r',(_,i)=>temporal&&i===epochIndex()?3.6:2.1).attr('fill',d.color).append('title').text((v,i)=>`${temporal?'Época '+EPOCHS[i]:'Capa '+(i+1)} · ${d.name}: ${percent(v)}`);
     });
-    $('evolution-note').textContent=temporal?'Misma cohorte: 1 000 imágenes. NH: vecinos de igual clase en 2D. Épocas a intervalos desiguales.':'NH: mezcla por clase. Fidelidad: trustworthiness de los vecinos originales. Muestra completa.';
+    const current=temporal?epochIndex():state.detailLayer;
+    const describe=(i,preview=false)=>`${preview?'Consulta · ':''}${temporal?'Época '+EPOCHS[i]:'Capa '+(i+1)} · ${values.map(d=>`${d.name} ${percent(d.v[i])}`).join(' · ')}`;
+    $('evolution-current').textContent=describe(current);
+    chart.attr('aria-label',temporal?'Evolución de exactitud y NH; pasa para consultar sin cambiar la época':'Calidad por capa; pasa para consultar sin cambiar la capa')
+      .on('pointermove',event=>{
+        const px=d3.pointer(event,chart.node())[0],i=d3.least(d3.range(temporal?7:4),(a,b)=>Math.abs(x(a)-px)-Math.abs(x(b)-px));
+        $('evolution-current').textContent=describe(i,true);
+        chart.selectAll('line.evolution-hover').data([i]).join('line').attr('class','evolution-hover').attr('x1',x(i)).attr('x2',x(i)).attr('y1',29).attr('y2',143).attr('stroke','#687573').attr('stroke-dasharray','2 3').attr('pointer-events','none');
+      }).on('pointerleave',()=>{chart.selectAll('.evolution-hover').remove();$('evolution-current').textContent=describe(current);});
+    $('evolution-note').textContent=temporal?'1 000 imágenes · NH: vecinos de igual clase en 2D. Checkpoints con intervalos desiguales.':'NH: mezcla por clase. Fidelidad: trustworthiness de los vecinos originales. Muestra completa.';
   }
 
   async function saveEvidence(){
