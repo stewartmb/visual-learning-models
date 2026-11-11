@@ -2,7 +2,7 @@
 
 Explorador de representaciones de una red neuronal para **Visual Learning Models · UTEC**. Versión **0.7.2**, preparada para revisar el diseño interactuando con datos reales.
 
-**T1:** una capa fija, siete épocas y trayectorias agrupadas. **T2:** una época fija, un mapa grande con cuatro miniaturas de capa, comparación estática de dos capas y recorrido agrupado en un espacio compartido. Una imagen mantiene su identidad en todo el recorrido.
+**T1:** una capa fija y trayectorias agrupadas desde la inicialización. **T2:** una época fija, un mapa grande con cuatro miniaturas de capa, comparación estática de dos capas y recorrido agrupado en un espacio compartido. Una imagen mantiene su identidad en todo el recorrido.
 
 ![Exploración de una capa con mapa amplio y selección de capas](docs/layers-explore.png)
 
@@ -27,17 +27,17 @@ python scripts/export.py --output preview.html
 
 El HTML contiene los mismos datos, D3, imágenes y código que la aplicación Flask.
 
-La [guía de exposición](docs/presentation-guide.md) vincula cada hallazgo con acciones concretas y los cuatro criterios de la rúbrica. El buscador por ID del inspector permite reproducir los casos 1182 y 1393.
+La [guía de exposición](docs/presentation-guide.md) vincula cada hallazgo con acciones concretas y los cuatro criterios de la rúbrica. En la época 20, los casos 1182 y 1393 se pueden abrir desde las celdas 6 → 8 y 5 → 3 de la matriz de confusión.
 
 ## Un recorrido para empezar
 
-1. Observa el conjunto inicial en **T1**, época 0; reproduce la secuencia o cambia de época con las siete miniaturas.
-2. En la barra superior, pulsa **Investigar 15 → 20**. El atajo permanece visible durante la inspección. El comparador separa imágenes que pasan a acertar, empiezan a fallar, siguen erradas y siguen correctas.
+1. Observa la **Inicialización** en T1. Las miniaturas y la reproducción pasan por las épocas 1, 5, 10, 15 y 20. La medición de la época 2 forma parte de las trayectorias.
+2. Haz **⌘ + clic** en dos miniaturas para elegir A y B en ese orden. En la barra superior, **Investigar 15 → 20** abre ese par directamente. El comparador separa imágenes que pasan a acertar, empiezan a fallar, siguen erradas y siguen correctas.
 3. Elige **Empiezan a fallar (8)**. Revisa sus imágenes y fija un ejemplo: el círculo vacío es A y el símbolo lleno B. Ambos extremos son posiciones medidas de la misma secuencia; en este modo se reemplaza el recorrido acumulado por la comparación directa.
 4. Comprueba su predicción y cuántos de los seis vecinos originales conserva. Los vecinos nuevos tienen una marca inferior; **Conectar vecinos en el mapa** permite localizar las relaciones calculadas en activaciones.
 5. Pulsa **Guardar evidencia** para descargar un HTML autónomo con mapa, imagen fijada, predicciones, selección, IDs y límites de interpretación.
 6. Desactiva el comparador y pasa a **T2**. Elige una capa con las cuatro miniaturas. **Explorar** muestra un mapa amplio y el recorrido de las imágenes seleccionadas; **Comparar** muestra A y B sin cables entre paneles y comparte la selección; **Recorrido** reúne las trayectorias hasta la capa activa. El inspector compara los vecinos originales de las capas elegidas. La curva muestra NH y fidelidad por capa.
-7. Selecciona una celda de la **matriz de confusión** para ver sus imágenes en el mapa y la galería. La matriz se actualiza con la época activa.
+7. Selecciona una celda de la **matriz de confusión** para ver sus imágenes en el mapa y la galería. En Inicialización, la matriz compara la clase real con un dígito sorteado por imagen mediante un sorteo uniforme con semilla fija. Desde la época 1, compara la clase real con la predicción medida del modelo.
 
 El mantra se mantiene: **overview → zoom/filter → details on demand**. Hover actualiza detalles sin atenuar el mapa; clic fija una imagen. Controles e inspector ocupan columnas más anchas, con áreas de pulsación y textos legibles. La curva queda fijada arriba del panel derecho, con valores activos y consulta por hover; los detalles se desplazan por separado. Las herramientas no desplazan la proyección y los filtros conservan contexto tenue. El encuadre usa los límites de toda la secuencia con escala isotrópica y constante entre épocas. «Encuadrar estado» permite acercar explícitamente lo mostrado.
 

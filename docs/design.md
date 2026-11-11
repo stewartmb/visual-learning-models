@@ -6,11 +6,11 @@ La referencia principal es el enunciado entregado. La grabación se consulta med
 
 El espacio de trabajo reserva controles a la izquierda, mapa en el centro e inspección a la derecha. Los tres mantienen su tamaño: hover, filtros, selección y ajustes no desplazan el mapa. El encabezado, la barra de herramientas y las miniaturas son compactos; la proyección usa la altura restante de la ventana. En una ventana de 1512 × 1050, T1 dispone de unos 810 píxeles de altura para el mapa.
 
-Una sola leyenda permite combinar clases, con un único filtro «Solo errores». El botón con borde «Limpiar filtros» permanece visible debajo: se habilita al activar filtros y queda deshabilitado cuando no hay ninguno. Los casos fuera del filtro conservan puntos pequeños, grises y tenues; sus trayectorias no se dibujan. Los números 0–9 sitúan la mediana de cada clase calculada con toda la cohorte, sin alterar la proyección. Son referencias de clase, no límites ni regiones de decisión. Cuando la mezcla es alta (NH < 0.6), solo se rotulan las clases filtradas para evitar sugerir grupos separados. «Acercar al filtro» permite ajustar explícitamente el zoom; filtrar no cambia las coordenadas ni la escala.
+La leyenda vertical en la esquina superior derecha del mapa permite combinar clases. Con un grupo filtrado o seleccionado, «Origen de las trayectorias» ordena las predicciones del modelo en la época 1 o en la época A de la comparación. Seleccionar una fila enfoca ese origen y marca sus posiciones de referencia con círculos vacíos. «Solo errores» está en el panel de controles. El botón con borde «Limpiar filtros» permanece visible debajo: se habilita al activar filtros y queda deshabilitado cuando no hay ninguno. Los casos fuera del filtro conservan puntos pequeños, grises y tenues; sus trayectorias no se dibujan. Los números 0–9 sitúan la mediana de cada clase calculada con toda la cohorte, sin alterar la proyección. Son referencias de clase, no límites ni regiones de decisión. Cuando la mezcla es alta (NH < 0.6), solo se rotulan las clases filtradas para evitar sugerir grupos separados. «Acercar al filtro» permite ajustar explícitamente el zoom; filtrar no cambia las coordenadas ni la escala.
 
-T1 conserva siete miniaturas como único selector de época; T2 tiene un selector compacto. Trayectorias, recorrido, fuerza, opacidad y velocidad permanecen en la columna izquierda. En comparación directa se retiran controles de agrupamiento que no aplican. No hay secciones desplegables que cambien el tamaño del mapa. La matriz permanece en la columna de análisis. La guía y el método se leen en vistas propias. En pantallas estrechas, el análisis y los controles siguen al mapa en el orden de lectura.
+T1 ofrece seis miniaturas. La primera dice «Inicialización» y le siguen las épocas 1, 5, 10, 15 y 20. T2 tiene un selector compacto con todos los estados medidos. Los controles de agrupamiento y opacidad permanecen en la columna izquierda. En comparación directa se retiran controles de agrupamiento que no aplican. No hay secciones desplegables que cambien el tamaño del mapa. La matriz permanece en la columna de análisis. La guía y el método se leen en vistas propias. En pantallas estrechas, el análisis y los controles siguen al mapa en el orden de lectura.
 
-El hover actualiza la imagen, etiqueta, predicción, tres mayores puntuaciones más clase real, historial breve y seis vecinos originales en el panel derecho. Solo añade un contorno al punto; no atenúa los demás ni modifica las curvas. El clic fija la imagen y atenúa las demás. Al salir de otro punto se recupera el detalle fijado. La galería de selección regional ocupa ese mismo panel.
+El hover actualiza la imagen, etiqueta, predicción, tres mayores puntuaciones más clase real, historial breve y seis vecinos originales en el panel derecho. Sobre un punto se resaltan su contorno y el recorrido que llega al estado activo. Sobre una arista se resaltan la conexión y el punto de su imagen. La vista previa conserva el contexto del mapa. El clic en un punto o una arista fija su imagen y atenúa las demás. Un segundo clic en la misma marca la libera. Al salir de otro punto se recupera el detalle fijado. La galería de selección regional ocupa ese mismo panel.
 
 T2 dedica el mapa a una capa, permite comparar dos capas con escala isotrópica común y ofrece un resumen agrupado en espacio compartido. La selección enlaza IDs sin conectar paneles mediante cables.
 
@@ -67,18 +67,18 @@ En la muestra hay 100 imágenes por clase, por lo que el conteo y el porcentaje 
 
 ## Agrupamiento en ambas tareas
 
-Las curvas Bézier conservan extremos medidos y usan controles atraídos hacia centroides de clase. Fuerza inicial 0.45; opacidad global inicial 12%. Se puede comparar agrupamiento, conexiones rectas y conexiones ocultas.
+Las curvas Bézier conservan extremos medidos y usan controles atraídos hacia centroides de clase. La fuerza inicial es 45% y la opacidad inicial es 24%. Cada mitad de un tramo se ensancha según cuántas trayectorias visibles de la misma clase pasan cerca en esa transición. Se puede comparar agrupamiento, conexiones rectas y conexiones ocultas.
 
-T1 conecta 1000 imágenes a través de siete épocas: 6000 segmentos. El modo Recorrido de T2 puede conectar 1000 imágenes entre cuatro capas: 3000 segmentos en un mismo mapa. Explorar muestra solo las trayectorias de la selección; Comparar comparte IDs sin conexiones entre paneles. Son relaciones de identidad, no aristas de vecindad ni conexiones neuronales.
+T1 conecta 1000 imágenes a través de siete épocas: 6000 segmentos. El modo Recorrido de T2 puede conectar 1000 imágenes entre cuatro capas: 3000 segmentos en un mismo mapa. Explorar muestra las trayectorias de la selección o del punto bajo el cursor; Comparar comparte IDs sin conexiones entre paneles. Son relaciones de identidad, no aristas de vecindad ni conexiones neuronales.
 
 
-Desde v0.1.2, la atracción se aplica únicamente en dirección perpendicular a la conexión entre extremos. Los controles mantienen posiciones longitudinales de 1/3 y 2/3 y una desviación transversal máxima del 25% de su distancia. Una saturación suave evita saltos al variar la fuerza. La curva avanza siempre entre sus extremos sin retroceder en esa dirección; extremos coincidentes no producen un bucle. La regla se aplica tanto en T1 como T2 y no cambia las proyecciones.
+La atracción se aplica en dirección perpendicular a la conexión entre extremos. Su límite parte del 25% de la distancia entre extremos y crece gradualmente desde el ajuste del 45% hasta el 40% al máximo. Dos curvas Bézier se unen en el punto medio del tramo. El tramo sale y llega en la dirección de la conexión recta y concentra la curvatura hacia el centro, con una desviación máxima del 30% de la distancia entre extremos. La curva avanza sin retroceder. Extremos coincidentes producen un recorrido nulo. La regla se aplica en T1 y T2.
 
 La geometría interior es esquemática. El método usa etiquetas en el dibujo: un haz de líneas de igual clase no es evidencia independiente de que la red separó clases. La proyección no recibe etiquetas. Esta implementación no reproduce el algoritmo CUBu del paper.
 
-T1 muestra los segmentos hasta la época activa: época 0 sin líneas, época 1 con 0→1, época 2 con 0→1→2. Al seleccionar la época 20 se ve el entrenamiento completo. La escala de luminancia mantiene el significado temporal entre estados. La selección y la reproducción respetan el mismo límite temporal. T2 conserva la época y limita el recorrido a la capa activa.
+T1 muestra los segmentos hasta la época activa. En Inicialización solo hay puntos. Al pasar de la época 1 a la 5, las trayectorias pasan por la posición medida en la época 2. Al seleccionar la época 20 se ve el entrenamiento completo. La escala de luminancia mantiene el significado temporal entre estados. La selección y la reproducción respetan el mismo límite temporal. T2 conserva la época y limita el recorrido a la capa activa.
 
-La referencia de época 0 se conserva por su valor para comparar antes/durante/después del entrenamiento. **Atenuar primer tramo (0→1)** reduce únicamente su opacidad de contexto al 12% del valor habitual; no cambia los datos, los demás segmentos ni los puntos. La trayectoria seleccionada conserva su énfasis para inspeccionar esa transición. El control se ofrece solo en T1.
+La inicialización sirve de referencia antes de entrenar. **Ocultar el primer tramo** retira la conexión entre Inicialización y Época 1 de todas las trayectorias en T1. Los recorridos posteriores parten de Época 1.
 
 ## Mantra
 
@@ -88,7 +88,7 @@ La referencia de época 0 se conserva por su valor para comparar antes/durante/d
 
 Los filtros nunca recalculan las proyecciones. La selección sigue IDs. La galería es paginada. El mouse tiene modos separados para desplazamiento y selección de región. Se permite limpiar selección, filtros y zoom por separado.
 
-La reproducción temporal termina en la última instantánea y puede pausarse. En T2 la reproducción interpola las posiciones de las mismas imágenes entre capas y termina en la capa 4, conservando la época. Las miniaturas temporales tienen espaciamiento uniforme como instantáneas, con números de época explícitos que muestran intervalos desiguales.
+La reproducción temporal termina en la última instantánea y puede pausarse. En T2 termina en la capa 4 y conserva la época. Los puntos animados siguen sus curvas cuando hay agrupamiento y pasan por las posiciones medidas, incluso al saltar varias instantáneas. Las miniaturas temporales tienen espaciamiento uniforme como instantáneas, con números de época explícitos que muestran intervalos desiguales.
 
 ## Integridad de comparación
 
@@ -108,9 +108,9 @@ El código es original. Los datos y resultados se generaron para esta versión.
 
 ## Legibilidad y espacio en 0.5.0
 
-Las columnas laterales se amplían de manera responsive (224/340 píxeles en escritorio medio, 240/370 a partir de 1700), con controles de al menos 33–35 píxeles y textos de 12–14. La proyección conserva toda la altura central. No se estira la geometría para llenar huecos: el espacio necesario se calcula con el rango real de toda la secuencia.
+En escritorio, la columna de controles crece de 224 a 360 píxeles según el ancho disponible y mantiene una separación mayor entre botones en ventanas amplias. El mapa ocupa la columna central completa y conserva su altura y una escala uniforme en ambos ejes. El encuadre se calcula con el rango de toda la secuencia.
 
-La curva se fija arriba del panel derecho. Su altura se adapta a la ventana y los valores activos se muestran en texto. Hover consulta una época/capa sin cambiar el estado ni añadir un selector duplicado. Perfil, galería y acciones se desplazan en su propia área; la curva y el mapa conservan sus posiciones. La matriz queda fija al pie de la columna derecha.
+En escritorio, la curva y la matriz se fijan arriba del panel derecho. La altura de la curva se adapta a la ventana y los valores activos se muestran en texto. Al pasar el cursor por la curva se consulta una época o capa sin cambiar el estado. El perfil y la galería se desplazan en su propia área. «Guardar evidencia» queda fijo al pie de la columna.
 
 «Encuadrar estado» está siempre disponible; con filtros cambia a «Encuadrar filtro». Ajusta explícitamente los estados de las conexiones visibles, conserva escala uniforme y deja un margen de 10%. «Vista completa» recupera la escala común de secuencia. Filtrar, pasar el cursor y cambiar de época no aplican este zoom por sí solos.
 
@@ -130,7 +130,7 @@ Las predicciones y símbolos de error son siempre la salida final del modelo en 
 
 ## Hallazgos reproducibles en 0.7.0
 
-El inspector incorpora búsqueda por ID de la cohorte. Un ID inexistente produce un mensaje claro; si un filtro oculta la imagen buscada, se retiran únicamente al ejecutar esa búsqueda y se informa al usuario. La comparación de vecinos muestra las seis clases originales de cada estado en dos filas enlazadas a la misma imagen. Los vecinos siguen calculados sobre las 1000 imágenes, independientemente de los filtros.
+Se puede fijar una imagen desde el mapa o desde una galería, por ejemplo la de una celda de la matriz de confusión. La comparación de vecinos muestra las seis clases originales de cada estado en dos filas enlazadas a la misma imagen. Los vecinos se calculan sobre las 1000 imágenes, independientemente de los filtros.
 
 «Encuadrar imagen» conserva el recorrido fijado y las referencias de su clase verdadera y de su predicción final. Así mantiene contexto para localizar la imagen dentro de los grupos, sin mover ni recalcular sus coordenadas. En comparación temporal, las conexiones A/B permanecen visibles aunque antes se hayan ocultado las trayectorias acumuladas. La matriz diferencia la exactitud de la muestra de la prueba completa.
 

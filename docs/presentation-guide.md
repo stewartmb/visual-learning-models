@@ -5,9 +5,9 @@ Doce diapositivas principales y dos anexos de respaldo. Duración orientativa: 1
 ## Preparación
 
 1. Abrir la aplicación Flask en http://127.0.0.1:5123/ o el HTML interactivo sin conexión.
-2. Usar una ventana de escritorio amplia. Recargar para comenzar sin filtros, con T1, capa 4 y época 0.
+2. Usar una ventana de escritorio amplia. Recargar para comenzar sin filtros, en T1, capa 4, con la miniatura Inicialización.
 3. Abrir la presentación. El guion indica qué decir y qué mostrar. Las diapositivas conservan las capturas como respaldo de la demostración.
-4. Los IDs 1182 y 1393 se encuentran con el buscador del inspector. En ventana estrecha, abrir Controles para los selectores laterales.
+4. En la época 20, las celdas 6 → 8 y 5 → 3 de la matriz de confusión abren las galerías de los casos 1182 y 1393. En ventana estrecha, abrir Controles para los selectores laterales.
 
 ## Recorrido resumido
 
@@ -28,7 +28,7 @@ Doce diapositivas principales y dos anexos de respaldo. Duración orientativa: 1
 
 ## 01. Cómo aprende una red
 
-**Acción en pantalla.** Abrir la presentación. Tener la aplicación en T1, capa 4, época 0.
+**Acción en pantalla.** Abrir la presentación. Tener la aplicación en T1, capa 4, en Inicialización.
 
 **Evidencia que debe verse.** Portada con un recorrido real entre capas.
 
@@ -58,7 +58,7 @@ Doce diapositivas principales y dos anexos de respaldo. Duración orientativa: 1
 
 ## 03. Las clases se separan durante el entrenamiento
 
-**Acción en pantalla.** T1, capa fija 4. Poner Opacidad al 0%. Alternar miniaturas de época 0 y 20. Mantener Vista completa para conservar escala.
+**Acción en pantalla.** T1, capa fija 4. Poner Opacidad al 0%. Alternar entre Inicialización y Época 20. Mantener Vista completa para conservar escala.
 
 **Evidencia que debe verse.** Los mismos 1000 IDs en la misma secuencia y los valores de NH en la curva derecha.
 
@@ -102,7 +102,7 @@ Doce diapositivas principales y dos anexos de respaldo. Duración orientativa: 1
 
 ## 06. Los vecinos del seis #1182 pasan a ser ochos
 
-**Acción en pantalla.** En T2, Comparar capas 1 y 4. Buscar ID 1182. Activar Conectar vecinos en el mapa y revisar Vecinos por capa. Elegir capa 2 para comprobar que allí ya aparecen seis ochos. Volver a capa 4, pulsar Explorar, ajustar Agrupamiento por encima de 0% y pulsar Encuadrar imagen para mostrar el recorrido numerado.
+**Acción en pantalla.** En T2, comparar capas 1 y 4. En la matriz de la época 20, elegir la celda 6 → 8 y pulsar su única imagen, la #1182. Activar Conectar vecinos en el mapa y revisar Vecinos por capa. Elegir capa 2 para comprobar que allí ya aparecen seis ochos. Volver a capa 4, pulsar Explorar, ajustar Agrupamiento por encima de 0% y pulsar Encuadrar imagen para mostrar el recorrido numerado.
 
 **Evidencia que debe verse.** Dígito real 6, trayecto entre capas y filas de clases de sus seis vecinos originales.
 
@@ -132,7 +132,7 @@ Doce diapositivas principales y dos anexos de respaldo. Duración orientativa: 1
 
 ## 08. El mismo seis cambia de acierto a error
 
-**Acción en pantalla.** En el comparador 15/20 elegir Empiezan a fallar. Buscar 1182 y pulsar Encuadrar imagen. Consultar historial, Vecinos por época y vecinos originales. Guardar evidencia si se desea.
+**Acción en pantalla.** En el comparador 15/20 elegir Empiezan a fallar. Pulsar la primera imagen de la galería, la #1182, y luego Encuadrar imagen. Consultar historial, Vecinos por época y vecinos originales. Guardar evidencia si se desea.
 
 **Evidencia que debe verse.** Predicción 6 en época 15 y 8 en época 20, etiqueta real 6. Un vecino conservado de seis.
 
@@ -146,7 +146,7 @@ Doce diapositivas principales y dos anexos de respaldo. Duración orientativa: 1
 
 ## 09. El cinco #1393 mantiene un error difícil
 
-**Acción en pantalla.** T1, época 20, desactivar Comparar dos épocas. En la matriz de confusión, pulsar la celda de clase real 5 y clase predicha 3. Buscar ID 1393.
+**Acción en pantalla.** T1, época 20, desactivar Comparar dos épocas. En la matriz de confusión, pulsar la celda de clase real 5 y clase predicha 3. Elegir la primera imagen de la galería, la #1393.
 
 **Evidencia que debe verse.** Tres imágenes en la confusión 5/3, el dígito 1393, historial de predicción y vecinos originales.
 
@@ -239,7 +239,7 @@ Doce diapositivas principales y dos anexos de respaldo. Duración orientativa: 1
 | Criterio | Máximo | Evidencia que se muestra | Demostración |
 |---|---:|---|---|
 | Claridad, interacción y animación | 4 | Clases consistentes, formas, leyendas, escala común, hover, clic, filtros y reproducción | Diapositivas 2, 3, 5 y 10; reproducir épocas/capas en la aplicación |
-| Hallazgos analíticos | 4 | Formación de grupos, refinamiento por capas, cambios de errores y dos imágenes concretas | Diapositivas 3–9; buscar 1182 y 1393 |
+| Hallazgos analíticos | 4 | Formación de grupos, refinamiento por capas, cambios de errores y dos imágenes concretas | Diapositivas 3–9; casos 1182 y 1393 en las galerías |
 | Justificación del diseño | 4 | Posición/color/forma, AlignedUMAP, comparación estática, detalle a demanda y límites | Diapositivas 2, 10 y 11; Método y fuentes |
 | Cumplimiento de T1 y T2 | 8 | Capa fija al recorrer épocas y época fija al recorrer capas, correspondencias por ID | Diapositivas 3–8; miniaturas, Comparar y Recorrido |
 

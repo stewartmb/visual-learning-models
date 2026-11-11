@@ -40,32 +40,44 @@
           <label id="reference-layer-control" class="field" hidden>Capa de referencia A<select id="reference-layer" aria-label="Capa de referencia A"><option value="0">Capa 1</option><option value="1">Capa 2</option><option value="2">Capa 3</option><option value="3">Capa 4</option></select></label>
           <button id="play" class="play-button">▶ Reproducir</button>
         </section>
-        <section class="rail-section"><h2>Clase verdadera</h2>
-          <div id="class-legend" class="class-legend" role="group" aria-label="Clases verdaderas"></div>
+        <section class="rail-section"><h2>Filtros</h2>
           <label class="check"><input id="errors-only" type="checkbox"><span>Solo errores</span></label>
           <button id="clear-filters" class="reset-filters" disabled>Limpiar filtros</button>
           <p class="rail-note">El fondo conserva todas las clases.</p>
         </section>
+        <section class="rail-section"><h2 id="trails-heading">Trayectorias</h2>
+          <label class="field range-label">Agrupamiento <output id="strength-value">45%</output><input id="strength" type="range" title="0%: líneas rectas" min="0" max="100" value="45"></label>
+          <label class="field range-label">Opacidad <output id="opacity-value">24%</output><input id="opacity" type="range" min="0" title="0%: oculta las líneas" max="100" value="24"></label>
+          <label id="hide-initial-control" class="check"><input id="hide-initial" type="checkbox"><span>Ocultar el primer tramo</span></label>
+        </section>
+        <label class="check region-toggle"><input id="regions-on" type="checkbox" checked><span>Contexto de clases</span></label><p id="quality-label" class="quality-note"></p>
         <section id="comparison-controls" class="rail-section comparison-controls"><h2>¿Qué cambió?</h2>
           <label class="check"><input id="compare-on" type="checkbox"><span>Comparar dos épocas</span></label>
           <label id="reference-epoch-control" class="field" hidden>Época de referencia A<select id="reference-epoch" aria-label="Época de referencia"></select></label>
-          <p id="comparison-direction" class="rail-note" hidden></p>
+          <p id="comparison-direction" class="rail-note" aria-live="polite"></p>
           <div id="transition-filters" class="transition-filters" role="group" aria-label="Cambios de clasificación"></div>
           <p id="comparison-summary" class="rail-note"></p>
+          <section id="trajectory-origins" class="trajectory-origins" aria-labelledby="origin-title" hidden>
+            <h3 id="origin-title">Origen de las trayectorias</h3>
+            <p id="origin-reference" class="rail-note"></p>
+            <div id="origin-groups" role="group" aria-labelledby="origin-title" aria-describedby="origin-reference"></div>
+          </section>
         </section>
-        <section class="rail-section"><h2 id="trails-heading">Trayectorias</h2>
-          <label class="field range-label">Agrupamiento <output id="strength-value">45%</output><input id="strength" type="range" title="0%: líneas rectas" min="0" max="100" value="45"></label>
-          <label class="field range-label">Opacidad <output id="opacity-value">12%</output><input id="opacity" type="range" min="0" title="0%: oculta las líneas" max="100" value="12"></label>
-          <label id="dim-initial-control" class="check"><input id="dim-initial" type="checkbox"><span>Atenuar tramo 0→1</span></label>
-          <label class="field speed-field">Velocidad<select id="speed"><option value="1800">Lenta</option><option value="1100" selected>Normal</option><option value="650">Rápida</option></select></label>
-        </section>
-        <label class="check region-toggle"><input id="regions-on" type="checkbox" checked><span>Contexto de clases</span></label><p id="quality-label" class="quality-note"></p>
       </aside>
       <section id="chart-section" class="chart-section" role="tabpanel" aria-labelledby="tab-t1" tabindex="-1">
-        <div class="map-toolbar"><h2 id="chart-title">Capa 4 · época 0</h2><div class="map-actions"><span id="visible-count" class="count-label" aria-live="polite"></span><button id="open-search" class="text-button">Buscar ID</button><div class="mode-switch" role="group" aria-label="Modo del ratón"><button id="mode-pan" aria-pressed="true">Mover</button><button id="mode-brush" aria-pressed="false">Seleccionar</button></div><button id="fit-focus" class="text-button" hidden>Acercar al filtro</button><button id="clear-selection" class="text-button" hidden>Quitar selección</button><button id="reset-view" class="text-button" hidden>Vista completa</button></div></div>
-        <div id="layer-view-bar" class="layer-view-bar" hidden><div class="mode-switch" role="group" aria-label="Vista entre capas"><button data-layer-view="explore" aria-pressed="true">Explorar</button><button data-layer-view="compare" aria-pressed="false">Comparar</button><button data-layer-view="flow" aria-pressed="false">Recorrido</button></div><p id="layer-view-hint">Elige una capa abajo. Fija una imagen para seguirla.</p></div>
-        <div class="plot-scroll"><div id="plot-wrap"><canvas id="trails-canvas" aria-hidden="true"></canvas><svg id="plot" role="img" aria-label="Proyecciones de activaciones de imágenes MNIST"></svg></div></div>
-        <div class="plot-caption"><span><i class="circle-key"></i> Acierto <i class="triangle-key"></i> Error <span class="inspection-hint">· Pasa para explorar; clic para fijar</span></span><div id="time-legend" class="time-legend"><span>Época 0</span><span id="time-ramp" class="time-ramp"></span><span id="time-legend-end">20</span></div></div>
+        <div class="map-toolbar"><h2 id="chart-title">Capa 4 · Inicialización</h2><div class="map-actions"><span id="visible-count" class="count-label" aria-live="polite"></span><div class="mode-switch" role="group" aria-label="Modo del ratón"><button id="mode-pan" aria-pressed="true">Mover</button><button id="mode-brush" aria-pressed="false">Seleccionar</button></div><button id="fit-focus" class="text-button" hidden>Acercar al filtro</button><button id="clear-selection" class="text-button" hidden>Quitar selección</button><button id="reset-view" class="text-button" hidden>Vista completa</button></div></div>
+        <div id="layer-view-bar" class="layer-view-bar" hidden><div class="mode-switch" role="group" aria-label="Vista entre capas"><button data-layer-view="explore" aria-pressed="true">Explorar</button><button data-layer-view="compare" aria-pressed="false">Comparar</button><button data-layer-view="flow" aria-pressed="false">Recorrido</button></div><p id="layer-view-hint">Elige una capa abajo. Pasa sobre un punto para ver su recorrido.</p></div>
+        <div class="plot-scroll">
+          <div id="plot-wrap">
+            <div id="map-class-key" class="map-class-key">
+              <h3 id="class-key-title">Clase verdadera</h3>
+              <div id="class-legend" class="class-legend" role="group" aria-labelledby="class-key-title"></div>
+            </div>
+            <canvas id="trails-canvas" aria-hidden="true"></canvas>
+            <svg id="plot" role="img" aria-label="Proyecciones de activaciones de imágenes MNIST"></svg>
+          </div>
+        </div>
+        <div class="plot-caption"><span><i class="circle-key"></i> Acierto <i class="triangle-key"></i> Error <span id="symbol-source" hidden>(sorteo)</span><span id="origin-marker-key" hidden></span> <span class="inspection-hint">· Pasa para ver el recorrido · Clic para fijar o soltar</span></span><div id="time-legend" class="time-legend"><span>Inicialización</span><span id="time-ramp" class="time-ramp"></span><span id="time-legend-end">20</span></div></div>
         <div id="epoch-strip" class="epoch-strip" aria-label="Comparación de épocas"></div>
         <div id="layer-strip" class="layer-strip" role="group" aria-label="Elegir capa activa" hidden></div>
         <p id="chart-footnote" class="chart-footnote">Cada punto es una imagen. El color indica su clase verdadera; la curva une sus estados medidos.</p>
@@ -73,14 +85,39 @@
       </section>
 
       <aside id="inspector" class="inspector" aria-label="Análisis e inspección">
+        <section class="evolution-section">
+          <div class="evolution-heading">
+            <h3 id="evolution-title">Evolución de la capa</h3>
+            <span id="evolution-scale">0–100%</span>
+            <button id="toggle-accuracy-changes" class="text-button" type="button" aria-controls="accuracy-changes" aria-expanded="false" hidden>Ver cambios</button>
+          </div>
+          <svg id="evolution-chart" role="img" aria-label="Evolución de exactitud y vecindarios"></svg>
+          <div id="accuracy-changes" hidden>
+            <table aria-label="Cambios de exactitud en puntos porcentuales">
+              <thead><tr><th scope="col">Épocas</th><th scope="col">Muestra</th><th scope="col">Prueba</th></tr></thead>
+              <tbody id="accuracy-change-rows"></tbody>
+            </table>
+          </div>
+          <div class="evolution-reading">
+            <p id="evolution-current" class="evolution-current"></p>
+            <p id="latest-accuracy-change" hidden></p>
+          </div>
+          <p id="evolution-note" class="control-note"></p>
+        </section>
+        <section id="diagnostics" class="diagnostic-section" aria-labelledby="matrix-title">
+          <div class="diagnostic-heading"><h3 id="matrix-title">Matriz de confusión</h3><span id="matrix-epoch"></span></div>
+          <svg id="matrix-grid" role="group" aria-label="Filas de clase real y columnas de clase predicha"></svg>
+          <p id="matrix-accuracy" class="control-note"></p>
+          <p id="matrix-status" class="control-note" aria-live="polite"></p>
+          <a class="text-button narrow-link" href="#chart-section">Volver al mapa ↑</a>
+        </section>
         <div id="inspector-scroll" class="inspector-scroll">
         <div class="inspector-heading"><h2>Inspección</h2><span id="preview-status">Vista previa</span><a class="text-button narrow-link" href="#chart-section">Volver al mapa ↑</a></div>
-        <form id="sample-find" class="sample-find"><label class="sr-only" for="sample-query">Buscar imagen por ID MNIST</label><input id="sample-query" type="search" inputmode="numeric" placeholder="ID de imagen, ej. 1182" autocomplete="off"><button type="submit">Buscar</button></form><p id="sample-find-status" class="control-note" role="status"></p>
-        <div id="inspector-empty"><p>Pasa sobre un punto para ver su imagen y predicción. Haz clic para fijarlo.</p>
+        <div id="inspector-empty"><p>Pasa sobre un punto para ver su recorrido. Haz clic en el punto o su arista para fijar la imagen o soltarla.</p>
         </div>
         <div id="inspector-detail" hidden>
           <div class="detail-top"><span id="sample-id" class="mono"></span><button id="unpin" class="text-button" hidden>Liberar</button></div>
-          <div class="image-summary"><canvas id="digit-image" width="28" height="28" role="img" aria-label="Imagen del dígito seleccionado"></canvas><div class="prediction-line"><span>Real <b id="true-label"></b></span><span>Predicción <b id="pred-label"></b></span><span id="prediction-status"></span></div></div>
+          <div class="image-summary"><canvas id="digit-image" width="28" height="28" role="img" aria-label="Imagen del dígito seleccionado"></canvas><div class="prediction-line"><span>Real <b id="true-label"></b></span><span><span id="displayed-digit-label">Predicción</span> <b id="pred-label"></b></span><span id="prediction-status"></span></div></div>
           <div id="sample-comparison" class="sample-comparison" hidden></div>
           <section id="neighbor-comparison" hidden><h3 id="neighbor-comparison-title" class="detail-label">Vecinos por capa</h3><svg id="neighbor-comparison-chart" role="img" aria-label="Clases de los seis vecinos originales en cada estado"></svg></section>
           <h3 class="detail-label">Salida final del modelo <span id="detail-epoch"></span></h3>
@@ -91,18 +128,13 @@
         </div>
         <section id="gallery-section" class="gallery-section" hidden><div class="gallery-heading"><h3 id="gallery-title">Imágenes seleccionadas</h3><div><button id="gallery-prev" aria-label="Página anterior de imágenes">←</button><span id="gallery-page"></span><button id="gallery-next" aria-label="Página siguiente de imágenes">→</button></div></div><div id="gallery" class="gallery"></div></section>
 
-        <button id="save-evidence" class="save-evidence">Guardar evidencia ↗</button><p id="evidence-status" class="control-note" role="status"></p>
         <p class="inspector-note">Contornos: concentración de ejemplos de cada clase; no son fronteras de decisión. Vecinos calculados en activaciones, no en el mapa.</p>
 
         </div>
-        <section class="evolution-section"><div class="evolution-heading"><h3 id="evolution-title">Evolución de la capa</h3><span>0–100%</span></div><svg id="evolution-chart" role="img" aria-label="Evolución de exactitud y vecindarios"></svg><p id="evolution-current" class="evolution-current"></p><p id="evolution-note" class="control-note"></p></section>
-        <section id="diagnostics" class="diagnostic-section" aria-labelledby="matrix-title">
-          <div class="diagnostic-heading"><h3 id="matrix-title">Matriz de confusión</h3><span id="matrix-epoch"></span></div>
-          <svg id="matrix-grid" role="group" aria-label="Filas de clase real y columnas de clase predicha"></svg>
-          <p id="matrix-accuracy" class="control-note"></p>
-          <p id="matrix-status" class="control-note" aria-live="polite"></p>
-          <a class="text-button narrow-link" href="#chart-section">Volver al mapa ↑</a>
-        </section>
+        <div class="evidence-actions">
+          <button id="save-evidence" class="save-evidence">Guardar evidencia ↗</button>
+          <p id="evidence-status" class="control-note" role="status"></p>
+        </div>
       </aside>
     </main>
 
@@ -110,7 +142,7 @@
   <main id="documentation" hidden>
     <article id="guia" hidden>
       <a class="text-button" href="#chart-section">← Volver al mapa</a>
-      <h2>Sigue una imagen, encuentra un patrón.</h2><ol><li><b>Observa el conjunto.</b> En T1, las trayectorias se acumulan hasta la época activa: en época 0 solo hay puntos. Para ver el entrenamiento completo, elige la época 20. En T2, elige una capa con las miniaturas. Explorar amplía esa capa; Comparar muestra dos capas con selección compartida; Recorrido resume sus trayectorias en un mapa común.</li><li><b>Acerca y filtra.</b> Usa la rueda para zoom, arrastra para desplazar, o activa «Seleccionar región». Puedes combinar clases; el fondo tenue y los números conservan la ubicación del conjunto. «Acercar al filtro» ajusta la vista cuando lo necesites.</li><li><b>Comprueba los ejemplos.</b> Pasa sobre un punto para ver su imagen, etiqueta y predicción a la derecha. Haz clic para fijarlo y atenuar los demás. El inspector conserva su identidad al cambiar de estado.</li><li><b>Prueba el agrupamiento.</b> En los controles de «Trayectorias», usa Agrupamiento al 0% para ver líneas rectas. Usa Opacidad al 0% para ocultar las líneas sin quitar los puntos.</li></ol><p><b>Compara y comprueba:</b> activa «Comparar dos épocas», elige referencia A y usa las miniaturas para B. Filtra casos corregidos, nuevos errores o errores persistentes. Un círculo vacío marca A y el punto lleno marca B; las líneas unen posiciones medidas. Al fijar una imagen, revisa cuántos vecinos conserva y guarda la evidencia.</p><p>En T2, fija una imagen para ver su recorrido hasta la capa activa. Los números identifican las capas anteriores. La forma indica acierto o error en la predicción final. El color siempre indica la clase verdadera.</p>
+      <h2>Sigue una imagen, encuentra un patrón.</h2><ol><li><b>Observa el conjunto.</b> En T1, el recorrido empieza en Inicialización y pasa a las épocas 1, 5, 10, 15 y 20. Las trayectorias se acumulan hasta la época activa. Para ver el entrenamiento completo, elige la época 20. En T2, elige una capa con las miniaturas. Explorar amplía esa capa; Comparar muestra dos capas con selección compartida; Recorrido resume sus trayectorias en un mapa común.</li><li><b>Acerca y filtra.</b> Usa la rueda para zoom, arrastra para desplazar, o activa «Seleccionar región». Puedes combinar clases; el fondo tenue y los números conservan la ubicación del conjunto. «Acercar al filtro» ajusta la vista cuando lo necesites.</li><li><b>Comprueba los ejemplos.</b> Pasa sobre un punto para ver su recorrido y consultar su imagen, etiqueta y predicción. Haz clic en el punto o su arista para fijar la imagen. Vuelve a pulsar para soltarla. El inspector conserva su identidad al cambiar de estado.</li><li><b>Prueba el agrupamiento.</b> En los controles de «Trayectorias», usa Agrupamiento al 0% para ver líneas rectas. Usa Opacidad al 0% para ocultar las líneas sin quitar los puntos.</li></ol><p><b>Compara y comprueba:</b> mantén ⌘ al hacer clic en dos miniaturas para elegir A y B en ese orden. También puedes activar «Comparar dos épocas» y elegir A en el panel izquierdo. Filtra casos corregidos, nuevos errores o errores persistentes. Un círculo vacío marca A y el punto lleno marca B; las líneas unen posiciones medidas. Al fijar una imagen, revisa cuántos vecinos conserva y guarda la evidencia.</p><p>En T2, pasa sobre un punto para ver su recorrido hasta la capa activa. Al fijar el punto, los números identifican las capas anteriores. La forma indica acierto o error en la predicción final. El color siempre indica la clase verdadera.</p>
     </article>
     <article id="metodo" hidden>
       <a class="text-button" href="#chart-section">← Volver al mapa</a>

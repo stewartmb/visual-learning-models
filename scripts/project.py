@@ -108,10 +108,12 @@ def run(cache):
         'neighborhood_hit_k': 6, 'trustworthiness_k': 10,
         'interpretation': 'Embedding alignment regularizes motion; it does not prove causal learning or exact distance preservation.'}
     result['meta']['versions'] = {p: importlib.metadata.version(p) for p in ['torch', 'torchvision', 'numpy', 'scikit-learn', 'umap-learn', 'numba', 'Flask']}
-    result['meta']['bundling'] = {'type': 'class-centroid attraction of cubic Bezier control points',
+    result['meta']['bundling'] = {'type': 'class-centroid attraction with two cubic Bezier halves per segment',
         'labels_used_in_drawing': True, 'labels_used_in_projection': False,
         'strength_default': .45, 'measured_waypoints_preserved': True,
-        'max_control_offset_ratio': .25, 'monotonic_along_chord': True,
+        'default_control_offset_ratio': .25, 'max_control_offset_ratio': .4,
+        'max_midpoint_offset_ratio': .3, 'endpoint_tangents': 'parallel to the segment chord',
+        'monotonic_along_chord': True,
         'is_original_paper_CUBu': False}
     dump(out / 'manifest.json', result['meta'])
     dump(out / 'dataset.json', result)

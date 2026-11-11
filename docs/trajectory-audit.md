@@ -18,6 +18,6 @@ La imagen #1393 sigue siendo útil como error persistente: su etiqueta es 5 y su
 
 Es la red inicial sin entrenamiento y permite comparar el primer cambio respecto de esa referencia. El enunciado pide observar antes, durante y después del entrenamiento. Se conserva su estado y el segmento 0→1.
 
-Para estudiar cambios tardíos puede resultar visualmente dominante. El nuevo control **Atenuar primer tramo (0→1)** reduce su opacidad de contexto sin eliminar observaciones ni relaciones. Seleccionar una imagen recupera el énfasis de su recorrido. La opción no supone que la transición inicial sea irrelevante.
+Para estudiar cambios tardíos puede resultar visualmente dominante. El control **Ocultar el primer tramo** retira la conexión entre Inicialización y Época 1. Sirve para observar los cambios de las épocas posteriores.
 
 La curva entre dos instantáneas es un recurso de conexión; no se midió la ruta continua de activaciones dentro de ese intervalo. Tampoco una proyección aparentemente estable garantiza que las activaciones originales no cambiaron.

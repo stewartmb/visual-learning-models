@@ -22,19 +22,19 @@ Cuatro pruebas Node verifican extremos coincidentes, fuerza cero, ausencia de bu
 Recorrido automatizado con Chromium/Playwright sobre la aplicación Flask:
 
 - Cambiar capa y época modifica el estado y conserva 1000 observaciones.
-- En época 0, el lienzo de trayectorias está vacío. En épocas 1 y 2 se añaden segmentos hasta la época activa; regresar a 0 los elimina. En época 20 se ve el recorrido completo.
+- En Inicialización, el lienzo de trayectorias está vacío. En épocas 1 y 5 aparecen los segmentos hasta la época activa. Regresar a Inicialización los elimina. En época 20 se ve el recorrido completo.
 - Filtrar una clase destaca 100 imágenes; los demás casos siguen como contexto gris tenue. Solo errores destaca 28 casos del modelo base en época 20. Ambos conservan diez referencias de clase, coordenadas y tamaño del mapa.
 - «Limpiar filtros» permanece visible, se habilita con filtros y vuelve a deshabilitarse tras restablecerlos.
 - Desactivar agrupamiento cambia el dibujo; el control de fuerza actualiza su valor.
-- Atenuar el primer tramo cambia su dibujo de contexto; el control se oculta en T2 y no afecta el número de observaciones.
+- Ocultar el primer tramo deja el lienzo de Época 1 sin líneas, incluso al fijar una imagen. Las conexiones posteriores se dibujan a partir de Época 1.
 - Hover muestra imagen, etiqueta, predicción, principales puntuaciones, historial y seis vecinos sin cambiar opacidades ni el lienzo de curvas. Clic fija el caso y atenúa el resto; hover sobre otro caso no sustituye la selección fijada.
 - Selección rectangular produce una galería paginada; zoom y restablecimiento funcionan.
 - T2 muestra 4000 estados y 40 referencias de clase; adapta dos filas con orden explícito y permite inspeccionar una imagen por capa.
 - Reproducción de épocas y revelado de capas pueden detenerse; el revelado se reanuda.
-- La matriz muestra 100 celdas; seleccionar la confusión 5 → 3 recupera tres imágenes en época 20.
+- La matriz muestra 100 celdas. En Inicialización aparecen los diez dígitos sorteados y cada fila suma 100 imágenes. La vista previa, la selección y la galería usan la misma asignación. Desde la época 1 se usan las predicciones medidas. Pasar por la confusión 5 → 3 en época 20 resalta tres imágenes temporalmente. Al pulsar la celda, el filtro se conserva al retirar el cursor.
 - Se distribuye un único modelo y no aparece un selector de experimentos.
 - Método y guía abren vistas de lectura y permiten volver al mapa con el estado de exploración conservado.
-- T1 tiene siete miniaturas para elegir época; T2 usa su selector propio. El historial es de lectura. Controles e inspector ocupan columnas estables. El mapa supera 750 píxeles de altura en una ventana de 1512 × 1050; filtros, hover, selección, ajustes y diagnóstico no cambian su posición ni tamaño.
+- T1 tiene seis miniaturas desde la inicialización; T2 usa su selector propio. El historial es de lectura. Controles e inspector ocupan columnas estables. El mapa supera 750 píxeles de altura en una ventana de 1512 × 1050; filtros, hover, selección, ajustes y diagnóstico no cambian su posición ni tamaño.
 - Una imagen fijada fuera del filtro conserva el detalle con etiqueta explícita; su punto pasa al contexto y su curva no se dibuja.
 - Anchura móvil de 390 píxeles sin desbordamiento global; análisis y controles debajo del mapa, con capas en dos filas.
 
@@ -56,7 +56,7 @@ La densidad tiene un único nivel con parámetros fijos; no se interpreta como f
 
 ## Espacio y legibilidad
 
-Verificación a 1512×1050, 1800×1050 y 1280×800: columnas de control legibles, curva de al menos 300 píxeles de ancho y siempre arriba. Su posición no cambia al inspeccionar ni al desplazar el panel de detalles. Se comprueba igualdad de unidades X/Y y constancia de escala entre épocas 2 y 20, ocupación mayoritaria del ancho en época 2 y ausencia de cambios de época al consultar la curva. El encuadre explícito sigue incluyendo A y B.
+Verificación a 1512×1050, 1800×1050 y 1280×800: columnas de control legibles, curva de al menos 300 píxeles de ancho y siempre arriba. Su posición no cambia al inspeccionar ni al desplazar el panel de detalles. Se comprueba igualdad de unidades X/Y y constancia de escala entre épocas 5 y 20, ocupación mayoritaria del ancho en época 5 y ausencia de cambios de época al consultar la curva. El encuadre explícito sigue incluyendo A y B.
 
 También se verifica 772×1050: mapa de más de 700 píxeles de ancho, curva y matriz en el flujo debajo del mapa, navegación a controles y regreso al mismo encuadre.
 

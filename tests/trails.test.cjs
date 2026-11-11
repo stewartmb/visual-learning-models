@@ -2,18 +2,14 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
-const {controls}=require('../static/trails.js');
+const {controls,pointAt}=require('../static/trails.js');
 const data=JSON.parse(fs.readFileSync(path.join(__dirname,'../static/data/dataset.json'),'utf8'));
 const labels=data.samples.labels;
 
-function curveAt(a,b,c,t) {
-  const s=1-t;
-  return [0,1].map(k=>s*s*s*a[k]+3*s*s*t*c.first[k]+3*s*t*t*c.second[k]+t*t*t*b[k]);
-}
 function length(a,b,c) {
   let previous=a,total=0;
   for(let j=1;j<=80;j++) {
-    const current=curveAt(a,b,c,j/80);
+    const current=pointAt(a,b,c,j/80);
     total+=Math.hypot(current[0]-previous[0],current[1]-previous[1]);previous=current;
   }
   return total;
@@ -28,20 +24,25 @@ function centroids(frames) {
 
 test('coincident endpoints produce no artificial excursion; zero force is straight',()=> {
   const same=controls([1,2],[1,2],[100,100],[-100,-100],1);
-  assert.deepEqual(same.first,[1,2]);assert.deepEqual(same.second,[1,2]);
+  assert.deepEqual(pointAt([1,2],[1,2],same,.25),[1,2]);
   assert.equal(same.distance,0);
   const flat=controls([0,0],[3,0],[0,100],[3,100],0);
-  assert.deepEqual(flat.first,[1,0]);assert.deepEqual(flat.second,[2,0]);
+  assert.deepEqual(pointAt([0,0],[3,0],flat,.5),[1.5,0]);
 });
 
 test('near-stationary points cannot create a large loop toward a remote centroid',()=> {
   const a=[0,0],b=[.0001,0],c=controls(a,b,[10,10],[10,10],1);
-  assert.ok(length(a,b,c)<=c.distance*1.2);
+  const initial=controls(a,b,[10,10],[10,10],.45);
+  assert.ok(Math.abs(initial.middle[1]/c.distance-.1875)<1e-9);
+  assert.ok(Math.abs(c.middle[1]/c.distance-.30)<1e-9);
+  assert.equal(c.firstHalf[0][1],0);
+  assert.equal(c.secondHalf[1][1],0);
+  assert.ok(length(a,b,c)<=c.distance*1.21);
   let previous=-Infinity;
   for(let j=0;j<=80;j++) {
-    const p=curveAt(a,b,c,j/80);
+    const p=pointAt(a,b,c,j/80);
     assert.ok(p[0]>=previous-1e-12);previous=p[0];
-    assert.ok(Math.abs(p[1])<=c.distance*.25+1e-12);
+    assert.ok(Math.abs(p[1])<=c.distance*.30+1e-12);
   }
 });
 
@@ -51,8 +52,8 @@ test('audited images keep measured endpoints and lose their exaggerated detours'
     const frames=data.experiments.base.sequences[`t1-l${layer}`].frames;
     const centers=centroids(frames),a=frames[start][index],b=frames[start+1][index];
     const c=controls(a,b,centers[start][labels[index]],centers[start+1][labels[index]],.45);
-    assert.deepEqual(curveAt(a,b,c,0),a);
-    assert.deepEqual(curveAt(a,b,c,1),b);
+    assert.deepEqual(pointAt(a,b,c,0),a);
+    assert.deepEqual(pointAt(a,b,c,1),b);
     assert.ok(length(a,b,c)/c.distance<1.2,`MNIST #${id} must not acquire a loop`);
   }
 });
@@ -68,11 +69,11 @@ test('all published temporal segments remain bounded at maximum grouping strengt
         const dx=(b[0]-a[0])/c.distance,dy=(b[1]-a[1])/c.distance;
         let previous=-Infinity;
         for(let j=0;j<=12;j++) {
-          const p=curveAt(a,b,c,j/12),vx=p[0]-a[0],vy=p[1]-a[1];
+          const p=pointAt(a,b,c,j/12),vx=p[0]-a[0],vy=p[1]-a[1];
           const along=vx*dx+vy*dy,across=Math.abs(-vx*dy+vy*dx);
           assert.ok(Number.isFinite(along)&&Number.isFinite(across));
           assert.ok(along>=previous-1e-8&&along<=c.distance+1e-8);
-          assert.ok(across<=.25*c.distance+1e-8);
+          assert.ok(across<=.30*c.distance+1e-8);
           previous=along;
         }
         checked++;
