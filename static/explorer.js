@@ -8,7 +8,7 @@
   const percent = v => `${(100 * v).toFixed(1)}%`;
   const state = {
     task: 't1', experiment: 'base', layer: 3, epochs: {t1: 0, t2: 6},
-    classes: new Set(), errors: false, fullTrails: false, dimInitial: false,
+    classes: new Set(), errors: false, dimInitial: false,
     strength: .45, opacity: .12, mode: 'pan', pinned: null, hover: null, hoverLayer: 3,
     detailLayer: 3, selected: new Set(), galleryPage: 0, confusion: null,
     transform: d3.zoomIdentity, playing: false, reveal: 3, selectionOpacity: .85,
@@ -71,9 +71,9 @@
       buildControls();
       setupInteractions();
       $('loading').hidden = true;
-      $('workspace').hidden = false;
-      renderAll(true);
       makeMethod();
+      window.addEventListener('hashchange', showPage);
+      showPage();
       let pending;
       new ResizeObserver(() => {
         clearTimeout(pending);
@@ -91,10 +91,24 @@
     }
   }
 
+  function showPage() {
+    const page = location.hash.slice(1);
+    const isDocumentation = page === 'guia' || page === 'metodo';
+    $('guia').hidden = page !== 'guia';
+    $('metodo').hidden = page !== 'metodo';
+    $('documentation').hidden = !isDocumentation;
+    const wasHidden = $('workspace').hidden;
+    if (isDocumentation && !wasHidden) stop();
+    $('workspace').hidden = isDocumentation;
+    if (isDocumentation) {
+      $('documentation').scrollTop = 0;
+    } else if (wasHidden) {
+      renderAll();
+      $('chart-section').focus({preventScroll:true});
+    }
+  }
+
   function buildControls() {
-    const closeControls=()=>{$('app').classList.remove('controls-open');$('controls-scrim').hidden=true;$('controls-toggle').setAttribute('aria-expanded','false');};
-    $('controls-toggle').onclick=()=>{const open=$('app').classList.toggle('controls-open');$('controls-scrim').hidden=!open;$('controls-toggle').setAttribute('aria-expanded',String(open));};
-    $('controls-scrim').onclick=closeControls;
     d3.select('#reference-epoch').selectAll('option').data(EPOCHS).join('option').attr('value',(_,i)=>i).text(e=>`Época ${e}`);
     $('reference-epoch').onchange=e=>{const reference=+e.target.value;stop();state.reference=reference;state.selected.clear();state.hover=null;renderAll();};
     $('compare-on').onchange=e=>{const checked=e.target.checked;stop();state.compare=checked;state.outcome=null;state.selected.clear();state.hover=null;renderAll();};
@@ -114,8 +128,18 @@
       $('sample-find-status').textContent=reset?`Imagen #${query}. Se retiraron los filtros que la ocultaban.`:'';
       pin(i,state.task==='t2'?state.activeLayer:state.layer);
     };
-    $('inspector-close').onclick=()=>{$('app').classList.remove('search-open');$('app').classList.add('detail-dismissed');};
-    $('open-search').onclick=()=>{$('app').classList.remove('detail-dismissed');$('app').classList.add('search-open');$('sample-query').focus();};
+    const explorer = $('explorer-layout');
+    const jumpTo = target => {
+      explorer.scrollTop += target.getBoundingClientRect().top - explorer.getBoundingClientRect().top;
+      target.focus({preventScroll:true});
+    };
+    document.querySelectorAll('a.narrow-link').forEach(link => {
+      link.onclick = event => {
+        event.preventDefault();
+        jumpTo($(link.hash.slice(1)));
+      };
+    });
+    $('open-search').onclick=()=>jumpTo($('sample-query'));
     d3.select('#epoch-select').selectAll('option').data(EPOCHS).join('option').attr('value',e=>e).text(e=>e);
     $('epoch-select').onchange = e => {const index=EPOCHS.indexOf(+e.target.value);stop();setEpoch(index);};
     d3.select('#class-legend').selectAll('button').data(d3.range(10)).join('button')
@@ -130,7 +154,6 @@
     for (const [id, prop] of [['dim-initial','dimInitial'], ['errors-only','errors']]) {
       $(id).addEventListener('change', e => {state[prop] = e.target.checked; renderAll();});
     }
-    $('trail-scope').onchange = e => {state.fullTrails=e.target.value==='full';renderAll();};
     $('strength').addEventListener('input', e => {state.strength = +e.target.value / 100; updateControls(); drawTrails();});
     $('opacity').addEventListener('input', e => {if(comparing())state.compareOpacity=+e.target.value/100;else if(exploringLayers())state.selectionOpacity=+e.target.value/100;else state.opacity = +e.target.value / 100; updateControls(); drawTrails();drawComparison();drawLayerWaypoints();});
     $('layer').addEventListener('change', e => {const layer = +e.target.value; stop(); state.layer = layer; state.detailLayer = state.layer; miniatureKey = ''; renderAll(true);});
@@ -138,6 +161,7 @@
     $('mode-pan').onclick = () => setMode('pan');
     $('mode-brush').onclick = () => {stop(); setMode('brush');};
     $('clear-filters').onclick = () => {
+      if (state.confusion) state.selected.clear();
       state.classes.clear(); state.errors = false; state.confusion = null;state.outcome=null;
       renderAll();
     };
@@ -150,12 +174,10 @@
     $('unpin').onclick = () => {state.pinned = null; state.hover = null; renderAll();};
     $('gallery-prev').onclick = () => {state.galleryPage = Math.max(0, state.galleryPage-1); renderGallery();};
     $('gallery-next').onclick = () => {state.galleryPage++; renderGallery();};
-    $('diagnostics-open').onclick = () => {$('diagnostics').showModal();renderMatrices();};
-    document.querySelectorAll('[data-task]').forEach(b => b.onclick = () => setTask(b.dataset.task));
-    $('help-open').onclick = () => $('help-dialog').showModal();
-    $('method-open').onclick = () => $('method-dialog').showModal();
-    document.querySelectorAll('.dialog-close').forEach(b => b.onclick = () => b.closest('dialog').close());
-    document.querySelectorAll('dialog').forEach(dialog => dialog.addEventListener('click', e => {if (e.target === dialog) dialog.close();}));
+    document.querySelectorAll('[data-task]').forEach(b => b.onclick = () => {
+      setTask(b.dataset.task);
+      $('explorer-layout').scrollTop = 0;
+    });
   }
 
   function setupInteractions() {
@@ -307,9 +329,6 @@
     $('strength').closest('label').hidden=comparing()||noLayerTrails;
     $('trails-heading').closest('section').hidden=noLayerTrails;
     $('trails-heading').textContent=comparing()?'Conexiones A → B':!temporal&&state.layerView==='explore'?'Recorrido de la selección':'Trayectorias';
-    $('trail-scope').value = state.fullTrails?'full':'current';
-    $('full-trails-control').hidden = !temporal||comparing();
-    $('trail-scope').disabled = !trailOpacity()||comparing();
     $('dim-initial-control').hidden = !temporal||comparing();
     $('dim-initial').disabled = !trailOpacity()||comparing();
     $('strength-value').value = state.strength===0?'0% · Rectas':`${Math.round(state.strength*100)}%`;
@@ -317,13 +336,13 @@
     $('opacity-value').value = shownOpacity===0?'0% · Ocultas':`${Math.round(shownOpacity*100)}%`;
     $('opacity').value=Math.round(shownOpacity*100);
     $('strength').disabled = !shownOpacity||comparing();
-    $('time-legend').hidden = !shownOpacity || comparing() || (temporal?(!state.fullTrails && epochIndex() === 0):layerComparing()||state.activeLayer===0);
+    $('time-legend').hidden = !shownOpacity || comparing() || (temporal?epochIndex()===0:layerComparing()||state.activeLayer===0);
     $('time-legend').firstElementChild.textContent=temporal?'Época 0':'Capa 1';
-    $('time-legend-end').textContent = temporal?(state.fullTrails ? '20' : epoch()):state.activeLayer+1;
+    $('time-legend-end').textContent = temporal?epoch():state.activeLayer+1;
     const finalColor = d3.hsl(COLORS[0]);
     const rampStart = finalColor.copy({l:Math.max(.18,finalColor.l*.42)}).formatRgb();
     const rampEnd = finalColor.copy({l:Math.min(.67,finalColor.l)}).formatRgb();
-    const shownEnd = d3.interpolateHsl(rampStart,rampEnd)(temporal?(state.fullTrails ? 1 : epochIndex()/6):state.activeLayer/3);
+    const shownEnd = d3.interpolateHsl(rampStart,rampEnd)(temporal?epochIndex()/6:state.activeLayer/3);
     $('time-ramp').style.background = `linear-gradient(90deg,${rampStart},${shownEnd})`;
     $('epoch-strip').hidden = !temporal;
     d3.select('#class-legend').selectAll('button').attr('aria-pressed', c => state.classes.has(c))
@@ -341,11 +360,9 @@
     renderComparisonControls();renderEvolution();
     updateActionVisibility();
     $('chart-footnote').textContent = comparing()?`A: época ${EPOCHS[state.reference]} ○ → B: época ${epoch()} ● · Posiciones medidas. Selecciona un cambio o fija una imagen.`:temporal
-      ? state.fullTrails
-        ? 'Recorrido completo 0–20 · Los puntos corresponden a la época activa.'
-        : epochIndex() === 0
-          ? 'Época 0 · Red sin entrenamiento. Elige una miniatura para avanzar.'
-          : `Recorrido acumulado 0–${epoch()} · Cada curva sigue la misma imagen.`
+      ? epochIndex() === 0
+        ? 'Época 0 · Red sin entrenamiento. Elige una miniatura para avanzar.'
+        : `Recorrido acumulado 0–${epoch()} · Cada curva sigue la misma imagen.`
       : layerComparing()?'Mismas imágenes y escala en ambos mapas · Fija una imagen o selecciona una región para compararlas.':state.layerView==='flow'?`Recorrido 1 → ${state.activeLayer+1} · Las curvas siguen imágenes, no conexiones entre neuronas. El brillo indica profundidad.`:'Cada punto es una imagen · Fija una para ver cómo cambia su representación entre capas. La forma indica la predicción final del modelo.';
   }
 
@@ -360,7 +377,7 @@
 
   function fitFocus() {
     const points=[];
-    const entries=state.task==='t1'?(comparing()?[state.reference,epochIndex()]:trailOpacity()?d3.range(state.fullTrails?7:epochIndex()+1):[epochIndex()]).map(l=>({frame:geometry.frames[l],panel:geometry.panels[0]})):layerComparing()?geometry.panels.map(p=>({frame:geometry.frames[p.frameIndex],panel:p})):d3.range(state.activeLayer+1).filter(l=>trailOpacity()&&(focused()!==null||state.selected.size||state.layerView==='flow')||l===state.activeLayer).map(l=>({frame:geometry.frames[l],panel:geometry.panels[0]}));
+    const entries=state.task==='t1'?(comparing()?[state.reference,epochIndex()]:trailOpacity()?d3.range(epochIndex()+1):[epochIndex()]).map(l=>({frame:geometry.frames[l],panel:geometry.panels[0]})):layerComparing()?geometry.panels.map(p=>({frame:geometry.frames[p.frameIndex],panel:p})):d3.range(state.activeLayer+1).filter(l=>trailOpacity()&&(focused()!==null||state.selected.size||state.layerView==='flow')||l===state.activeLayer).map(l=>({frame:geometry.frames[l],panel:geometry.panels[0]}));
     entries.forEach(({frame,panel})=>frame.forEach((p,i)=>{
       if(!included(i)||(state.selected.size&&!state.selected.has(i)))return;
       if(focused()!==null&&i!==focused())return;
@@ -447,10 +464,10 @@
   }
 
   function renderAll(reset=false) {
-    if (!DATA || !svg) return;
+    if (!DATA || !svg || $('workspace').hidden) return;
     if (reset) {state.transform = d3.zoomIdentity; svg.property('__zoom',d3.zoomIdentity);}
     updateControls(); updateInspector(); makeGeometry(); renderPlot(); renderMiniatures(); renderGallery();
-    if ($('diagnostics').open) renderMatrices();
+    renderMatrix();
   }
 
   function requestPlot() {
@@ -524,7 +541,7 @@
     if (!baseOpacity || comparing() || layerComparing()) return;
     const f = focused(), selected = state.selected;
     const stages = frames.length-1;
-    const visibleStages = temporal ? (state.fullTrails ? stages : epochIndex()) : state.activeLayer;
+    const visibleStages = temporal ? epochIndex() : state.activeLayer;
     const strength = state.strength;
     const drawOne = (i, stage, strong=false) => {
       if(!included(i))return;
@@ -611,7 +628,6 @@
 
   function pin(i,layer=state.detailLayer) {
     if (!Number.isInteger(i) || i<0 || i>=1000) return;
-    $('app').classList.remove('detail-dismissed');
     stop(); state.pinned=i; state.hover=null; state.detailLayer=layer;
     renderAll();
   }
@@ -642,7 +658,6 @@
     const i=state.hover??state.pinned;
     $('inspector-empty').hidden=i!==null;
     $('inspector-detail').hidden=i===null;
-    $('app').classList.toggle('has-preview',i!==null);
     if (i===null) {lastInspectorKey='';$('preview-status').textContent='Vista previa';$('unpin').hidden=true;$('neighbor-links').disabled=true;return;}
     const l=state.task==='t1'?state.layer:state.hover!==null?state.hoverLayer:state.detailLayer;
     const preview=state.hover!==null&&state.hover!==state.pinned;
@@ -714,7 +729,6 @@
   function renderGallery() {
     const ids=state.selected.size?[...state.selected].filter(included):comparing()&&state.outcome?d3.range(1000).filter(included):[];
     $('gallery-section').hidden=ids.length===0;
-    $('app').classList.toggle('has-gallery',ids.length>0);
     if (!ids.length) return;
     const pages=Math.ceil(ids.length/30);
     state.galleryPage=Math.max(0,Math.min(state.galleryPage,pages-1));
@@ -769,40 +783,77 @@
     });
   }
 
-  function renderMatrices() {
-    const key=`${epoch()}:${state.experiment}:${state.confusion?.join('-')}`;
-    if (key===lastMatrixKey) return;
-    lastMatrixKey=key;
-    const containers=d3.select('#matrix-grid').selectAll('div.matrix-item').data(['base']).join(enter=> {
-      const d=enter.append('div').attr('class','matrix-item');d.append('h3');d.append('p');d.append('svg').attr('role','img');return d;
+  function renderMatrix() {
+    const key = `${epoch()}:${state.experiment}:${state.confusion?.join('-')}`;
+    if (key === lastMatrixKey) return;
+    lastMatrixKey = key;
+
+    const digits = d3.range(10);
+    const counts = digits.map(() => digits.map(() => 0));
+    const predictions = record().predictions[epochIndex()];
+    predictions.forEach((pred, i) => counts[label(i)][pred]++);
+    const cells = counts.flatMap((row, real) => {
+      const total = d3.sum(row);
+      return row.map((count, pred) => ({real, pred, count, fraction: total ? count / total : 0}));
     });
-    containers.each(function(exp) {
-      const block=d3.select(this), predictions=DATA.experiments[exp].predictions[epochIndex()];
-      const counts=Array.from({length:10},()=>Array(10).fill(0));
-      predictions.forEach((p,i)=>counts[label(i)][p]++);
-      const cells=counts.flatMap((row,real)=>row.map((count,pred)=>({real,pred,count,value:count/100})));
-      const m=DATA.meta.experiments[exp].history[epochIndex()];
-      block.select('h3').text('Clasificación de dígitos MNIST');
-      block.select('p').text(`Matriz: 1 000 imágenes · exactitud ${percent(m.sample_accuracy)}. Prueba completa: ${percent(m.test_accuracy)} (n=10 000). Época ${epoch()}.`);
-      const s=block.select('svg').attr('viewBox','0 0 290 285').attr('aria-label',`Matriz de confusión ${exp}, época ${epoch()}`);
-      const color=d3.scaleSequential(d3.interpolatePurples).domain([0,1]);
-      s.selectAll('rect.matrix-cell').data(cells).join('rect').attr('class','matrix-cell')
-        .classed('active',d=>exp===state.experiment&&state.confusion?.[0]===d.real&&state.confusion?.[1]===d.pred)
-        .attr('x',d=>28+d.pred*24).attr('y',d=>14+d.real*24).attr('width',23).attr('height',23)
-        .attr('fill',d=>color(d.value)).on('click',(_,d)=> {
-          stop();state.experiment=exp;state.classes.clear();state.errors=false;state.outcome=null;
-          state.confusion=state.confusion?.[0]===d.real&&state.confusion?.[1]===d.pred?null:[d.real,d.pred];
-          state.selected=new Set(d3.range(1000).filter(i=>state.confusion&&label(i)===d.real&&DATA.experiments[exp].predictions[epochIndex()][i]===d.pred));
-          state.galleryPage=0;miniatureKey='';renderAll(true);
-          $('diagnostics').close();
-        }).selectAll('title').data(d=>[d]).join('title').text(d=>`Real ${d.real} → predicción ${d.pred}: ${d.count} imágenes (${Math.round(d.value*100)}%)`);
-      s.selectAll('text.cell-value').data(cells.filter(d=>d.count>0)).join('text').attr('class','cell-value')
-        .attr('x',d=>39.5+d.pred*24).attr('y',d=>29+d.real*24).attr('text-anchor','middle')
-        .attr('fill',d=>d.value>.5?'#fff':'#4d425a').attr('pointer-events','none').text(d=>d.count);
-      s.selectAll('text.row-label').data(d3.range(10)).join('text').attr('class','row-label').attr('x',17).attr('y',d=>29+d*24).attr('text-anchor','middle').text(d=>d);
-      s.selectAll('text.col-label').data(d3.range(10)).join('text').attr('class','col-label').attr('x',d=>39.5+d*24).attr('y',267).attr('text-anchor','middle').text(d=>d);
-      s.selectAll('text.axis-label').data([{x:148,y:281,text:'Clase predicha'}]).join('text').attr('class','axis-label').attr('x',d=>d.x).attr('y',d=>d.y).attr('text-anchor','middle').attr('fill','#687573').text(d=>d.text);
-    });
+    const active = d => state.confusion?.[0] === d.real && state.confusion?.[1] === d.pred;
+    const describe = d => `${d.real} → ${d.pred} · ${d.count} ${d.count === 1 ? 'imagen' : 'imágenes'}`;
+    const selected = cells.find(active);
+    const status = selected ? describe(selected) : 'Selecciona una celda para ver sus imágenes.';
+    const showStatus = value => { $('matrix-status').textContent = value; };
+    $('matrix-epoch').textContent = `Época ${epoch()} · ${predictions.length.toLocaleString('es-PE')} imágenes`;
+    const metrics = DATA.meta.experiments[state.experiment].history[epochIndex()];
+    $('matrix-accuracy').textContent = `Exactitud · muestra ${percent(metrics.sample_accuracy)} · prueba ${percent(metrics.test_accuracy)} (10 000)`;
+    showStatus(status);
+
+    const selectCell = d => {
+      if (!d.count && !active(d)) return;
+      stop();
+      state.confusion = active(d) ? null : [d.real, d.pred];
+      state.classes.clear();
+      state.errors = false;
+      state.outcome = null;
+      state.hover = null;
+      state.pinned = null;
+      state.galleryPage = 0;
+      state.selected = new Set(d3.range(predictions.length).filter(i => state.confusion && included(i)));
+      renderAll();
+      $('inspector-scroll').scrollTop = 0;
+    };
+
+    const s = d3.select('#matrix-grid').attr('viewBox', '0 0 252 242');
+    const color = d3.scaleSequential(d3.interpolatePurples).domain([0, 1]);
+    const x = col => 30 + col * 21;
+    const y = row => 2 + row * 21;
+
+    s.selectAll('rect.matrix-cell').data(cells).join('rect').attr('class', 'matrix-cell')
+      .classed('active', active)
+      .attr('x', d => x(d.pred)).attr('y', d => y(d.real)).attr('width', 20).attr('height', 20)
+      .attr('fill', d => color(d.fraction)).attr('role', 'button')
+      .attr('aria-label', d => `Clase real ${d.real}, predicha ${d.pred}, ${d.count} imágenes`)
+      .attr('aria-pressed', active).attr('aria-disabled', d => !d.count && !active(d))
+      .attr('tabindex', d => d.count || active(d) ? 0 : null)
+      .on('pointerenter focus', (_, d) => showStatus(describe(d)))
+      .on('pointerleave blur', () => showStatus(status))
+      .on('click', (_, d) => selectCell(d))
+      .on('keydown', (event, d) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        selectCell(d);
+      });
+
+    s.selectAll('text.cell-value').data(cells.filter(d => d.count > 0)).join('text')
+      .attr('class', 'cell-value').attr('x', d => x(d.pred) + 10).attr('y', d => y(d.real) + 10)
+      .attr('fill', d => d.fraction > .5 ? '#fff' : '#4d425a').text(d => d.count);
+    s.selectAll('text.row-label').data(digits).join('text').attr('class', 'row-label')
+      .attr('x', 20).attr('y', d => y(d) + 10).text(d => d);
+    s.selectAll('text.col-label').data(digits).join('text').attr('class', 'col-label')
+      .attr('x', d => x(d) + 10).attr('y', 221).text(d => d);
+    s.selectAll('text.axis-label').data([
+      {x: 7, y: 106, transform: 'rotate(-90 7 106)', label: 'Clase real'},
+      {x: 134, y: 235, transform: null, label: 'Clase predicha'}
+    ]).join('text').attr('class', 'axis-label').attr('x', d => d.x).attr('y', d => d.y)
+      .attr('transform', d => d.transform).text(d => d.label);
   }
 
   function comparisonStats(){
@@ -893,8 +944,9 @@
   }
 
   function renderEvolution(){
-    const temporal=state.task==='t1',width=$('evolution-chart').clientWidth||300,height=174;
-    const x=d3.scalePoint().domain(d3.range(temporal?7:4)).range([38,width-13]),y=d3.scaleLinear().domain([0,1]).range([143,30]);
+    const temporal=state.task==='t1',width=$('evolution-chart').clientWidth||300;
+    const height=$('evolution-chart').clientHeight||174,bottom=height-31;
+    const x=d3.scalePoint().domain(d3.range(temporal?7:4)).range([38,width-13]),y=d3.scaleLinear().domain([0,1]).range([bottom,30]);
     const values=temporal?[
       {name:'Exactitud',color:'#202d32',v:DATA.meta.experiments.base.history.map(h=>h.sample_accuracy)},
       {name:'NH',color:'#287f8e',v:seq().quality.map(q=>q.neighborhood_hit)}
@@ -904,9 +956,9 @@
     $('evolution-title').textContent=temporal?'Separación y aciertos':'Representación por capa';
     values.forEach((d,j)=>{const left=38+j*(width-38)/2;chart.append('line').attr('x1',left).attr('x2',left+14).attr('y1',10).attr('y2',10).attr('stroke',d.color).attr('stroke-width',2.3);chart.append('text').attr('x',left+20).attr('y',14).text(d.name);});
     chart.append('g').attr('class','evolution-axis').attr('transform','translate(38,0)').call(d3.axisLeft(y).tickValues([0,.5,1]).tickFormat(d3.format('.0%')).tickSize(-(width-51))).call(g=>g.select('.domain').remove());
-    chart.append('g').attr('class','evolution-axis').attr('transform','translate(0,143)').call(d3.axisBottom(x).tickFormat(i=>temporal?EPOCHS[i]:`C${i+1}`).tickSize(0)).call(g=>g.select('.domain').remove());
-    if(comparing())chart.append('line').attr('class','reference-cursor').attr('x1',x(state.reference)).attr('x2',x(state.reference)).attr('y1',29).attr('y2',143).attr('stroke','#8a9891').attr('stroke-dasharray','3 3');
-    if(temporal)chart.append('line').attr('x1',x(epochIndex())).attr('x2',x(epochIndex())).attr('y1',29).attr('y2',143).attr('stroke','#aab5b0');
+    chart.append('g').attr('class','evolution-axis').attr('transform',`translate(0,${bottom})`).call(d3.axisBottom(x).tickFormat(i=>temporal?EPOCHS[i]:`C${i+1}`).tickSize(0)).call(g=>g.select('.domain').remove());
+    if(comparing())chart.append('line').attr('class','reference-cursor').attr('x1',x(state.reference)).attr('x2',x(state.reference)).attr('y1',29).attr('y2',bottom).attr('stroke','#8a9891').attr('stroke-dasharray','3 3');
+    if(temporal)chart.append('line').attr('x1',x(epochIndex())).attr('x2',x(epochIndex())).attr('y1',29).attr('y2',bottom).attr('stroke','#aab5b0');
     values.forEach(d=>{
       chart.append('path').attr('d',d3.line().x((_,i)=>x(i)).y(y)(d.v)).attr('fill','none').attr('stroke',d.color).attr('stroke-width',2);
       chart.append('g').selectAll('circle').data(d.v).join('circle').attr('cx',(_,i)=>x(i)).attr('cy',y).attr('r',(_,i)=>temporal&&i===epochIndex()?3.6:2.1).attr('fill',d.color).append('title').text((v,i)=>`${temporal?'Época '+EPOCHS[i]:'Capa '+(i+1)} · ${d.name}: ${percent(v)}`);
@@ -918,7 +970,7 @@
       .on('pointermove',event=>{
         const px=d3.pointer(event,chart.node())[0],i=d3.least(d3.range(temporal?7:4),(a,b)=>Math.abs(x(a)-px)-Math.abs(x(b)-px));
         $('evolution-current').textContent=describe(i,true);
-        chart.selectAll('line.evolution-hover').data([i]).join('line').attr('class','evolution-hover').attr('x1',x(i)).attr('x2',x(i)).attr('y1',29).attr('y2',143).attr('stroke','#687573').attr('stroke-dasharray','2 3').attr('pointer-events','none');
+        chart.selectAll('line.evolution-hover').data([i]).join('line').attr('class','evolution-hover').attr('x1',x(i)).attr('x2',x(i)).attr('y1',29).attr('y2',bottom).attr('stroke','#687573').attr('stroke-dasharray','2 3').attr('pointer-events','none');
       }).on('pointerleave',()=>{chart.selectAll('.evolution-hover').remove();$('evolution-current').textContent=describe(current);});
     $('evolution-note').textContent=temporal?'1 000 imágenes · NH: vecinos de igual clase en 2D. Checkpoints con intervalos desiguales.':'NH: mezcla por clase. Fidelidad: trustworthiness de los vecinos originales. Muestra completa.';
   }

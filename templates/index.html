@@ -12,10 +12,10 @@
   <script defer src="/static/explorer.js"></script>
 </head>
 <body>
-<div id="app" data-version="0.7.1">
+<div id="app" data-version="0.7.2">
   <header class="masthead">
     <div><p class="eyebrow"><span class="brand-mark"></span> VISUAL LEARNING MODELS / UTEC</p><h1>Cómo aprende una red<span class="title-dot">.</span></h1></div>
-    <div class="masthead-meta"><button id="help-open" class="text-button">Guía</button><button id="method-open" class="text-button">Método y fuentes</button></div>
+    <div class="masthead-meta"><a id="help-open" class="text-button" href="#guia">Guía</a><a id="method-open" class="text-button" href="#metodo">Método y fuentes</a></div>
   </header>
 
   <div id="loading" role="status"><span class="loading-pulse"></span> Preparando las representaciones…</div>
@@ -23,17 +23,17 @@
 
   <div id="workspace" hidden>
     <div class="workspace-bar">
-      <button id="controls-toggle" class="text-button" aria-expanded="false">Controles</button>
+      <a id="controls-jump" class="text-button narrow-link" href="#control-rail">Controles</a>
       <nav class="task-tabs" role="tablist" aria-label="Tarea de visualización">
         <button id="tab-t1" role="tab" aria-selected="true" aria-controls="chart-section" data-task="t1"><span>T1</span> Entre épocas</button>
         <button id="tab-t2" role="tab" aria-selected="false" aria-controls="chart-section" data-task="t2"><span>T2</span> Entre capas</button>
       </nav>
-      <div class="workspace-actions" aria-label="Diagnóstico y comparación"><button id="diagnostics-open" aria-haspopup="dialog" aria-controls="diagnostics">Diagnóstico</button><button id="explore-learning">Investigar 15 → 20</button></div>
+      <div class="workspace-actions" aria-label="Comparación"><button id="explore-learning">Investigar 15 → 20</button></div>
     </div>
-    <div id="controls-scrim" hidden></div>
 
     <main id="explorer-layout" class="explorer-layout">
-      <aside class="control-rail" aria-label="Controles de exploración">
+      <aside id="control-rail" class="control-rail" aria-label="Controles de exploración" tabindex="-1">
+        <a class="text-button narrow-link" href="#chart-section">Volver al mapa ↑</a>
         <section class="rail-section"><h2>Explorar</h2>
           <label id="layer-control" class="field">Capa fija<select id="layer"><option value="0">Capa 1</option><option value="1">Capa 2</option><option value="2">Capa 3</option><option value="3" selected>Capa 4</option></select></label>
           <label id="epoch-control" class="field" hidden>Época fija<select id="epoch-select" aria-label="Época fija"></select></label>
@@ -54,7 +54,6 @@
           <p id="comparison-summary" class="rail-note"></p>
         </section>
         <section class="rail-section"><h2 id="trails-heading">Trayectorias</h2>
-          <label id="full-trails-control" class="field">Recorrido<select id="trail-scope"><option value="current">Hasta época activa</option><option value="full">Completo (0–20)</option></select></label>
           <label class="field range-label">Agrupamiento <output id="strength-value">45%</output><input id="strength" type="range" title="0%: líneas rectas" min="0" max="100" value="45"></label>
           <label class="field range-label">Opacidad <output id="opacity-value">12%</output><input id="opacity" type="range" min="0" title="0%: oculta las líneas" max="100" value="12"></label>
           <label id="dim-initial-control" class="check"><input id="dim-initial" type="checkbox"><span>Atenuar tramo 0→1</span></label>
@@ -62,7 +61,7 @@
         </section>
         <label class="check region-toggle"><input id="regions-on" type="checkbox" checked><span>Contexto de clases</span></label><p id="quality-label" class="quality-note"></p>
       </aside>
-      <section id="chart-section" class="chart-section" role="tabpanel" aria-labelledby="tab-t1">
+      <section id="chart-section" class="chart-section" role="tabpanel" aria-labelledby="tab-t1" tabindex="-1">
         <div class="map-toolbar"><h2 id="chart-title">Capa 4 · época 0</h2><div class="map-actions"><span id="visible-count" class="count-label" aria-live="polite"></span><button id="open-search" class="text-button">Buscar ID</button><div class="mode-switch" role="group" aria-label="Modo del ratón"><button id="mode-pan" aria-pressed="true">Mover</button><button id="mode-brush" aria-pressed="false">Seleccionar</button></div><button id="fit-focus" class="text-button" hidden>Acercar al filtro</button><button id="clear-selection" class="text-button" hidden>Quitar selección</button><button id="reset-view" class="text-button" hidden>Vista completa</button></div></div>
         <div id="layer-view-bar" class="layer-view-bar" hidden><div class="mode-switch" role="group" aria-label="Vista entre capas"><button data-layer-view="explore" aria-pressed="true">Explorar</button><button data-layer-view="compare" aria-pressed="false">Comparar</button><button data-layer-view="flow" aria-pressed="false">Recorrido</button></div><p id="layer-view-hint">Elige una capa abajo. Fija una imagen para seguirla.</p></div>
         <div class="plot-scroll"><div id="plot-wrap"><canvas id="trails-canvas" aria-hidden="true"></canvas><svg id="plot" role="img" aria-label="Proyecciones de activaciones de imágenes MNIST"></svg></div></div>
@@ -73,9 +72,9 @@
 
       </section>
 
-      <aside id="inspector" class="inspector" aria-label="Detalles de la imagen">
+      <aside id="inspector" class="inspector" aria-label="Análisis e inspección">
         <div id="inspector-scroll" class="inspector-scroll">
-        <div class="inspector-heading"><h2>Inspección</h2><span id="preview-status">Vista previa</span><button id="inspector-close" class="mobile-detail-close" aria-label="Cerrar detalle">×</button></div>
+        <div class="inspector-heading"><h2>Inspección</h2><span id="preview-status">Vista previa</span><a class="text-button narrow-link" href="#chart-section">Volver al mapa ↑</a></div>
         <form id="sample-find" class="sample-find"><label class="sr-only" for="sample-query">Buscar imagen por ID MNIST</label><input id="sample-query" type="search" inputmode="numeric" placeholder="ID de imagen, ej. 1182" autocomplete="off"><button type="submit">Buscar</button></form><p id="sample-find-status" class="control-note" role="status"></p>
         <div id="inspector-empty"><p>Pasa sobre un punto para ver su imagen y predicción. Haz clic para fijarlo.</p>
         </div>
@@ -97,14 +96,27 @@
 
         </div>
         <section class="evolution-section"><div class="evolution-heading"><h3 id="evolution-title">Evolución de la capa</h3><span>0–100%</span></div><svg id="evolution-chart" role="img" aria-label="Evolución de exactitud y vecindarios"></svg><p id="evolution-current" class="evolution-current"></p><p id="evolution-note" class="control-note"></p></section>
+        <section id="diagnostics" class="diagnostic-section" aria-labelledby="matrix-title">
+          <div class="diagnostic-heading"><h3 id="matrix-title">Matriz de confusión</h3><span id="matrix-epoch"></span></div>
+          <svg id="matrix-grid" role="group" aria-label="Filas de clase real y columnas de clase predicha"></svg>
+          <p id="matrix-accuracy" class="control-note"></p>
+          <p id="matrix-status" class="control-note" aria-live="polite"></p>
+          <a class="text-button narrow-link" href="#chart-section">Volver al mapa ↑</a>
+        </section>
       </aside>
     </main>
 
   </div>
+  <main id="documentation" hidden>
+    <article id="guia" hidden>
+      <a class="text-button" href="#chart-section">← Volver al mapa</a>
+      <h2>Sigue una imagen, encuentra un patrón.</h2><ol><li><b>Observa el conjunto.</b> En T1, las trayectorias se acumulan hasta la época activa: en época 0 solo hay puntos. Para ver el entrenamiento completo, elige la época 20. En T2, elige una capa con las miniaturas. Explorar amplía esa capa; Comparar muestra dos capas con selección compartida; Recorrido resume sus trayectorias en un mapa común.</li><li><b>Acerca y filtra.</b> Usa la rueda para zoom, arrastra para desplazar, o activa «Seleccionar región». Puedes combinar clases; el fondo tenue y los números conservan la ubicación del conjunto. «Acercar al filtro» ajusta la vista cuando lo necesites.</li><li><b>Comprueba los ejemplos.</b> Pasa sobre un punto para ver su imagen, etiqueta y predicción a la derecha. Haz clic para fijarlo y atenuar los demás. El inspector conserva su identidad al cambiar de estado.</li><li><b>Prueba el agrupamiento.</b> En los controles de «Trayectorias», usa Agrupamiento al 0% para ver líneas rectas. Usa Opacidad al 0% para ocultar las líneas sin quitar los puntos.</li></ol><p><b>Compara y comprueba:</b> activa «Comparar dos épocas», elige referencia A y usa las miniaturas para B. Filtra casos corregidos, nuevos errores o errores persistentes. Un círculo vacío marca A y el punto lleno marca B; las líneas unen posiciones medidas. Al fijar una imagen, revisa cuántos vecinos conserva y guarda la evidencia.</p><p>En T2, fija una imagen para ver su recorrido hasta la capa activa. Los números identifican las capas anteriores. La forma indica acierto o error en la predicción final. El color siempre indica la clase verdadera.</p>
+    </article>
+    <article id="metodo" hidden>
+      <a class="text-button" href="#chart-section">← Volver al mapa</a>
+      <h2>Los estados son reales. Las curvas los conectan.</h2><div id="method-content"></div><p><b>Referencia científica:</b> <a href="https://webspace.science.uu.nl/~telea001/VisualAnalytics/NNHidden" target="_blank" rel="noreferrer">Rauber et al. · Visualizing the Hidden Activity of Artificial Neural Networks</a></p>
+    </article>
+  </main>
 </div>
-
-<dialog id="diagnostics" class="diagnostic-dialog"><div class="dialog-heading"><p class="eyebrow">DIAGNÓSTICO</p><button class="dialog-close" aria-label="Cerrar diagnóstico">✕</button></div><h2>Confusiones del modelo</h2><p class="diagnostic-note">Filas: clase verdadera · columnas: predicción. Haz clic en una celda para recuperar sus imágenes.</p><div id="matrix-grid" class="matrix-grid single-model"></div></dialog>
-<dialog id="help-dialog"><div class="dialog-heading"><p class="eyebrow">GUÍA DE EXPLORACIÓN</p><button class="dialog-close" aria-label="Cerrar guía">✕</button></div><h2>Sigue una imagen, encuentra un patrón.</h2><ol><li><b>Observa el conjunto.</b> En T1, las trayectorias se acumulan hasta la época activa: en época 0 solo hay puntos. En los controles de «Trayectorias», el recorrido completo permite comparar todas las épocas. En T2, elige una capa con las miniaturas. Explorar amplía esa capa; Comparar muestra dos capas con selección compartida; Recorrido resume sus trayectorias en un mapa común.</li><li><b>Acerca y filtra.</b> Usa la rueda para zoom, arrastra para desplazar, o activa «Seleccionar región». Puedes combinar clases; el fondo tenue y los números conservan la ubicación del conjunto. «Acercar al filtro» ajusta la vista cuando lo necesites.</li><li><b>Comprueba los ejemplos.</b> Pasa sobre un punto para ver su imagen, etiqueta y predicción a la derecha. Haz clic para fijarlo y atenuar los demás. El inspector conserva su identidad al cambiar de estado.</li><li><b>Prueba el agrupamiento.</b> En los controles de «Trayectorias», usa Agrupamiento al 0% para ver líneas rectas. Usa Opacidad al 0% para ocultar las líneas sin quitar los puntos.</li></ol><p><b>Compara y comprueba:</b> activa «Comparar dos épocas», elige referencia A y usa las miniaturas para B. Filtra casos corregidos, nuevos errores o errores persistentes. Un círculo vacío marca A y el punto lleno marca B; las líneas unen posiciones medidas. Al fijar una imagen, revisa cuántos vecinos conserva y guarda la evidencia.</p><p>En T2, fija una imagen para ver su recorrido hasta la capa activa. Los números identifican las capas anteriores. La forma indica acierto o error en la predicción final. El color siempre indica la clase verdadera.</p></dialog>
-<dialog id="method-dialog"><div class="dialog-heading"><p class="eyebrow">MÉTODO Y ALCANCE</p><button class="dialog-close" aria-label="Cerrar método">✕</button></div><h2>Los estados son reales. Las curvas los conectan.</h2><div id="method-content"></div><p><b>Referencia científica:</b> <a href="https://webspace.science.uu.nl/~telea001/VisualAnalytics/NNHidden" target="_blank" rel="noreferrer">Rauber et al. · Visualizing the Hidden Activity of Artificial Neural Networks</a></p></dialog>
 </body>
 </html>

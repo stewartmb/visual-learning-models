@@ -5,8 +5,8 @@ const out=path.resolve(process.env.QA_OUTPUT||'test-results/layout');fs.mkdirSyn
  for(const viewport of [{width:1512,height:1050},{width:1800,height:1050},{width:1280,height:800}]){
   const page=await browser.newPage({viewport});const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(process.env.VLM_URL||'http://127.0.0.1:5123/');await page.waitForFunction(()=>window.VLM);await page.waitForTimeout(150);
-  const bounds=async()=>page.evaluate(()=>Object.fromEntries(['plot-wrap','evolution-chart','inspector-scroll'].map(id=>{const r=document.getElementById(id).getBoundingClientRect();return [id,{x:r.x,y:r.y,width:r.width,height:r.height}]})));
-  const initial=await bounds();assert.ok(initial['evolution-chart'].width>=300);assert.ok(initial['evolution-chart'].height>=170);
+  const bounds=async()=>page.evaluate(()=>Object.fromEntries(['plot-wrap','evolution-chart','inspector-scroll','diagnostics'].map(id=>{const r=document.getElementById(id).getBoundingClientRect();return [id,{x:r.x,y:r.y,width:r.width,height:r.height}]})));
+  const initial=await bounds();assert.ok(initial['evolution-chart'].width>=300);assert.ok(initial['evolution-chart'].height>=(viewport.height<861?148:174));
   assert.ok(initial['evolution-chart'].y<180,'The support chart must remain at the top');
   const control=await page.locator('#layer').boundingBox();assert.ok(control.height>=34);assert.ok(control.width>=200);
   await page.locator('[aria-label="Ver época 2"]').click();await page.waitForTimeout(750);
@@ -26,8 +26,8 @@ const out=path.resolve(process.env.QA_OUTPUT||'test-results/layout');fs.mkdirSyn
   await page.mouse.move(5,5);assert.match(await page.locator('#evolution-current').innerText(),/^Época 20/);
   const index=await page.evaluate(()=>VLM.data.samples.ids.indexOf(1393));await page.locator(`.point[data-sample="${index}"]`).dispatchEvent('mouseenter');
   await page.locator(`.point[data-sample="${index}"]`).dispatchEvent('click');
-  const inspected=await bounds();assert.deepEqual(inspected['plot-wrap'],initial['plot-wrap']);assert.deepEqual(inspected['evolution-chart'],initial['evolution-chart']);
-  await page.locator('#inspector-scroll').evaluate(e=>e.scrollTop=e.scrollHeight);const scrolled=await bounds();assert.deepEqual(scrolled['evolution-chart'],initial['evolution-chart']);
+  const inspected=await bounds();assert.deepEqual(inspected['plot-wrap'],initial['plot-wrap']);assert.deepEqual(inspected['evolution-chart'],initial['evolution-chart']);assert.deepEqual(inspected.diagnostics,initial.diagnostics);
+  await page.locator('#inspector-scroll').evaluate(e=>e.scrollTop=e.scrollHeight);const scrolled=await bounds();assert.deepEqual(scrolled['evolution-chart'],initial['evolution-chart']);assert.deepEqual(scrolled.diagnostics,initial.diagnostics);
   await page.screenshot({path:out+`/inspection-${viewport.width}.png`,fullPage:true});
   assert.deepEqual(errors,[]);results.push({viewport,map:initial['plot-wrap'],chart:initial['evolution-chart'],epoch2Occupancy:occupied,isotropicScale:s2.x});await page.close();
  }
@@ -35,11 +35,11 @@ const out=path.resolve(process.env.QA_OUTPUT||'test-results/layout');fs.mkdirSyn
  await tablet.goto(process.env.VLM_URL||'http://127.0.0.1:5123/');await tablet.waitForFunction(()=>window.VLM);await tablet.waitForTimeout(150);
  const tabletMap=await tablet.locator('#plot-wrap').boundingBox(),tabletChart=await tablet.locator('#evolution-chart').boundingBox();
  assert.ok(tabletMap.width>700&&tabletMap.height>500);assert.ok(tabletChart.y>tabletMap.y+tabletMap.height);
- await tablet.click('#controls-toggle');assert.equal(await tablet.locator('#controls-toggle').getAttribute('aria-expanded'),'true');await tablet.click('#controls-toggle');
+ await tablet.click('#controls-jump');await tablet.locator('#control-rail > a').click();
  assert.deepEqual(await tablet.locator('#plot-wrap').boundingBox(),tabletMap);
  await tablet.locator('.point').first().dispatchEvent('mouseenter');assert.equal(await tablet.locator('#inspector-scroll').isVisible(),true);
  assert.deepEqual(await tablet.locator('#evolution-chart').boundingBox(),tabletChart);
- await tablet.click('#inspector-close');assert.equal(await tablet.locator('#inspector-scroll').isVisible(),false);assert.equal(await tablet.locator('#evolution-chart').isVisible(),true);
+ assert.equal(await tablet.locator('#diagnostics').isVisible(),true);assert.equal(await tablet.locator('#evolution-chart').isVisible(),true);
  assert.deepEqual(await tablet.locator('#plot-wrap').boundingBox(),tabletMap);assert.ok(await tablet.evaluate(()=>document.documentElement.scrollWidth)<=772);
  results.push({viewport:{width:772,height:1050},map:tabletMap,chart:tabletChart});await tablet.close();
  fs.writeFileSync(out+'/layout-result.json',JSON.stringify(results,null,2));console.log('Layout checks passed at three desktop sizes and tablet width.');await browser.close();

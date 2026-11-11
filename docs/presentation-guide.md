@@ -146,7 +146,7 @@ Doce diapositivas principales y dos anexos de respaldo. Duración orientativa: 1
 
 ## 09. El cinco #1393 mantiene un error difícil
 
-**Acción en pantalla.** T1, época 20, desactivar Comparar dos épocas. Abrir Diagnóstico. Pulsar la celda real 5 y predicción 3. Buscar ID 1393.
+**Acción en pantalla.** T1, época 20, desactivar Comparar dos épocas. En la matriz de confusión, pulsar la celda de clase real 5 y clase predicha 3. Buscar ID 1393.
 
 **Evidencia que debe verse.** Tres imágenes en la confusión 5/3, el dígito 1393, historial de predicción y vecinos originales.
 

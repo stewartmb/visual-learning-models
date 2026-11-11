@@ -84,7 +84,7 @@ const output=path.resolve(process.env.QA_OUTPUT||'test-results');fs.mkdirSync(ou
  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(200);
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth)<=390);
  assert.ok((await page.locator('#plot-wrap').boundingBox()).height>450);
- await page.click('#open-search');await page.fill('#sample-query','1182');await page.click('#sample-find button');assert.match(await page.locator('#sample-id').innerText(),/1182/);await page.click('#inspector-close');
+ await page.click('#open-search');await page.fill('#sample-query','1182');await page.click('#sample-find button');assert.match(await page.locator('#sample-id').innerText(),/1182/);await page.locator('.inspector-heading a').click();
  await page.click('[data-layer-view="compare"]');await page.waitForTimeout(150);
  const clips=await page.locator('clipPath rect').evaluateAll(es=>es.map(e=>({x:+e.getAttribute('x'),y:+e.getAttribute('y')})));
  assert.ok(clips[1].y>clips[0].y,'Narrow comparison stacks two maps without horizontal scrolling');

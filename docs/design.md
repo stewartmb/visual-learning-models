@@ -1,4 +1,4 @@
-# Diseño visual · versión 0.7.1
+# Diseño visual · versión 0.7.2
 
 La referencia principal es el enunciado entregado. La grabación se consulta mediante el análisis exhaustivo HTML local, no mediante el SRT. El paper guía la metodología y el enunciado determina las tareas.
 
@@ -8,7 +8,7 @@ El espacio de trabajo reserva controles a la izquierda, mapa en el centro e insp
 
 Una sola leyenda permite combinar clases, con un único filtro «Solo errores». El botón con borde «Limpiar filtros» permanece visible debajo: se habilita al activar filtros y queda deshabilitado cuando no hay ninguno. Los casos fuera del filtro conservan puntos pequeños, grises y tenues; sus trayectorias no se dibujan. Los números 0–9 sitúan la mediana de cada clase calculada con toda la cohorte, sin alterar la proyección. Son referencias de clase, no límites ni regiones de decisión. Cuando la mezcla es alta (NH < 0.6), solo se rotulan las clases filtradas para evitar sugerir grupos separados. «Acercar al filtro» permite ajustar explícitamente el zoom; filtrar no cambia las coordenadas ni la escala.
 
-T1 conserva siete miniaturas como único selector de época; T2 tiene un selector compacto. Trayectorias, recorrido, fuerza, opacidad y velocidad permanecen en la columna izquierda. En comparación directa se retiran controles de agrupamiento que no aplican. No hay secciones desplegables que cambien el tamaño del mapa. Diagnóstico, guía y método usan diálogos superpuestos. En móvil, los controles se abren sobre la vista.
+T1 conserva siete miniaturas como único selector de época; T2 tiene un selector compacto. Trayectorias, recorrido, fuerza, opacidad y velocidad permanecen en la columna izquierda. En comparación directa se retiran controles de agrupamiento que no aplican. No hay secciones desplegables que cambien el tamaño del mapa. La matriz permanece en la columna de análisis. La guía y el método se leen en vistas propias. En pantallas estrechas, el análisis y los controles siguen al mapa en el orden de lectura.
 
 El hover actualiza la imagen, etiqueta, predicción, tres mayores puntuaciones más clase real, historial breve y seis vecinos originales en el panel derecho. Solo añade un contorno al punto; no atenúa los demás ni modifica las curvas. El clic fija la imagen y atenúa las demás. Al salir de otro punto se recupera el detalle fijado. La galería de selección regional ocupa ese mismo panel.
 
@@ -76,7 +76,7 @@ Desde v0.1.2, la atracción se aplica únicamente en dirección perpendicular a 
 
 La geometría interior es esquemática. El método usa etiquetas en el dibujo: un haz de líneas de igual clase no es evidencia independiente de que la red separó clases. La proyección no recibe etiquetas. Esta implementación no reproduce el algoritmo CUBu del paper.
 
-T1 muestra de forma predeterminada solo los segmentos hasta la época activa: época 0 sin líneas, época 1 con 0→1, época 2 con 0→1→2, etc. **Trayectorias → Recorrido → Completo (0–20)** conserva el overview de todas las trayectorias. La escala de luminancia mantiene el significado temporal entre estados. La selección y la reproducción respetan el mismo límite temporal. T2 conserva la época y limita el recorrido a la capa activa.
+T1 muestra los segmentos hasta la época activa: época 0 sin líneas, época 1 con 0→1, época 2 con 0→1→2. Al seleccionar la época 20 se ve el entrenamiento completo. La escala de luminancia mantiene el significado temporal entre estados. La selección y la reproducción respetan el mismo límite temporal. T2 conserva la época y limita el recorrido a la capa activa.
 
 La referencia de época 0 se conserva por su valor para comparar antes/durante/después del entrenamiento. **Atenuar primer tramo (0→1)** reduce únicamente su opacidad de contexto al 12% del valor habitual; no cambia los datos, los demás segmentos ni los puntos. La trayectoria seleccionada conserva su énfasis para inspeccionar esa transición. El control se ofrece solo en T1.
 
@@ -110,11 +110,11 @@ El código es original. Los datos y resultados se generaron para esta versión.
 
 Las columnas laterales se amplían de manera responsive (224/340 píxeles en escritorio medio, 240/370 a partir de 1700), con controles de al menos 33–35 píxeles y textos de 12–14. La proyección conserva toda la altura central. No se estira la geometría para llenar huecos: el espacio necesario se calcula con el rango real de toda la secuencia.
 
-La curva se fija arriba del panel derecho, mide 174 píxeles de alto y sus valores activos se muestran en texto. Hover consulta una época/capa sin cambiar el estado ni añadir un selector duplicado. Perfil, galería y acciones se desplazan en su propia área; la curva y el mapa conservan sus posiciones. En móvil, los detalles mantienen el panel superpuesto desplazable.
+La curva se fija arriba del panel derecho. Su altura se adapta a la ventana y los valores activos se muestran en texto. Hover consulta una época/capa sin cambiar el estado ni añadir un selector duplicado. Perfil, galería y acciones se desplazan en su propia área; la curva y el mapa conservan sus posiciones. La matriz queda fija al pie de la columna derecha.
 
 «Encuadrar estado» está siempre disponible; con filtros cambia a «Encuadrar filtro». Ajusta explícitamente los estados de las conexiones visibles, conserva escala uniforme y deja un margen de 10%. «Vista completa» recupera la escala común de secuencia. Filtrar, pasar el cursor y cambiar de época no aplican este zoom por sí solos.
 
-Entre 761 y 1100 píxeles se usa todo el ancho para el mapa, los controles se abren superpuestos y la curva queda en una franja inferior fija. El detalle se consulta en un panel superpuesto independiente que puede cerrarse sin ocultar la curva. Se evita dejar tres columnas estrechas en tablet.
+Hasta 1100 píxeles de ancho, el mapa ocupa toda la columna. La curva, la matriz, el inspector y los controles se consultan debajo del mapa mediante desplazamiento vertical.
 
 
 ## Reorganización de capas en 0.7.0
@@ -136,4 +136,4 @@ El inspector incorpora búsqueda por ID de la cohorte. Un ID inexistente produce
 
 ## Controles de trayectorias y diagnóstico
 
-Agrupamiento al 0% usa líneas rectas y opacidad al 0% oculta las conexiones. Los puntos conservan su ubicación y, en el comparador temporal, los marcadores A y B siguen disponibles. La referencia A solo se muestra al activar la comparación. Los botones Diagnóstico e Investigar permanecen en la barra superior, fuera del detalle desplazable.
+Agrupamiento al 0% usa líneas rectas y opacidad al 0% oculta las conexiones. Los puntos conservan su ubicación y, en el comparador temporal, los marcadores A y B siguen disponibles. La referencia A solo se muestra al activar la comparación. Investigar permanece en la barra superior. La matriz de confusión ocupa una sección fija en la columna derecha, fuera del detalle desplazable. Muestra los conteos de la época activa sobre la cohorte completa. Cada celda con casos filtra el mapa y abre la galería en el inspector.
