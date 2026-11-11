@@ -798,10 +798,18 @@
     });
     const active = d => state.confusion?.[0] === d.real && state.confusion?.[1] === d.pred;
     const describe = d => `${d.real} → ${d.pred} · ${d.count} ${d.count === 1 ? 'imagen' : 'imágenes'}`;
+    const untrained = epoch() === 0;
+    const sampleSize = d3.format(',d')(predictions.length).replaceAll(',', ' ');
+    let hint = 'Selecciona una celda para ver sus imágenes.';
+    if (untrained) {
+      const totals = digits.map(pred => d3.sum(counts, row => row[pred]));
+      const digit = d3.maxIndex(totals);
+      hint = `${totals[digit]} de ${sampleSize} imágenes se predicen como ${digit}.`;
+    }
     const selected = cells.find(active);
-    const status = selected ? describe(selected) : 'Selecciona una celda para ver sus imágenes.';
+    const status = selected ? describe(selected) : hint;
     const showStatus = value => { $('matrix-status').textContent = value; };
-    $('matrix-epoch').textContent = `Época ${epoch()} · ${predictions.length.toLocaleString('es-PE')} imágenes`;
+    $('matrix-epoch').textContent = untrained ? 'Época 0 · sin entrenar' : `Época ${epoch()} · ${sampleSize} imágenes`;
     const metrics = DATA.meta.experiments[state.experiment].history[epochIndex()];
     $('matrix-accuracy').textContent = `Exactitud · muestra ${percent(metrics.sample_accuracy)} · prueba ${percent(metrics.test_accuracy)} (10 000)`;
     showStatus(status);
@@ -1018,7 +1026,7 @@
       <p><b>Proyección:</b> AlignedUMAP no supervisado, 15 vecinos, min_dist 0.1 y regularización de alineación 0.01. Las etiquetas no intervienen en la proyección. Cada secuencia tiene un sistema de coordenadas propio; no se comparan posiciones absolutas entre secuencias distintas.</p>
       <p><b>Agrupamiento:</b> curvas Bézier atraídas hacia centroides de clase, conservando las posiciones medidas. La desviación está limitada respecto de la distancia entre extremos y no retrocede a lo largo de su conexión. Así se evitan arcos grandes en imágenes casi inmóviles. Esta adaptación usa etiquetas verdaderas para organizar el dibujo. La existencia de haces no demuestra por sí misma que el modelo haya separado clases. No reproduce el algoritmo GPU CUBu del paper.</p>
       <p><b>Comparación:</b> A y B usan posiciones medidas de la misma secuencia. En T2, Explorar amplía una capa, Comparar enlaza selecciones entre dos mapas sin conexiones que los atraviesen y Recorrido resume capas en un espacio compartido. Las curvas se detienen en la capa activa. Los números sobre una trayectoria fijada identifican sus capas anteriores. La predicción y la forma del punto siempre corresponden a la salida final del modelo: no se han entrenado clasificadores por capa. Los grupos de cambio de T1 se calculan con predicciones y etiquetas reales, no con distancias 2D. Los contornos son densidades por clase con ancho y umbral fijos; no fronteras de decisión.</p>
-      <p><b>Época 0:</b> corresponde a la red inicial sin entrenamiento, no a una proyección de píxeles originales. El tramo 0→1 permite comparar esa referencia con el primer estado entrenado. Se puede atenuar su dibujo de contexto para examinar cambios posteriores; seleccionar una imagen recupera todo su recorrido visible.</p>
+      <p><b>Época 0.</b> Las activaciones provienen de la red antes de entrenar. En esta corrida, la inicialización favorece ligeramente al 9 en la salida. El modelo elige la clase con mayor puntuación y asigna 992 de las 1 000 imágenes al 9, aunque la puntuación máxima media es de 10.6%. El tramo 0→1 permite comparar esa referencia con el primer estado entrenado. Se puede atenuar su dibujo de contexto para examinar cambios posteriores; seleccionar una imagen recupera todo su recorrido visible.</p>
       <p><b>Calidad:</b> NH₆ mide la fracción de vecinos de igual clase en 2D. Trust₁₀ mide preservación de vecindarios respecto de activaciones originales. La selección de vecinos del inspector se calcula en las activaciones originales.</p>
       <table><tr><td>Exactitud final · prueba completa</td><td>${percent(base.test_accuracy)}</td></tr><tr><td>Observaciones visualizadas</td><td>1 000 / 10 000</td></tr></table>
       <p><b>Límites:</b> la alineación regulariza el movimiento y puede atenuarlo. Distancias, áreas y curvas no son explicaciones causales. Las transiciones animadas interpolan posiciones: sus puntos intermedios no son estados del entrenamiento medidos.</p>`;
