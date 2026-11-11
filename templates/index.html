@@ -12,10 +12,10 @@
   <script defer src="/static/explorer.js"></script>
 </head>
 <body>
-<div id="app" data-version="0.7.0">
+<div id="app" data-version="0.7.1">
   <header class="masthead">
     <div><p class="eyebrow"><span class="brand-mark"></span> VISUAL LEARNING MODELS / UTEC</p><h1>Cómo aprende una red<span class="title-dot">.</span></h1></div>
-    <div class="masthead-meta"><button id="diagnostics-open" class="text-button">Diagnóstico</button><button id="help-open" class="text-button">Guía</button><button id="method-open" class="text-button">Método y fuentes</button></div>
+    <div class="masthead-meta"><button id="help-open" class="text-button">Guía</button><button id="method-open" class="text-button">Método y fuentes</button></div>
   </header>
 
   <div id="loading" role="status"><span class="loading-pulse"></span> Preparando las representaciones…</div>
@@ -28,7 +28,7 @@
         <button id="tab-t1" role="tab" aria-selected="true" aria-controls="chart-section" data-task="t1"><span>T1</span> Entre épocas</button>
         <button id="tab-t2" role="tab" aria-selected="false" aria-controls="chart-section" data-task="t2"><span>T2</span> Entre capas</button>
       </nav>
-      <span class="experiment-label">MLP · MNIST</span>
+      <div class="workspace-actions" aria-label="Diagnóstico y comparación"><button id="diagnostics-open" aria-haspopup="dialog" aria-controls="diagnostics">Diagnóstico</button><button id="explore-learning">Investigar 15 → 20</button></div>
     </div>
     <div id="controls-scrim" hidden></div>
 
@@ -48,16 +48,15 @@
         </section>
         <section id="comparison-controls" class="rail-section comparison-controls"><h2>¿Qué cambió?</h2>
           <label class="check"><input id="compare-on" type="checkbox"><span>Comparar dos épocas</span></label>
-          <label class="field">Época de referencia A<select id="reference-epoch" aria-label="Época de referencia"></select></label>
-          <p id="comparison-direction" class="rail-note">B se elige en las miniaturas.</p>
+          <label id="reference-epoch-control" class="field" hidden>Época de referencia A<select id="reference-epoch" aria-label="Época de referencia"></select></label>
+          <p id="comparison-direction" class="rail-note" hidden></p>
           <div id="transition-filters" class="transition-filters" role="group" aria-label="Cambios de clasificación"></div>
           <p id="comparison-summary" class="rail-note"></p>
         </section>
         <section class="rail-section"><h2 id="trails-heading">Trayectorias</h2>
-          <label class="field"><span class="sr-only">Estilo de trayectorias</span><select id="trail-style" aria-label="Estilo de trayectorias"><option value="bundled">Agrupadas</option><option value="straight">Rectas</option><option value="off">Ocultas</option></select></label>
           <label id="full-trails-control" class="field">Recorrido<select id="trail-scope"><option value="current">Hasta época activa</option><option value="full">Completo (0–20)</option></select></label>
-          <label class="field range-label">Agrupamiento <output id="strength-value">45%</output><input id="strength" type="range" min="0" max="100" value="45"></label>
-          <label class="field range-label">Opacidad <output id="opacity-value">12%</output><input id="opacity" type="range" min="1" max="100" value="12"></label>
+          <label class="field range-label">Agrupamiento <output id="strength-value">45%</output><input id="strength" type="range" title="0%: líneas rectas" min="0" max="100" value="45"></label>
+          <label class="field range-label">Opacidad <output id="opacity-value">12%</output><input id="opacity" type="range" min="0" title="0%: oculta las líneas" max="100" value="12"></label>
           <label id="dim-initial-control" class="check"><input id="dim-initial" type="checkbox"><span>Atenuar tramo 0→1</span></label>
           <label class="field speed-field">Velocidad<select id="speed"><option value="1800">Lenta</option><option value="1100" selected>Normal</option><option value="650">Rápida</option></select></label>
         </section>
@@ -79,7 +78,6 @@
         <div class="inspector-heading"><h2>Inspección</h2><span id="preview-status">Vista previa</span><button id="inspector-close" class="mobile-detail-close" aria-label="Cerrar detalle">×</button></div>
         <form id="sample-find" class="sample-find"><label class="sr-only" for="sample-query">Buscar imagen por ID MNIST</label><input id="sample-query" type="search" inputmode="numeric" placeholder="ID de imagen, ej. 1182" autocomplete="off"><button type="submit">Buscar</button></form><p id="sample-find-status" class="control-note" role="status"></p>
         <div id="inspector-empty"><p>Pasa sobre un punto para ver su imagen y predicción. Haz clic para fijarlo.</p>
-          <div class="discovery-card"><span class="eyebrow">UNA PREGUNTA REAL</span><h3>¿Entrenar más siempre ayuda?</h3><p>De época 15 a 20 hay casos que mejoran y otros que empiezan a fallar.</p><button id="explore-learning">Investigar 15 → 20 <span>↗</span></button></div>
         </div>
         <div id="inspector-detail" hidden>
           <div class="detail-top"><span id="sample-id" class="mono"></span><button id="unpin" class="text-button" hidden>Liberar</button></div>
@@ -106,7 +104,7 @@
 </div>
 
 <dialog id="diagnostics" class="diagnostic-dialog"><div class="dialog-heading"><p class="eyebrow">DIAGNÓSTICO</p><button class="dialog-close" aria-label="Cerrar diagnóstico">✕</button></div><h2>Confusiones del modelo</h2><p class="diagnostic-note">Filas: clase verdadera · columnas: predicción. Haz clic en una celda para recuperar sus imágenes.</p><div id="matrix-grid" class="matrix-grid single-model"></div></dialog>
-<dialog id="help-dialog"><div class="dialog-heading"><p class="eyebrow">GUÍA DE EXPLORACIÓN</p><button class="dialog-close" aria-label="Cerrar guía">✕</button></div><h2>Sigue una imagen, encuentra un patrón.</h2><ol><li><b>Observa el conjunto.</b> En T1, las trayectorias se acumulan hasta la época activa: en época 0 solo hay puntos. En los controles de «Trayectorias», el recorrido completo permite comparar todas las épocas. En T2, elige una capa con las miniaturas. Explorar amplía esa capa; Comparar muestra dos capas con selección compartida; Recorrido resume sus trayectorias en un mapa común.</li><li><b>Acerca y filtra.</b> Usa la rueda para zoom, arrastra para desplazar, o activa «Seleccionar región». Puedes combinar clases; el fondo tenue y los números conservan la ubicación del conjunto. «Acercar al filtro» ajusta la vista cuando lo necesites.</li><li><b>Comprueba los ejemplos.</b> Pasa sobre un punto para ver su imagen, etiqueta y predicción a la derecha. Haz clic para fijarlo y atenuar los demás. El inspector conserva su identidad al cambiar de estado.</li><li><b>Prueba el agrupamiento.</b> En los controles de «Trayectorias», compara trayectorias agrupadas y rectas para distinguir datos y dibujo.</li></ol><p><b>Compara y comprueba:</b> activa «Comparar dos épocas», elige referencia A y usa las miniaturas para B. Filtra casos corregidos, nuevos errores o errores persistentes. Un círculo vacío marca A y el punto lleno marca B; las líneas unen posiciones medidas. Al fijar una imagen, revisa cuántos vecinos conserva y guarda la evidencia.</p><p>En T2, fija una imagen para ver su recorrido hasta la capa activa. Los números identifican las capas anteriores. La forma indica acierto o error en la predicción final. El color siempre indica la clase verdadera.</p></dialog>
+<dialog id="help-dialog"><div class="dialog-heading"><p class="eyebrow">GUÍA DE EXPLORACIÓN</p><button class="dialog-close" aria-label="Cerrar guía">✕</button></div><h2>Sigue una imagen, encuentra un patrón.</h2><ol><li><b>Observa el conjunto.</b> En T1, las trayectorias se acumulan hasta la época activa: en época 0 solo hay puntos. En los controles de «Trayectorias», el recorrido completo permite comparar todas las épocas. En T2, elige una capa con las miniaturas. Explorar amplía esa capa; Comparar muestra dos capas con selección compartida; Recorrido resume sus trayectorias en un mapa común.</li><li><b>Acerca y filtra.</b> Usa la rueda para zoom, arrastra para desplazar, o activa «Seleccionar región». Puedes combinar clases; el fondo tenue y los números conservan la ubicación del conjunto. «Acercar al filtro» ajusta la vista cuando lo necesites.</li><li><b>Comprueba los ejemplos.</b> Pasa sobre un punto para ver su imagen, etiqueta y predicción a la derecha. Haz clic para fijarlo y atenuar los demás. El inspector conserva su identidad al cambiar de estado.</li><li><b>Prueba el agrupamiento.</b> En los controles de «Trayectorias», usa Agrupamiento al 0% para ver líneas rectas. Usa Opacidad al 0% para ocultar las líneas sin quitar los puntos.</li></ol><p><b>Compara y comprueba:</b> activa «Comparar dos épocas», elige referencia A y usa las miniaturas para B. Filtra casos corregidos, nuevos errores o errores persistentes. Un círculo vacío marca A y el punto lleno marca B; las líneas unen posiciones medidas. Al fijar una imagen, revisa cuántos vecinos conserva y guarda la evidencia.</p><p>En T2, fija una imagen para ver su recorrido hasta la capa activa. Los números identifican las capas anteriores. La forma indica acierto o error en la predicción final. El color siempre indica la clase verdadera.</p></dialog>
 <dialog id="method-dialog"><div class="dialog-heading"><p class="eyebrow">MÉTODO Y ALCANCE</p><button class="dialog-close" aria-label="Cerrar método">✕</button></div><h2>Los estados son reales. Las curvas los conectan.</h2><div id="method-content"></div><p><b>Referencia científica:</b> <a href="https://webspace.science.uu.nl/~telea001/VisualAnalytics/NNHidden" target="_blank" rel="noreferrer">Rauber et al. · Visualizing the Hidden Activity of Artificial Neural Networks</a></p></dialog>
 </body>
 </html>

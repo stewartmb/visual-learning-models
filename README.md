@@ -1,6 +1,6 @@
 # Cómo aprende una red
 
-Explorador de representaciones de una red neuronal para **Visual Learning Models · UTEC**. Versión **0.7.0**, preparada para revisar el diseño interactuando con datos reales.
+Explorador de representaciones de una red neuronal para **Visual Learning Models · UTEC**. Versión **0.7.1**, preparada para revisar el diseño interactuando con datos reales.
 
 **T1:** una capa fija, siete épocas y trayectorias agrupadas. **T2:** una época fija, un mapa grande con cuatro miniaturas de capa, comparación estática de dos capas y recorrido agrupado en un espacio compartido. Una imagen mantiene su identidad en todo el recorrido.
 
@@ -32,7 +32,7 @@ La [guía de exposición](docs/presentation-guide.md) vincula cada hallazgo con 
 ## Un recorrido para empezar
 
 1. Observa el conjunto inicial en **T1**, época 0; reproduce la secuencia o cambia de época con las siete miniaturas.
-2. Pulsa **Investigar 15 → 20**. El comparador separa imágenes que pasan a acertar, empiezan a fallar, siguen erradas y siguen correctas.
+2. En la barra superior, pulsa **Investigar 15 → 20**. El atajo y **Diagnóstico** permanecen visibles durante la inspección. El comparador separa imágenes que pasan a acertar, empiezan a fallar, siguen erradas y siguen correctas.
 3. Elige **Empiezan a fallar (8)**. Revisa sus imágenes y fija un ejemplo: el círculo vacío es A y el símbolo lleno B. Ambos extremos son posiciones medidas de la misma secuencia; en este modo se reemplaza el recorrido acumulado por la comparación directa.
 4. Comprueba su predicción y cuántos de los seis vecinos originales conserva. Los vecinos nuevos tienen una marca inferior; **Conectar vecinos en el mapa** permite localizar las relaciones calculadas en activaciones.
 5. Pulsa **Guardar evidencia** para descargar un HTML autónomo con mapa, imagen fijada, predicciones, selección, IDs y límites de interpretación.
@@ -74,6 +74,8 @@ Las proyecciones se calculan con **AlignedUMAP**, enlazando los mismos identific
 - Tamaño de marca para legibilidad: contexto reducido, errores ampliados ligeramente y selección fijada con énfasis; hover añade contorno.
 
 El agrupamiento usa etiquetas para ordenar líneas. **La existencia de haces no demuestra aprendizaje.** La proyección y el dibujo tienen limitaciones diferentes. Una curva larga no significa que el modelo aprendió más, y los estados intermedios de la animación no son checkpoints medidos.
+
+**Agrupamiento al 0%** dibuja conexiones rectas y **Opacidad al 0%** oculta las conexiones.
 
 La época 0 es la red inicial sin entrenamiento. Su conexión con época 1 es una referencia útil para estudiar el inicio del aprendizaje; no debe interpretarse como una trayectoria continua observada durante esa época. Se conserva la referencia y se ofrece atenuación para facilitar el diagnóstico posterior. Ver [auditoría y corrección de curvas](docs/trajectory-audit.md).
 

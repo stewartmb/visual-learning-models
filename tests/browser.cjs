@@ -80,6 +80,11 @@ const output=path.resolve(process.env.QA_OUTPUT||'test-results');fs.mkdirSync(ou
  assert.equal(await page.locator('#neighbors button').count(),6);
  assert.equal(await page.locator('#prediction-history button').count(),0);
  assert.equal(await page.locator('#prediction-history .prediction-cell').count(),7);
+ assert.equal(await page.locator('#explore-learning').isVisible(),true,'Investigar debe seguir visible con una imagen fijada');
+ await page.click('#diagnostics-open');
+ assert.equal(await page.locator('#diagnostics').isVisible(),true);
+ await page.locator('#diagnostics .dialog-close').click();
+ assert.equal(await page.evaluate(()=>VLM.getState().pinned),errorIndex);
  const shownScores=await page.locator('#probability-bars>g').count();assert.ok(shownScores>=3&&shownScores<=4);
  await sameBox(box);await page.screenshot({path:output+'/detail.png',fullPage:true});
  const otherIndex=errorIndex===0?1:0;await page.locator(`.point[data-sample="${otherIndex}"]`).dispatchEvent('mouseenter');
@@ -91,8 +96,14 @@ const output=path.resolve(process.env.QA_OUTPUT||'test-results');fs.mkdirSync(ou
  await page.click('#unpin');await sameBox(box);
  assert.equal(await page.locator('#inspector-detail').isVisible(),false);
  const grouped=await page.locator('#trails-canvas').evaluate(c=>c.toDataURL());
- await page.selectOption('#trail-style','straight');assert.notEqual(grouped,await page.locator('#trails-canvas').evaluate(c=>c.toDataURL()));
- await page.selectOption('#trail-style','bundled');
+ await page.locator('#strength').fill('0');
+ assert.match(await page.locator('#strength-value').innerText(),/Rectas/);
+ assert.notEqual(grouped,await page.locator('#trails-canvas').evaluate(c=>c.toDataURL()));
+ assert.ok(await paintedPixels()>0,'Agrupamiento 0 conserva las líneas');
+ await page.locator('#opacity').fill('0');
+ assert.equal(await paintedPixels(),0,'Opacidad 0 oculta las líneas');
+ assert.equal(await page.locator('.point').count(),1000);
+ await page.locator('#opacity').fill('12');
  await page.locator('#strength').evaluate(e=>{e.value='80';e.dispatchEvent(new Event('input',{bubbles:true}));});
  assert.equal(await page.locator('#strength-value').innerText(),'80%');
  await page.locator('#strength').evaluate(e=>{e.value='45';e.dispatchEvent(new Event('input',{bubbles:true}));});await sameBox(box);

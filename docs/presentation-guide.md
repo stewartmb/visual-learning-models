@@ -58,7 +58,7 @@ Doce diapositivas principales y dos anexos de respaldo. Duración orientativa: 1
 
 ## 03. Las clases se separan durante el entrenamiento
 
-**Acción en pantalla.** T1, capa fija 4. Elegir trayectorias Ocultas. Alternar miniaturas de época 0 y 20. Mantener Vista completa para conservar escala.
+**Acción en pantalla.** T1, capa fija 4. Poner Opacidad al 0%. Alternar miniaturas de época 0 y 20. Mantener Vista completa para conservar escala.
 
 **Evidencia que debe verse.** Los mismos 1000 IDs en la misma secuencia y los valores de NH en la curva derecha.
 
@@ -102,7 +102,7 @@ Doce diapositivas principales y dos anexos de respaldo. Duración orientativa: 1
 
 ## 06. Los vecinos del seis #1182 pasan a ser ochos
 
-**Acción en pantalla.** En T2, Comparar capas 1 y 4. Buscar ID 1182. Activar Conectar vecinos en el mapa y revisar Vecinos por capa. Elegir capa 2 para comprobar que allí ya aparecen seis ochos. Volver a capa 4, pulsar Explorar, elegir Agrupadas y Encuadrar imagen para mostrar el recorrido numerado.
+**Acción en pantalla.** En T2, Comparar capas 1 y 4. Buscar ID 1182. Activar Conectar vecinos en el mapa y revisar Vecinos por capa. Elegir capa 2 para comprobar que allí ya aparecen seis ochos. Volver a capa 4, pulsar Explorar, ajustar Agrupamiento por encima de 0% y pulsar Encuadrar imagen para mostrar el recorrido numerado.
 
 **Evidencia que debe verse.** Dígito real 6, trayecto entre capas y filas de clases de sus seis vecinos originales.
 
@@ -118,7 +118,7 @@ Doce diapositivas principales y dos anexos de respaldo. Duración orientativa: 1
 
 ## 07. Ocho imágenes empiezan a fallar al seguir entrenando
 
-**Acción en pantalla.** T1. Pulsar Investigar 15 a 20, visible al liberar la imagen. También se puede activar Comparar dos épocas, referencia A época 15 y miniatura B época 20.
+**Acción en pantalla.** T1. Pulsar Investigar 15 a 20, visible en la barra superior incluso con una imagen fijada. También se puede activar Comparar dos épocas, referencia A época 15 y miniatura B época 20.
 
 **Evidencia que debe verse.** Conteos 6 corregidas, 8 nuevos errores, 20 errores persistentes y 966 aciertos persistentes.
 
@@ -178,7 +178,7 @@ Doce diapositivas principales y dos anexos de respaldo. Duración orientativa: 1
 
 ## 11. Qué permiten afirmar las visualizaciones
 
-**Acción en pantalla.** Abrir Método y fuentes para revisar modelo, muestra, proyección y límites. Alternar trayectorias Agrupadas y Rectas en una selección.
+**Acción en pantalla.** Abrir Método y fuentes para revisar modelo, muestra, proyección y límites. En una selección, comparar Agrupamiento al 0% con un valor superior.
 
 **Evidencia que debe verse.** Diferencia entre posiciones medidas y dibujo de las conexiones, datos del experimento y definiciones de métricas.
 

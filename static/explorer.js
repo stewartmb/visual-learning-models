@@ -8,7 +8,7 @@
   const percent = v => `${(100 * v).toFixed(1)}%`;
   const state = {
     task: 't1', experiment: 'base', layer: 3, epochs: {t1: 0, t2: 6},
-    classes: new Set(), errors: false, trails: true, bundle: true, fullTrails: false, dimInitial: false,
+    classes: new Set(), errors: false, fullTrails: false, dimInitial: false,
     strength: .45, opacity: .12, mode: 'pan', pinned: null, hover: null, hoverLayer: 3,
     detailLayer: 3, selected: new Set(), galleryPage: 0, confusion: null,
     transform: d3.zoomIdentity, playing: false, reveal: 3, selectionOpacity: .85,
@@ -20,6 +20,8 @@
   let renderQueued = false, lastInspectorKey = '', lastMatrixKey = '', miniatureKey = '';
   const contourCache=new Map();
   const comparing=()=>state.task==='t1'&&state.compare;
+  const exploringLayers=()=>state.task==='t2'&&state.layerView==='explore';
+  const trailOpacity=()=>comparing()?state.compareOpacity:exploringLayers()?state.selectionOpacity:state.opacity;
   const outcomeOf=i=>VLMAnalysis.transition(label(i),record().predictions[state.reference][i],prediction(i));
   const record = () => DATA.experiments[state.experiment];
   const epochIndex = () => state.epochs[state.task];
@@ -128,10 +130,9 @@
     for (const [id, prop] of [['dim-initial','dimInitial'], ['errors-only','errors']]) {
       $(id).addEventListener('change', e => {state[prop] = e.target.checked; renderAll();});
     }
-    $('trail-style').onchange = e => {state.trails=e.target.value!=='off';state.bundle=e.target.value==='bundled';renderAll();};
     $('trail-scope').onchange = e => {state.fullTrails=e.target.value==='full';renderAll();};
     $('strength').addEventListener('input', e => {state.strength = +e.target.value / 100; updateControls(); drawTrails();});
-    $('opacity').addEventListener('input', e => {if(comparing())state.compareOpacity=+e.target.value/100;else if(state.task==='t2'&&state.layerView==='explore')state.selectionOpacity=+e.target.value/100;else state.opacity = +e.target.value / 100; updateControls(); drawTrails();drawComparison();});
+    $('opacity').addEventListener('input', e => {if(comparing())state.compareOpacity=+e.target.value/100;else if(exploringLayers())state.selectionOpacity=+e.target.value/100;else state.opacity = +e.target.value / 100; updateControls(); drawTrails();drawComparison();drawLayerWaypoints();});
     $('layer').addEventListener('change', e => {const layer = +e.target.value; stop(); state.layer = layer; state.detailLayer = state.layer; miniatureKey = ''; renderAll(true);});
     $('play').onclick = () => state.playing ? stop() : play();
     $('mode-pan').onclick = () => setMode('pan');
@@ -297,31 +298,26 @@
     $('reference-layer').value=state.referenceLayer;
     document.querySelectorAll('[data-layer-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.layerView===state.layerView)));
     $('layer-view-hint').textContent=layerComparing()?'A: referencia · B: capa elegida abajo. La selección se comparte.':state.layerView==='flow'?'Las curvas reúnen el recorrido 1 → capa activa en un mismo mapa.':'Elige una capa abajo. Fija una imagen para seguir su recorrido.';
-    const discovery=document.querySelector('.discovery-card');
-    discovery.querySelector('h3').textContent=temporal?'¿Entrenar más siempre ayuda?':'¿Qué cambia entre capas?';
-    discovery.querySelector('p').textContent=temporal?'De época 15 a 20 hay casos que mejoran y otros que empiezan a fallar.':'Compara la primera y la última capa. Fija un ejemplo para comprobar cómo cambian sus vecinos.';
-    $('explore-learning').innerHTML=temporal?'Investigar 15 → 20 <span>↗</span>':'Comparar capas 1 y 4 <span>↗</span>';
+    $('explore-learning').textContent=temporal?'Investigar 15 → 20':'Comparar capas 1 y 4';
+    $('explore-learning').title=temporal?'Ver qué imágenes mejoran o empiezan a fallar entre las épocas 15 y 20.':'Comparar las representaciones de la primera y la última capa.';
     $('play').disabled=comparing();
     $('play').textContent = comparing()?'Comparación A → B':state.playing ? 'Ⅱ Pausar' : temporal ? '▶ Reproducir' : '▶ Recorrer capas';
     for (const [id, prop] of [['dim-initial','dimInitial'],['errors-only','errors']]) $(id).checked = state[prop];
-    $('trail-style').value = comparing()?'straight':!state.trails?'off':state.bundle?'bundled':'straight';
     const noLayerTrails=layerComparing();
-    $('trail-style').disabled=comparing();$('trail-style').closest('label').hidden=comparing()||noLayerTrails;
     $('strength').closest('label').hidden=comparing()||noLayerTrails;
     $('trails-heading').closest('section').hidden=noLayerTrails;
     $('trails-heading').textContent=comparing()?'Conexiones A → B':!temporal&&state.layerView==='explore'?'Recorrido de la selección':'Trayectorias';
     $('trail-scope').value = state.fullTrails?'full':'current';
     $('full-trails-control').hidden = !temporal||comparing();
-    $('trail-scope').disabled = !state.trails||comparing();
+    $('trail-scope').disabled = !trailOpacity()||comparing();
     $('dim-initial-control').hidden = !temporal||comparing();
-    $('dim-initial').disabled = !state.trails||comparing();
-    $('strength-value').value = `${Math.round(state.strength*100)}%`;
-    const shownOpacity=comparing()?state.compareOpacity:!temporal&&state.layerView==='explore'?state.selectionOpacity:state.opacity;
-    $('opacity-value').value = `${Math.round(shownOpacity*100)}%`;
+    $('dim-initial').disabled = !trailOpacity()||comparing();
+    $('strength-value').value = state.strength===0?'0% · Rectas':`${Math.round(state.strength*100)}%`;
+    const shownOpacity=trailOpacity();
+    $('opacity-value').value = shownOpacity===0?'0% · Ocultas':`${Math.round(shownOpacity*100)}%`;
     $('opacity').value=Math.round(shownOpacity*100);
-    $('strength').disabled = !state.bundle || !state.trails||comparing();
-    $('opacity').disabled = !state.trails&&!comparing();
-    $('time-legend').hidden = comparing() || (temporal?(!state.fullTrails && epochIndex() === 0):layerComparing()||state.activeLayer===0);
+    $('strength').disabled = !shownOpacity||comparing();
+    $('time-legend').hidden = !shownOpacity || comparing() || (temporal?(!state.fullTrails && epochIndex() === 0):layerComparing()||state.activeLayer===0);
     $('time-legend').firstElementChild.textContent=temporal?'Época 0':'Capa 1';
     $('time-legend-end').textContent = temporal?(state.fullTrails ? '20' : epoch()):state.activeLayer+1;
     const finalColor = d3.hsl(COLORS[0]);
@@ -364,7 +360,7 @@
 
   function fitFocus() {
     const points=[];
-    const entries=state.task==='t1'?(comparing()?[state.reference,epochIndex()]:state.trails?d3.range(state.fullTrails?7:epochIndex()+1):[epochIndex()]).map(l=>({frame:geometry.frames[l],panel:geometry.panels[0]})):layerComparing()?geometry.panels.map(p=>({frame:geometry.frames[p.frameIndex],panel:p})):d3.range(state.activeLayer+1).filter(l=>state.trails&&(focused()!==null||state.selected.size||state.layerView==='flow')||l===state.activeLayer).map(l=>({frame:geometry.frames[l],panel:geometry.panels[0]}));
+    const entries=state.task==='t1'?(comparing()?[state.reference,epochIndex()]:trailOpacity()?d3.range(state.fullTrails?7:epochIndex()+1):[epochIndex()]).map(l=>({frame:geometry.frames[l],panel:geometry.panels[0]})):layerComparing()?geometry.panels.map(p=>({frame:geometry.frames[p.frameIndex],panel:p})):d3.range(state.activeLayer+1).filter(l=>trailOpacity()&&(focused()!==null||state.selected.size||state.layerView==='flow')||l===state.activeLayer).map(l=>({frame:geometry.frames[l],panel:geometry.panels[0]}));
     entries.forEach(({frame,panel})=>frame.forEach((p,i)=>{
       if(!included(i)||(state.selected.size&&!state.selected.has(i)))return;
       if(focused()!==null&&i!==focused())return;
@@ -524,31 +520,31 @@
     if (!geometry) return;
     const {width,height,frames,centroids,temporal,panels} = geometry;
     ctx.clearRect(0,0,width,height);
-    if (!state.trails || comparing() || layerComparing()) return;
+    const baseOpacity = trailOpacity();
+    if (!baseOpacity || comparing() || layerComparing()) return;
     const f = focused(), selected = state.selected;
     const stages = frames.length-1;
     const visibleStages = temporal ? (state.fullTrails ? stages : epochIndex()) : state.activeLayer;
-    const alpha = state.bundle ? state.strength : 0;
+    const strength = state.strength;
     const drawOne = (i, stage, strong=false) => {
       if(!included(i))return;
       const p0 = screen(frames[stage][i], 0);
       const p1 = screen(frames[stage+1][i], 0);
-      const c0 = screen(centroids[stage][label(i)], 0);
-      const c1 = screen(centroids[stage+1][label(i)], 0);
-      const curve = VLMTrails.controls(p0,p1,c0,c1,alpha);
-      if (curve.distance === 0) return;
-      let opacity;
-      if (strong) opacity = !temporal&&state.layerView==='explore'?state.selectionOpacity:f !== null ? .96 : .68;
-      else {
-        const base=state.classes.size||state.errors||state.confusion?Math.max(.3,state.opacity):state.opacity;
-        opacity=(f!==null||selected.size)?base*.18:base;
-      }
+      if (p0[0] === p1[0] && p0[1] === p1[1]) return;
+      let opacity=strong && !exploringLayers()
+        ? Math.min(1,baseOpacity*(f!==null?8:5.7))
+        : baseOpacity*(!strong&&(f!==null||selected.size)?.18:1);
       if (temporal && stage === 0 && state.dimInitial && !strong) opacity *= .12;
       if (!opacity) return;
       ctx.globalAlpha = opacity;
       ctx.lineWidth = strong ? 2 : 1;
       ctx.beginPath(); ctx.moveTo(...p0);
-      if (state.bundle) ctx.bezierCurveTo(...curve.first,...curve.second,...p1); else ctx.lineTo(...p1);
+      if (strength>0) {
+        const c0 = screen(centroids[stage][label(i)], 0);
+        const c1 = screen(centroids[stage+1][label(i)], 0);
+        const curve = VLMTrails.controls(p0,p1,c0,c1,strength);
+        ctx.bezierCurveTo(...curve.first,...curve.second,...p1);
+      } else ctx.lineTo(...p1);
       {
         const color = d3.hsl(COLORS[label(i)]);
         const dark = color.copy({l:Math.max(.18,color.l*.42)}).formatRgb();
@@ -603,7 +599,7 @@
 
   function drawLayerWaypoints(){
     const i=focused(),marks=[];
-    if(state.task==='t2'&&!layerComparing()&&i!==null&&state.trails){
+    if(state.task==='t2'&&!layerComparing()&&i!==null&&trailOpacity()){
       for(let l=0;l<state.activeLayer;l++)marks.push({l,p:screen(geometry.frames[l][i],0)});
     }
     const group=svg.select('.layer-waypoints').attr('clip-path','url(#panel-clip-0)');
@@ -816,12 +812,13 @@
 
   function renderComparisonControls(){
     const active=comparing();
-    $('app').classList.toggle('is-comparing',active);
     $('comparison-controls').hidden=state.task!=='t1';
     $('compare-on').checked=state.compare;
+    $('reference-epoch-control').hidden=!active;
     $('reference-epoch').value=state.reference;$('reference-epoch').disabled=!active;
     $('regions-on').checked=state.regions;
-    $('comparison-direction').textContent=active?`A ${EPOCHS[state.reference]} → B ${epoch()} · B se elige abajo.`:'B se elige en las miniaturas.';
+    $('comparison-direction').hidden=!active;
+    $('comparison-direction').textContent=active?`A ${EPOCHS[state.reference]} → B ${epoch()} · B se elige abajo.`:'';
     $('transition-filters').hidden=!active;
     const stats=comparisonStats();
     const names={fixed:'Pasan a acierto',new:'Empiezan a fallar',persistent:'Siguen fallando',steady:'Siguen acertando'};

@@ -1,4 +1,4 @@
-# Diseño visual · versión 0.6.1
+# Diseño visual · versión 0.7.1
 
 La referencia principal es el enunciado entregado. La grabación se consulta mediante el análisis exhaustivo HTML local, no mediante el SRT. El paper guía la metodología y el enunciado determina las tareas.
 
@@ -133,3 +133,7 @@ Las predicciones y símbolos de error son siempre la salida final del modelo en 
 El inspector incorpora búsqueda por ID de la cohorte. Un ID inexistente produce un mensaje claro; si un filtro oculta la imagen buscada, se retiran únicamente al ejecutar esa búsqueda y se informa al usuario. La comparación de vecinos muestra las seis clases originales de cada estado en dos filas enlazadas a la misma imagen. Los vecinos siguen calculados sobre las 1000 imágenes, independientemente de los filtros.
 
 «Encuadrar imagen» conserva el recorrido fijado y las referencias de su clase verdadera y de su predicción final. Así mantiene contexto para localizar la imagen dentro de los grupos, sin mover ni recalcular sus coordenadas. En comparación temporal, las conexiones A/B permanecen visibles aunque antes se hayan ocultado las trayectorias acumuladas. La matriz diferencia la exactitud de la muestra de la prueba completa.
+
+## Controles de trayectorias y diagnóstico
+
+Agrupamiento al 0% usa líneas rectas y opacidad al 0% oculta las conexiones. Los puntos conservan su ubicación y, en el comparador temporal, los marcadores A y B siguen disponibles. La referencia A solo se muestra al activar la comparación. Los botones Diagnóstico e Investigar permanecen en la barra superior, fuera del detalle desplazable.

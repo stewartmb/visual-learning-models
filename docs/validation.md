@@ -79,3 +79,5 @@ Se revisaron capturas de las vistas y catorce diapositivas. La revisión retiró
 El caso 1182 tiene vecinos de clases 6,8,6,8,6,9 en capa 1 y seis ochos desde capa 2, en época 20. La prueba de navegador verifica esas clases contra los datos originales. En épocas 15/20 de capa 4 pasa de predicción 6 a 8 y conserva un vecino de seis. El caso 1393 conserva predicción 3 desde época 1, con clase verdadera 5. Los cuatro grupos de transición suman 1000 y los conteos 6/8/20/966 corresponden a la muestra, independientemente de la mejora de prueba completa.
 
 Las pruebas de integridad y los recorridos de navegador pasan en aplicación y HTML sin conexión. También se revisa la presentación sin conexión: 14 imágenes completas, navegación por teclado, notas y ausencia de solicitudes externas. Las cifras se contrastaron con el JSON del experimento. Las conclusiones siguen siendo descriptivas y no causales.
+
+En 0.7.1 se comprobó que el agrupamiento al 0% conserva las conexiones rectas, la opacidad al 0% oculta las trayectorias sin retirar los puntos y la matriz puede abrirse y cerrarse con una imagen fijada. Los atajos permanecen en la barra superior.

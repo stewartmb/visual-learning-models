@@ -27,6 +27,11 @@ const output=path.resolve(process.env.QA_OUTPUT||'test-results');fs.mkdirSync(ou
  assert.deepEqual(await page.locator('#neighbor-comparison-chart text.neighbor-class').allTextContents(),[...firstNeighbors,...finalNeighbors]);
  assert.ok(await pixels()>0);assert.equal(await page.locator('.layer-waypoint').count(),3);
  assert.deepEqual(await page.locator('.layer-waypoint text').allTextContents(),['1','2','3']);
+ await page.locator('#opacity').fill('0');
+ assert.equal(await pixels(),0);
+ assert.equal(await page.locator('.layer-waypoint').count(),0);
+ await page.locator('#opacity').fill('85');
+ assert.equal(await page.locator('.layer-waypoint').count(),3);
  await page.click('#fit-focus');
  const anchors=await page.locator('.class-reference text').allTextContents();
  assert.ok(anchors.includes('6')&&anchors.includes('8'),'Framing a selected case must retain its true and predicted class context');
